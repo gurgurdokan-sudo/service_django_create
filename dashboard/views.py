@@ -4,6 +4,8 @@ from django.contrib import messages
 from .models import User, ServiceMaster, ServicePlan
 from .excel.service_sheet import create_service_sheet
 from .forms import UserForm, PlanForm
+from datetime import datetime
+import json
 from .calendar_table import get_month_days
 #利用者一覧
 def user_list(request):
@@ -81,6 +83,9 @@ def user_service(request,user_id):
     sq = ServiceMaster.get_quer_plan(level=target.care_level,stay_time_category = plan.stay_time_category)
     naiyou = sq.first() if sq else None
     calendar = get_month_days(2026,3) #todo:月は動的に
+    for d in calendar:
+        d['schedule'] = plan.schedule_json.get(str(d['day']), '')
+        d['actual'] = plan.actual_json.get(str(d['day']), '')
     context = {
         'user': target,
         'plan': plan,
@@ -88,7 +93,7 @@ def user_service(request,user_id):
         'naiyou':naiyou,
         'calendar': calendar,
     }
-    return render(request,'dashboard/user_service.html',{'context':context})
+    return render(request,'dashboard/user_service.html',context)
 def test(request,user_id):
     target = get_object_or_404(User,id=user_id)
     plan = ServicePlan.objects.get(user=target)
@@ -102,4 +107,21 @@ def test(request,user_id):
         'naiyou':naiyou,
         'calendar': calendar,
     }
-    return render(request,'dashboard/base/test.html',{'context':context}) 
+    return render(request,'dashboard/base/test.html',context) 
+#サービス提供の保存
+def save_service(request,user_id):
+    if request.method =='POST':
+        print('------------------保存処理開始------------------')
+        schedule_json = request.POST.get('schedule_json')
+        actual_json = request.POST.get('actual_json')
+        print('schedule_json:', schedule_json)
+        schedule_dict = json.loads(schedule_json)
+        actual_dict = json.loads(actual_json)
+        target = get_object_or_404(User,id=user_id)
+        plan = ServicePlan.objects.get(user=target)
+        plan.schedule_json = schedule_dict
+        plan.actual_json = actual_dict
+        plan.save()
+        messages.success(request,'サービス提供内容を保存しました')
+        return redirect('dashboard:user_list')
+    return render(request,'dashboard/user_list.html')

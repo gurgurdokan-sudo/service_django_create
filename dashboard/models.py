@@ -75,18 +75,20 @@ class ServiceMaster(models.Model):
 class ServiceRecord(models.Model): 
     '''実際に提供されたサービスの記録を管理するモデル'''
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    service = models.ForeignKey(ServiceMaster, on_delete=models.CASCADE)
     date = models.DateField()
-    unit = models.FloatField()
-    notes = models.TextField(blank=True)
+    PATTERN_CHOICES = [('day','日ごと'),('week','週ごと'),('month','各週ごと')]
+    pattern_type = models.CharField(max_length=10, choices=PATTERN_CHOICES)
+    pattern_json = models.JSONField(default=dict)
     def __str__(self):
         return str(self.user)
 class ServicePlan(models.Model): 
     '''サービス提供計画を管理するモデル'''
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    date = models.DateField(default="2024-01-01")
+    date = models.DateField(default="2026-01-01")
     start_time = models.TimeField(default="09:00")
-    end_time = models.TimeField(default="15:01")
+    end_time = models.TimeField(default="15:00")
+    schedule_json = models.JSONField(default=dict,null=True, blank=True)
+    actual_json = models.JSONField(default=dict ,null=True, blank=True)
     @property 
     def stay_time_category(self):
         '''サービス提供時間を返すプロパティ'''

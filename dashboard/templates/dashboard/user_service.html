@@ -1,6 +1,14 @@
 {% extends 'dashboard/base/base.html' %}
 {% block body %}
-<h2>{{ context.user.name }} さんのサービス一覧</h2>
+<h2>{{ user.name }} さんのサービス一覧</h2>
+<form action="{% url 'dashboard:save' user.id %}" method="POST">
+  <script>
+    window.initialSchedule = {{ plan.schedule_json|safe }};
+    window.initialActual = {{ plan.actual_json|safe }};
+  </script>
+  {% csrf_token %}
+  <input type="hidden" name="schedule_json" id="schedule_json"">
+  <input type="hidden" name="actual_json" id="actual_json">
   <div class="table-wrapper">
     <table class="schedule-table">
       <thead>
@@ -12,7 +20,7 @@
             <!-- 日付行 -->
             <div class="calendar-row date-row">
               <div class="label-cell">日付</div>
-              {% for d in context.calendar %}<!-- 1〜31のループ想定 -->
+              {% for d in calendar %}<!-- 1〜31のループ想定 -->
               <div class="day-cell {% if d.is_sun %}sun{% elif d.is_sat %}sat {% elif d.is_holiday %}holi {% endif %}">{{ d.day }}</div>
               {% endfor %}
               <div class="total-cell">合計</div>
@@ -20,7 +28,7 @@
             <!-- 曜日行 -->
             <div class="calendar-row weekday-row">
               <div class="label-cell">曜日</div>
-              {% for d in context.calendar %}<!-- 1〜31のループ想定 -->
+              {% for d in calendar %}<!-- 1〜31のループ想定 -->
               <div class="day-cell {% if d.is_sun %}sun{% elif d.is_sat %}sat {% elif d.is_holiday %}holiday {% endif %}">{{ d.weekday_jp }}</div>
               {% endfor %}
               <div class="total-cell">回数</div>
@@ -29,26 +37,28 @@
         </tr>
       </thead>
       <tbody>
-        {% if not context.naiyou is None %}
+        {% if not naiyou is None %}
         <tr>
-          <td class="col-time"> {{ context.plan.start_time }}〜<br />{{ context.plan.end_time }}</td>
-          <td class="col-service">{{ context.naiyou }}</td>
+          <td class="col-time"> {{ plan.start_time }}〜<br />{{ plan.end_time }}</td>
+          <td class="col-service">{{ naiyou }}</td>
           <td class="col-office">通所介護事務所<br />民の家</td>
           <td class="col-calendar">
             <div class="calendar-row data-row" data-row-type="schedule">
               <div class="label-cell">予定</div>
-              {% for d in context.calendar %}
-                <div class="day-cell editable-cell {% if d.is_sun %}sun{% elif d.is_sat %}sat {% elif d.is_holiday %}holi {% endif %}">
+              {% for d in calendar %}
+                <div class="day-cell editable-cell {% if d.is_sun %}sun{% elif d.is_sat %}sat {% elif d.is_holiday %}holi {% endif %}" data-day="{{ d.day }}">
                 <!-- ここにサービス提供の有無を表示（例:1,×） -->
+                {{ d.schedule }}
                 </div>
               {% endfor %}
               <div class="total-cell">0</div>
             </div>
             <div class="calendar-row data-row" data-row-type="actual">
               <div class="label-cell">実績</div>
-              {% for d in context.calendar %}
-                <div class="day-cell editable-cell {% if d.is_sun %}sun{% elif d.is_sat %}sat {% elif d.is_holiday %}holi {% endif %}">
+              {% for d in calendar %}
+                <div class="day-cell editable-cell {% if d.is_sun %}sun{% elif d.is_sat %}sat {% elif d.is_holiday %}holi {% endif %}" data-day="{{ d.day }}">
                 <!-- ここにサービス提供の有無を表示（例:1,△） -->
+                {{ d.actual }}
                 </div>
               {% endfor %}
               <div class="total-cell">0</div>
@@ -62,6 +72,8 @@
       </tbody>
     </table>
   </div>
+  <input class="btn" type="submit" value="保存">
+</form>
 
 <table class="data-table select">
   <tr>
@@ -70,7 +82,7 @@
     <th>滞在時間</th>
     <th>単位</th>
   </tr>
-  {% for s in context.service %}
+  {% for s in service %}
   <tr>
     <td><input type="radio" name="" id=""></td>
     <td>{{ s.service_name }}</td>
