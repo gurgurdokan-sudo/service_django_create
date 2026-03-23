@@ -1,46 +1,77 @@
-    document.addEventListener('DOMContentLoaded', () => {
-        console.log("DOM Fully Loaded");
-        // 編集モードに入ったかどうかのフラグ
-        let isFirstEdit = true;
+document.addEventListener('DOMContentLoaded', () => {
+    let isFirstEdit = true;
 
-    // すべての編集可能セルを取得
+    // JSON文字列をオブジェクトに変換（失敗したら空オブジェクト）
+    let scheduleData = window.initialSchedule || {};
+    let actualData = window.initialActual || {};
+    console.log("Initial Schedule Data:", scheduleData);
+    // JSONをHidden Inputに反映させる関数
+    function syncJson() {
+        scheduleInput.value = JSON.stringify(scheduleData);
+        actualInput.value = JSON.stringify(actualData);
+        console.log("JSON Synced");
+    }
+
+    // 初期表示処理: 保存されているデータをセルに反映する
+    function initCells() {
+        const rows = document.querySelectorAll('.data-row');
+        rows.forEach(row => {
+            const rowType = row.getAttribute('data-row-type');
+            const dataObj = (rowType === 'schedule') ? scheduleData : actualData;
+            const cells = row.querySelectorAll('.editable-cell');
+
+            cells.forEach(cell => {
+                const day = cell.getAttribute('data-day');
+                // オブジェクトにデータがあれば表示、なければ空
+                if (dataObj[day]) {
+                    cell.innerText = dataObj[day];
+                }
+            });
+            // 初期表示後の合計計算
+            updateRowTotal(row);
+        });
+    }
+
+    // 初期実行
+    initCells();
+
+    // 3. 編集イベント（クリック処理）
     const editableCells = document.querySelectorAll('.editable-cell');
-
     editableCells.forEach(cell => {
         cell.addEventListener('click', function() {
-            // 初回クリック時のみアラートを表示
             if (isFirstEdit) {
-                alert('編集します');
+                alert('編集を開始します');
                 isFirstEdit = false;
             }
 
-            // 親要素の属性から「予定(schedule)」か「実績(actual)」かを判定
             const rowType = this.parentElement.getAttribute('data-row-type');
+            const day = this.getAttribute('data-day');
             const currentValue = this.innerText.trim();
             
             let newValue = "";
 
             if (rowType === 'schedule') {
-                // 予定の切り替え: 空白 -> 1 -> x -> 空白
                 if (currentValue === "") newValue = "1";
                 else if (currentValue === "1") newValue = "x";
                 else newValue = "";
+                scheduleData[day] = newValue;
             } else {
-                // 実績の切り替え: 空白 -> 1 -> △ -> 空白
                 if (currentValue === "") newValue = "1";
                 else if (currentValue === "1") newValue = "△";
                 else newValue = "";
+                actualData[day] = newValue;
             }
 
-            // 値を書き換え
             this.innerText = newValue;
 
-            // 合計値の再計算（オプション）
+            // データの同期
+            syncJson();
+            // 合計計算
             updateRowTotal(this.parentElement);
         });
     });
 
-    // 行の合計（1の数）を計算する関数
+    // 合計計算関数
     function updateRowTotal(rowElement) {
         const cells = rowElement.querySelectorAll('.editable-cell');
         const totalCell = rowElement.querySelector('.total-cell');
