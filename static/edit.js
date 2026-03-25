@@ -1,10 +1,15 @@
 document.addEventListener('DOMContentLoaded', () => {
     let isFirstEdit = true;
 
+    // 1. Hidden Inputから現在の（保存されている）値を取得
+    const scheduleInput = document.getElementById('schedule_json');
+    const actualInput = document.getElementById('actual_json');
+
     // JSON文字列をオブジェクトに変換（失敗したら空オブジェクト）
     let scheduleData = window.initialSchedule || {};
     let actualData = window.initialActual || {};
-    console.log("Initial Schedule Data:", scheduleData);
+
+
     // JSONをHidden Inputに反映させる関数
     function syncJson() {
         scheduleInput.value = JSON.stringify(scheduleData);
@@ -12,7 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log("JSON Synced");
     }
 
-    // 初期表示処理: 保存されているデータをセルに反映する
+    // 2. ★初期表示処理: 保存されているデータをセルに反映する
     function initCells() {
         const rows = document.querySelectorAll('.data-row');
         rows.forEach(row => {

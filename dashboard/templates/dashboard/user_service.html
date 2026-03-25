@@ -3,8 +3,8 @@
 <h2>{{ user.name }} さんのサービス一覧</h2>
 <form action="{% url 'dashboard:save' user.id %}" method="POST">
   <script>
-    window.initialSchedule = {{ plan.schedule_json|safe }};
-    window.initialActual = {{ plan.actual_json|safe }};
+    window.initialSchedule ={% if  schedule_json %}JSON.parse('{{ schedule_json|safe }}'){% else %}{}{% endif %};
+    window.initialActual ={% if  actual_json %}JSON.parse('{{ actual_json|safe }}'){% else %}{}{% endif %};
   </script>
   {% csrf_token %}
   <input type="hidden" name="schedule_json" id="schedule_json"">
@@ -48,7 +48,6 @@
               {% for d in calendar %}
                 <div class="day-cell editable-cell {% if d.is_sun %}sun{% elif d.is_sat %}sat {% elif d.is_holiday %}holi {% endif %}" data-day="{{ d.day }}">
                 <!-- ここにサービス提供の有無を表示（例:1,×） -->
-                {{ d.schedule }}
                 </div>
               {% endfor %}
               <div class="total-cell">0</div>
@@ -58,7 +57,6 @@
               {% for d in calendar %}
                 <div class="day-cell editable-cell {% if d.is_sun %}sun{% elif d.is_sat %}sat {% elif d.is_holiday %}holi {% endif %}" data-day="{{ d.day }}">
                 <!-- ここにサービス提供の有無を表示（例:1,△） -->
-                {{ d.actual }}
                 </div>
               {% endfor %}
               <div class="total-cell">0</div>

@@ -83,15 +83,14 @@ def user_service(request,user_id):
     sq = ServiceMaster.get_quer_plan(level=target.care_level,stay_time_category = plan.stay_time_category)
     naiyou = sq.first() if sq else None
     calendar = get_month_days(2026,3) #todo:月は動的に
-    for d in calendar:
-        d['schedule'] = plan.schedule_json.get(str(d['day']), '')
-        d['actual'] = plan.actual_json.get(str(d['day']), '')
     context = {
         'user': target,
         'plan': plan,
         'service': service,
         'naiyou':naiyou,
         'calendar': calendar,
+        'schedule_json': json.dumps(plan.schedule_json),
+        'actual_json': json.dumps(plan.actual_json),
     }
     return render(request,'dashboard/user_service.html',context)
 def test(request,user_id):
@@ -115,13 +114,12 @@ def save_service(request,user_id):
         schedule_json = request.POST.get('schedule_json')
         actual_json = request.POST.get('actual_json')
         print('schedule_json:', schedule_json)
-        schedule_dict = json.loads(schedule_json)
-        actual_dict = json.loads(actual_json)
         target = get_object_or_404(User,id=user_id)
         plan = ServicePlan.objects.get(user=target)
-        plan.schedule_json = schedule_dict
-        plan.actual_json = actual_dict
+        plan.schedule_json = json.loads(schedule_json)
+        plan.actual_json = json.loads(actual_json)
         plan.save()
-        messages.success(request,'サービス提供内容を保存しました')
+        print(plan.schedule_json)
+        messages.success(request,f'{plan.schedule_json}サービス提供内容を保存しました')
         return redirect('dashboard:user_list')
     return render(request,'dashboard/user_list.html')
