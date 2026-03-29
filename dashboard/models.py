@@ -43,7 +43,7 @@ class ServiceMaster(models.Model):
     service_code = models.CharField(max_length=20)
     service_name = models.CharField(max_length=20)
     unit = models.IntegerField()  # 409 など
-    description = models.CharField(max_length=100,default="2024-01-01")
+    description = models.CharField(max_length=100,default="2026-03-01")
     def __str__(self):
         return str(self.service_name)
     @classmethod
@@ -81,17 +81,19 @@ class ServiceRecord(models.Model):
     pattern_json = models.JSONField(default=dict)
     def __str__(self):
         return str(self.user)
-class ServicePlan(models.Model): 
-    '''サービス提供計画を管理するモデル'''
+class ServicePlan(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    date = models.DateField(default="2026-01-01")
+    this_year = datetime.now().year
+    year = models.IntegerField(choices=[(i, f"{i}年") for i in range(this_year-1, this_year+5)], default=this_year)
+    month = models.IntegerField(choices=[(i, f"{i}月") for i in range(1, 13)], default = datetime.now().month)
     start_time = models.TimeField(default="09:00")
     end_time = models.TimeField(default="15:00")
-    schedule_json = models.JSONField(default=dict,null=True, blank=True)
-    actual_json = models.JSONField(default=dict ,null=True, blank=True)
-    @property 
+
+    schedule_json = models.JSONField(default=dict, blank=True)
+    actual_json = models.JSONField(default=dict, blank=True)
+
+    @property
     def stay_time_category(self):
-        '''サービス提供時間を返すプロパティ'''
         delta = datetime.combine(date.min, self.end_time) - datetime.combine(date.min, self.start_time)
         hours = delta.total_seconds() / 3600
         if hours <= 3:
@@ -108,8 +110,21 @@ class ServicePlan(models.Model):
             return '7-8'
         elif 8 < hours <= 9:
             return '8-9'
-        else:
-            return None
-    def __str__(self):
-        return str(self.user)
-
+        return None
+class AddOnService(models.Model):
+    code = models.CharField(max_length=20)
+    service_name = models.CharField(max_length=100)
+    unit = models.IntegerField()
+    category = models.CharField(max_length=20)
+    insurance_type = models.CharField(max_length=20, choices=[
+        ("insurance","保険内"),
+        ("self_pay","保険外")
+    ])
+    apply_unit = models.CharField(max_length=20, choices=[
+        ("monthly","月ごと"),
+        ("per_day","日ごと"),
+        ("per_service","サービスごと")
+    ])
+class UserAddOnService(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    addon = models.ForeignKey(AddOnService, on_delete=models.CASCADE)

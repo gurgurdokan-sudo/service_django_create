@@ -1,6 +1,7 @@
 {% extends 'dashboard/base/base.html' %}
 {% block body %}
 <h2>{{ user.name }} さんのサービス提供計画作成</h2>
+<div class=detail-card>
 <form method="post" class="plan-form">
   {% csrf_token %}
   {{ form.as_p }}

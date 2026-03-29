@@ -24,14 +24,14 @@ class PlanForm(forms.ModelForm):
             self.user_id = user_id
     class Meta:
         model = ServicePlan
-        fields = ['date','start_time','end_time']
+        fields = ['year', 'month', 'start_time', 'end_time']
         labels = {
-            'date': 'サービス提供開始日',
+            'year': 'サービス提供開始年',
+            'month': 'サービス提供開始月',
             'start_time': '開始時間',
             'end_time': '終了時間',
         }
         widgets = {
-        'date': forms.DateInput(attrs={'type': 'date'}),
         'start_time': forms.TimeInput(attrs={'type': 'time'}),
         'end_time': forms.TimeInput(attrs={'type': 'time'}),
         }
