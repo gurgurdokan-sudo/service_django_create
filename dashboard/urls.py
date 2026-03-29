@@ -13,5 +13,5 @@ urlpatterns = [
     path('user/<int:user_id>/service/', views.user_service, name='service'),
     path('user/<int:user_id>/service/save', views.save_service, name='save'),
     path('user/<int:user_id>/create_plan/', views.create_plan, name='creatPlan'),
-    path('user/test/', views.init_plan, name='test'),
+    path('user/test/', views.init_plan, name='test2'),
 ]

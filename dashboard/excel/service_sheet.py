@@ -2,7 +2,6 @@ from openpyxl import load_workbook
 
 def create_service_sheet(user, year, month):
     wb = load_workbook('templatesExcel/service_template.xlsx')
-    wb.name = user.name
     ws = wb.active
     siyaku_number = '112300' #一旦新座市固定
     for i,d in enumerate(siyaku_number):
@@ -22,5 +21,6 @@ def create_service_sheet(user, year, month):
     ws['W9'] = user.care_level
     ws['W11'] = '' #変更後
     ws['W12'] = '' 
-    ws['AI9'] = user.max_separate_payment()
+    ws['AI9'] = user.max_separate_payment
+    wb.save(f'サービス提供表_{user.name}_{year}_{month}.xlsx')
     return wb

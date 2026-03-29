@@ -54,23 +54,6 @@ class ServiceMaster(models.Model):
             return None
         return plan if plan else None
 
-# class ServicePlan(models.Model):
-#     user = models.ForeignKey(User, on_delete=models.CASCADE)
-#     service = models.ForeignKey(ServiceMaster, on_delete=models.CASCADE)
-#     year = models.IntegerField()
-#     month = models.IntegerField()
-#     mon = models.BooleanField(default=False)
-#     tue = models.BooleanField(default=False)
-#     wed = models.BooleanField(default=False)
-#     thu = models.BooleanField(default=False)
-#     fri = models.BooleanField(default=False)
-#     sat = models.BooleanField(default=False)
-#     sun = models.BooleanField(default=False)
-#     time_from = models.TimeField(null=True)
-#     time_to = models.TimeField(null=True)
-#     notes = models.TextField(blank=True)
-#     def __str__(self):
-#         return str(self.year)+'年'+str(self.month)+'月'
 
 class ServiceRecord(models.Model): 
     '''実際に提供されたサービスの記録を管理するモデル'''
@@ -84,7 +67,7 @@ class ServiceRecord(models.Model):
 class ServicePlan(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     this_year = datetime.now().year
-    year = models.IntegerField(choices=[(i, f"{i}年") for i in range(this_year-1, this_year+5)], default=this_year)
+    year = models.IntegerField(choices=[(i, f"{i}年") for i in range(this_year-1, this_year+1)], default=this_year)
     month = models.IntegerField(choices=[(i, f"{i}月") for i in range(1, 13)], default = datetime.now().month)
     start_time = models.TimeField(default="09:00")
     end_time = models.TimeField(default="15:00")
@@ -114,8 +97,10 @@ class ServicePlan(models.Model):
 class AddOnService(models.Model):
     code = models.CharField(max_length=20)
     service_name = models.CharField(max_length=100)
+    price = models.IntegerField(null=True, blank=True) # 単価（1000円 など）
     unit = models.IntegerField()
     category = models.CharField(max_length=20)
+    is_tax = models.BooleanField(max_length=20,default=False)  # 非課税 / 課税
     insurance_type = models.CharField(max_length=20, choices=[
         ("insurance","保険内"),
         ("self_pay","保険外")
@@ -124,7 +109,10 @@ class AddOnService(models.Model):
         ("monthly","月ごと"),
         ("per_day","日ごと"),
         ("per_service","サービスごと")
-    ])
+    ],null=True, blank=True)
+    medical_deduction = models.BooleanField(default=False,null=True, blank=True) # 医療費控除対象
+    def __str__(self):
+        return self.service_name
 class UserAddOnService(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     addon = models.ForeignKey(AddOnService, on_delete=models.CASCADE)

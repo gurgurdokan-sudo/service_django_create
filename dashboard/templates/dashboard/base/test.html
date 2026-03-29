@@ -1,25 +1,139 @@
+{% extends 'dashboard/base/base.html' %}
+{% comment %} 
 {% load static %}
-<link rel="stylesheet" href="{% static 'main.css' %}">
-<!-- 1. サービスの追加ボタン -->
- <body>
-<div class="action-area">
-  <!-- type="button" を明示して、フォーム送信を防ぎます -->
-  <button type="button" id="openServiceModal" class="btn btn-create">サービスを追加する</button>
+{% block body %}
+<div class="container">
+  <div class="header-container">
+    <h2 class="page-title">{{ user.name }} さんのサービス一覧</h2>
+  </div>
+
+  {% if messages %}
+  <ul class="messages">
+    {% for message in messages %}
+      <li class="{{ message.tags }}">{{ message }}</li>        
+    {% endfor %}
+  </ul>
+  {% endif %}
+
+  <!-- アクションバー -->
+  <div class="action-bar">
+    <div class="left-group">
+      <button type="button" id="openServiceModal" class="btn-outline blue-text">
+        <span class="icon">＋</span><span>サービス追加</span>
+      </button>
+      <button type="button" id="copyPlannedToActual" class="btn-outline blue-text">
+        <span class="icon">✔</span><span>予定通り</span>
+      </button>
+      <button type="button" class="btn-outline blue-text">
+        <span class="icon">▶</span><span>入力チェック</span>
+      </button>
+
+      <div class="sort-group">
+        <button type="button" class="btn-filled blue">提供時間</button>
+        <button type="button" class="btn-outline blue-text">事業所名</button>
+      </div>
+    </div>
+
+    <div class="right-group">
+      <a href="#" class="btn-outline green-text">
+        <span>月間カレンダー</span><span class="icon">↗</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- メインテーブルフォーム -->
+  <form action="{% url 'dashboard:save' user.id %}" method="POST">
+    {% csrf_token %}
+    <script>
+      window.initialSchedule = {% if schedule_json %}JSON.parse('{{ schedule_json|safe }}'){% else %}{}{% endif %};
+      window.initialActual = {% if actual_json %}JSON.parse('{{ actual_json|safe }}'){% else %}{}{% endif %};
+    </script>
+    <input type="hidden" name="schedule_json" id="schedule_json">
+    <input type="hidden" name="actual_json" id="actual_json">
+
+    <div class="table-wrapper">
+      <table class="schedule-table">
+        <thead>
+          <tr>
+            <th class="col-time">提供時間</th>
+            <th class="col-service">サービス内容</th>
+            <th class="col-office">事業所名</th>
+            <th class="col-calendar">
+              <div class="calendar-row date-row">
+                <div class="label-cell">日付</div>
+                {% for d in calendar %}
+                <div class="day-cell {% if d.is_sun %}sun{% elif d.is_sat %}sat{% elif d.is_holiday %}holi{% endif %}">{{ d.day }}</div>
+                {% endfor %}
+                <div class="total-cell">合計</div>
+              </div>
+              <div class="calendar-row weekday-row">
+                <div class="label-cell">曜日</div>
+                {% for d in calendar %}
+                <div class="day-cell {% if d.is_sun %}sun{% elif d.is_sat %}sat{% elif d.is_holiday %}holiday{% endif %}">{{ d.weekday_jp }}</div>
+                {% endfor %}
+                <div class="total-cell">回数</div>
+              </div>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if naiyou %}
+          <tr>
+            <td class="col-time">{{ plan.start_time }}〜<br />{{ plan.end_time }}</td>
+            <td class="col-service">{{ naiyou }}</td>
+            <td class="col-office">通所介護事務所<br />民の家</td>
+            <td class="col-calendar">
+              <div class="calendar-row data-row" data-row-type="schedule">
+                <div class="label-cell">予定</div>
+                {% for d in calendar %}
+                  <div class="day-cell editable-cell {% if d.is_sun %}sun{% elif d.is_sat %}sat{% elif d.is_holiday %}holi{% endif %}" data-day="{{ d.day }}"></div>
+                {% endfor %}
+                <div class="total-cell">0</div>
+              </div>
+              <div class="calendar-row data-row" data-row-type="actual">
+                <div class="label-cell">実績</div>
+                {% for d in calendar %}
+                  <div class="day-cell editable-cell {% if d.is_sun %}sun{% elif d.is_sat %}sat{% elif d.is_holiday %}holi{% endif %}" data-day="{{ d.day }}"></div>
+                {% endfor %}
+                <div class="total-cell">0</div>
+              </div>
+            </td>
+          </tr>
+          {% else %}
+          <tr class="no-data"><td colspan="5">データが見つかりません</td></tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+    <div style="margin-top: 20px; text-align: right;">
+        <input class="btn btn-create" type="submit" value="保存する">
+    </div>
+  </form>
 </div>
 
-<!-- 2. ポップアップ（dialogタグ） -->
-<!-- classに "modal-top" を追加して上部配置を制御します -->
-<dialog id="serviceModal" class="modal-dialog modal-top">
-  <div class="modal-content">
+<!-- サービス選択モーダル -->
+<div id="serviceModalOverlay" class="modal-overlay" style="display: none;">
+  <div class="modal-container">
     <div class="modal-header">
-      <h2 class="page-title">サービス選択</h2>
+      <h2 class="page-title">サービス選択 ({{ user.care_level }})</h2>
       <button type="button" class="close-icon-btn" id="closeBtn">×</button>
+    </div>
+
+    <!-- モーダル内検索エリア -->
+    <div class="modal-search-bar">
+      <div class="search-inputs">
+        <label>開始時間: <input type="time" id="modal_start_time" class="form-input-sm" value="09:00"></label>
+        <label>終了時間: <input type="time" id="modal_end_time" class="form-input-sm" value="17:00"></label>
+        <button type="button" id="btn_filter_service" class="btn">時間で絞り込み</button>
+        <button type="button" id="btn_reset_filter" class="btn">リセット</button>
+      </div>
+      <div class="search-hint">※入力された時間の差から「滞在時間」を判定して絞り込みます</div>
     </div>
 
     <form method="POST" action="." id="serviceForm">
       {% csrf_token %}
       <div class="table-scroll-container">
-        <table class="data-table select-table">
+        <table class="data-table select-table" id="modalServiceTable">
           <thead>
             <tr>
               <th>選択</th>
@@ -30,12 +144,12 @@
           </thead>
           <tbody>
             {% for s in service %}
-            <tr>
+            <tr class="service-row" data-stay-time="{{ s.get_stay_time_category_display }}">
               <td class="text-center">
                 <input type="radio" name="selected_service" value="{{ s.id }}" id="s_{{ s.id }}">
               </td>
               <td><label for="s_{{ s.id }}">{{ s.service_name }}</label></td>
-              <td>{{ s.get_stay_time_category_display }}</td>
+              <td class="stay-time-text">{{ s.get_stay_time_category_display }}</td>
               <td>{{ s.unit }}</td>
             </tr>
             {% endfor %}
@@ -49,6 +163,8 @@
       </div>
     </form>
   </div>
-</dialog>
-<script src="{% static 'popup.js' %}"></script>
-</body>
+</div>
+
+<script src="{% static 'edit.js' %}"></script>
+<script src="{% static 'search.js' %}"></script>
+{% endblock %} {% endcomment %}
