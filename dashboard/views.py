@@ -47,7 +47,7 @@ def export_service_sheet(request, user_id, year, month):
     )
     response['Content-Disposition'] = 'attachment; filename="【様式】サービス提供票・別表"'
 
-    wb.save(response)
+    wb.save(f'サービス提供表_{user.name}_{year}_{month}.xlsx')
     return response
 #更新
 def user_update(request, user_id):
@@ -91,10 +91,9 @@ def user_service(request,user_id):
         'calendar': calendar,
         'schedule_json': json.dumps(plan.schedule_json),
         'actual_json': json.dumps(plan.actual_json),
+        'addon_service': AddOnService.objects.all(),
     }
     return render(request,'dashboard/user_service.html',context)
-from django.shortcuts import render
-from .models import ServiceMaster
 
 def init_plan(request):
     # AddOnService.objects.all().delete()

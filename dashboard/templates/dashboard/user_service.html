@@ -117,9 +117,13 @@
       <h2 class="page-title">サービス選択 ({{ user.care_level }})</h2>
       <button type="button" class="close-icon-btn" id="closeBtn">×</button>
     </div>
-
+    <!-- タブヘッダー -->
+    <div class="modal-tabs">
+      <button type="button" class="tab-btn active" data-tab="tab-basic">基本サービス</button>
+      <button type="button" class="tab-btn" data-tab="tab-addon">加算・自費サービス</button>
+    </div>
     <!-- モーダル内検索エリア -->
-    <div class="modal-search-bar">
+    <div id="search-bar-container" class="modal-search-bar">
       <div class="search-inputs">
         <label>開始時間: <input type="time" id="modal_start_time" class="form-input-sm" value="09:00"></label>
         <label>終了時間: <input type="time" id="modal_end_time" class="form-input-sm" value="17:00"></label>
@@ -131,29 +135,31 @@
 
     <form method="POST" action="." id="serviceForm">
       {% csrf_token %}
-      <div class="table-scroll-container">
-        <table class="data-table select-table" id="modalServiceTable">
-          <thead>
-            <tr>
-              <th>選択</th>
-              <th>サービス内容</th>
-              <th>滞在時間</th>
-              <th>単位</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for s in service %}
-            <tr class="service-row" data-stay-time="{{ s.get_stay_time_category_display }}">
-              <td class="text-center">
-                <input type="radio" name="selected_service" value="{{ s.id }}" id="s_{{ s.id }}">
-              </td>
-              <td><label for="s_{{ s.id }}">{{ s.service_name }}</label></td>
-              <td class="stay-time-text">{{ s.get_stay_time_category_display }}</td>
-              <td>{{ s.unit }}</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+      <div id="tab-basic" class="tab-panel active">
+        <div class="table-scroll-container">
+          <table class="data-table select-table" id="modalServiceTable">
+            <thead>
+              <tr>
+                <th>選択</th>
+                <th>サービス内容</th>
+                <th>滞在時間</th>
+                <th>単位</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for s in service %}
+              <tr class="service-row" data-stay-time="{{ s.get_stay_time_category_display }}">
+                <td class="text-center">
+                  <input type="radio" name="selected_service" value="{{ s.id }}" id="s_{{ s.id }}">
+                </td>
+                <td><label for="s_{{ s.id }}">{{ s.service_name }}</label></td>
+                <td class="stay-time-text">{{ s.get_stay_time_category_display }}</td>
+                <td>{{ s.unit }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <div class="modal-footer">
@@ -163,7 +169,40 @@
     </form>
   </div>
 </div>
-
+<!--  加算・自費サービスパネル -->
+<div id="tab-addon" class="tab-panel">
+  <div class="table-scroll-container">
+    <table class="data-table select-table">
+      <thead>
+        <tr>
+          <th>選択</th>
+          <th>名称</th>
+          <th>単価/単位</th>
+          <th>区分/頻度</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in addon_service %}
+        <tr>
+          <td class="text-center">
+            <input type="radio" name="selected_service" value="addon_{{ a.id }}" id="a_{{ a.id }}">
+          </td>
+          <td>
+            <label for="a_{{ a.id }}">
+              <span class="badge {{ a.insurance_type }}">{{ a.get_insurance_type_display }}</span>
+              {{ a.service_name }}
+            </label>
+          </td>
+          <td>{{ a.price|default:a.unit }}円</td>
+          <td>{{ a.get_category_display }} / {{ a.get_apply_unit_display }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4">加算データがありません。</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
 <script src="{% static 'edit.js' %}"></script>
 <script src="{% static 'search.js' %}"></script>
 {% endblock %} 

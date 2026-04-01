@@ -1,11 +1,35 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // モーダル開閉ロジック（既存分）
+    // モーダル開閉ロジック
     const overlay = document.getElementById('serviceModalOverlay');
     const openBtn = document.getElementById('openServiceModal');
     const closeBtn = document.getElementById('closeBtn');
     const cancelBtn = document.getElementById('cancelBtn');
     const startTimeInput = document.getElementById('modal_start_time');
     const endTimeInput = document.getElementById('modal_end_time');
+        // --- タブ切り替えロジック ---
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const tabPanels = document.querySelectorAll('.tab-panel');
+    const searchBar = document.getElementById('search-bar-container');
+    tabBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const target = btn.getAttribute('data-tab');
+
+            // 1. ボタンの状態を更新
+            tabBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            // 2. パネルの表示を切り替え
+            tabPanels.forEach(p => p.classList.remove('active'));
+            document.getElementById(target).classList.add('active');
+
+            // 3. 基本サービス以外のタブでは検索バーを隠す
+            if (target === 'tab-basic') {
+                searchBar.style.display = 'block';
+            } else {
+                searchBar.style.display = 'none';
+            }
+        });
+    });
     openBtn.addEventListener('click', () => {
         startTimeInput.value = "09:00";
         endTimeInput.value = "18:00"; 
