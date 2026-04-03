@@ -10,6 +10,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const tabBtns = document.querySelectorAll('.tab-btn');
     const tabPanels = document.querySelectorAll('.tab-panel');
     const searchBar = document.getElementById('search-bar-container');
+
+    
     tabBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             const target = btn.getAttribute('data-tab');
@@ -43,10 +45,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnFilter = document.getElementById('btn_filter_service');
     const btnReset = document.getElementById('btn_reset_filter');
     const rows = document.querySelectorAll('.service-row');
+    const nameSearchInput = document.getElementById('modal_name_search');
 
     btnFilter.addEventListener('click', () => {
         const start = document.getElementById('modal_start_time').value;
         const end = document.getElementById('modal_end_time').value;
+        const searchName = nameSearchInput.value.toLowerCase();
 
         if (!start || !end) {
             alert('開始時間と終了時間の両方を入力してください。');
@@ -74,6 +78,9 @@ document.addEventListener('DOMContentLoaded', () => {
         else if (diffHours < 7) targetCategory = "6以上-7未満";
         else if (diffHours < 8) targetCategory = "7以上-8未満";
         else if (diffHours < 9) targetCategory = "8以上-9未満";
+
+        // 名称一致チェック (共通)
+        const nameMatches = rowName.includes(searchName);
 
         // テーブル行の表示・非表示を切り替え
         rows.forEach(row => {
