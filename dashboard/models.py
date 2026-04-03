@@ -100,17 +100,17 @@ class AddOnService(models.Model):
     price = models.IntegerField(null=True, blank=True) # 単価（1000円 など）
     unit = models.IntegerField()
     category = models.CharField(max_length=20)
-    is_tax = models.BooleanField(max_length=20,default=False)  # 非課税 / 課税
-    insurance_type = models.CharField(max_length=20, choices=[
+    is_tax = models.BooleanField(max_length=20,default=False, verbose_name='課税')  # 非課税 / 課税
+    insurance_type = models.CharField(max_length=20, verbose_name='保険適用',choices=[
         ("insurance","保険内"),
-        ("self_pay","保険外")
+        ("self_pay","自費")
     ])
-    apply_unit = models.CharField(max_length=20, choices=[
+    apply_unit = models.CharField(max_length=20, verbose_name='適用種類', choices=[
         ("monthly","月ごと"),
         ("per_day","日ごと"),
         ("per_service","サービスごと")
     ],null=True, blank=True)
-    medical_deduction = models.BooleanField(default=False,null=True, blank=True) # 医療費控除対象
+    medical_deduction = models.BooleanField(default=False,null=True, blank=True, verbose_name='医療費控除対象') # 医療費控除対象
     def __str__(self):
         return self.service_name
 class UserAddOnService(models.Model):

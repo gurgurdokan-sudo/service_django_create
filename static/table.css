@@ -6,6 +6,7 @@
 
 .schedule-table {
     width: 100%;
+    max-width: 1400px; /* 必要に応じて調整 */
     border-collapse: collapse; /* 隙間をなくす */
     font-size: 0.85rem;
     font-family: "Yu Gothic", "Meiryo", sans-serif;

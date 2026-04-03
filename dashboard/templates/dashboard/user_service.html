@@ -27,10 +27,6 @@
         <span class="icon">▶</span><span>入力チェック</span>
       </button>
 
-      <div class="sort-group">
-        <button type="button" class="btn-filled blue">提供時間</button>
-        <button type="button" class="btn-outline blue-text">事業所名</button>
-      </div>
     </div>
 
     <div class="right-group">
@@ -161,14 +157,6 @@
           </table>
         </div>
       </div>
-
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" id="cancelBtn">キャンセル</button>
-        <button type="submit" class="btn btn-create">選択を確定する</button>
-      </div>
-    </form>
-  </div>
-</div>
 <!--  加算・自費サービスパネル -->
 <div id="tab-addon" class="tab-panel">
   <div class="table-scroll-container">
@@ -203,6 +191,14 @@
     </table>
   </div>
 </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="cancelBtn">キャンセル</button>
+        <button type="submit" class="btn btn-create">選択を確定する</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <script src="{% static 'edit.js' %}"></script>
 <script src="{% static 'search.js' %}"></script>
 {% endblock %} 
