@@ -38,8 +38,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // 初期実行
+    syncJson();
     initCells();
-
     // 3. 編集イベント（クリック処理）
     const editableCells = document.querySelectorAll('.editable-cell');
     editableCells.forEach(cell => {

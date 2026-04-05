@@ -1,101 +1,128 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // モーダル開閉ロジック
-    const overlay = document.getElementById('serviceModalOverlay');
+    const modalOverlay = document.getElementById('serviceModalOverlay');
     const openBtn = document.getElementById('openServiceModal');
-    const closeBtn = document.getElementById('closeBtn');
     const cancelBtn = document.getElementById('cancelBtn');
-    const startTimeInput = document.getElementById('modal_start_time');
-    const endTimeInput = document.getElementById('modal_end_time');
-        // --- タブ切り替えロジック ---
+    const closeBtn = document.getElementById('closeBtn');
+    const submitBtnAddon = document.getElementById('footer-addon');
+    const submitBtnBasic = document.getElementById('footer-basic');
+    const serviceForm = document.getElementById('main-service-form');
+
+    // 1. モーダル表示・非表示
+    if (openBtn) {
+        openBtn.addEventListener('click', () => {
+            modalOverlay.style.display = 'flex';
+        });
+    }
+
+    const hideModal = () => { modalOverlay.style.display = 'none'; };
+    if (cancelBtn) cancelBtn.addEventListener('click', hideModal);
+    if (closeBtn) closeBtn.addEventListener('click', hideModal);
+
+    // 2. タブ切り替え
     const tabBtns = document.querySelectorAll('.tab-btn');
     const tabPanels = document.querySelectorAll('.tab-panel');
-    const searchBar = document.getElementById('search-bar-container');
+    const searchBasic = document.getElementById('search-bar-basic');
+    const searchAddon = document.getElementById('search-bar-addon');
 
-    
     tabBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             const target = btn.getAttribute('data-tab');
-
-            // 1. ボタンの状態を更新
             tabBtns.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-
-            // 2. パネルの表示を切り替え
             tabPanels.forEach(p => p.classList.remove('active'));
             document.getElementById(target).classList.add('active');
 
-            // 3. 基本サービス以外のタブでは検索バーを隠す
             if (target === 'tab-basic') {
-                searchBar.style.display = 'block';
+                searchBasic.style.display = 'block';
+                searchAddon.style.display = 'none';
             } else {
-                searchBar.style.display = 'none';
-            }
-        });
-    });
-    openBtn.addEventListener('click', () => {
-        startTimeInput.value = "09:00";
-        endTimeInput.value = "18:00"; 
-        overlay.style.display = 'flex'; 
-    });
-    const hideModal = () => { overlay.style.display = 'none'; };
-    closeBtn.addEventListener('click', hideModal);
-    cancelBtn.addEventListener('click', hideModal);
-
-    // --- サービス絞り込み機能 ---
-    const btnFilter = document.getElementById('btn_filter_service');
-    const btnReset = document.getElementById('btn_reset_filter');
-    const rows = document.querySelectorAll('.service-row');
-    const nameSearchInput = document.getElementById('modal_name_search');
-
-    btnFilter.addEventListener('click', () => {
-        const start = document.getElementById('modal_start_time').value;
-        const end = document.getElementById('modal_end_time').value;
-        const searchName = nameSearchInput.value.toLowerCase();
-
-        if (!start || !end) {
-            alert('開始時間と終了時間の両方を入力してください。');
-            return;
-        }
-
-        // 時間差（分）を計算
-        const [h1, m1] = start.split(':').map(Number);
-        const [h2, m2] = end.split(':').map(Number);
-        const diffMinutes = (h2 * 60 + m2) - (h1 * 60 + m1);
-
-        if (diffMinutes <= 0) {
-            alert('終了時間は開始時間より後の時間を設定してください。');
-            return;
-        }
-
-        const diffHours = diffMinutes / 60;
-
-        // 滞在時間カテゴリの判定
-        let targetCategory = "";
-        if (diffHours < 3) targetCategory = "3時間以下";
-        else if (diffHours < 4) targetCategory = "3以上-4未満";
-        else if (diffHours < 5) targetCategory = "4以上-5未満";
-        else if (diffHours < 6) targetCategory = "5以上-6未満";
-        else if (diffHours < 7) targetCategory = "6以上-7未満";
-        else if (diffHours < 8) targetCategory = "7以上-8未満";
-        else if (diffHours < 9) targetCategory = "8以上-9未満";
-
-        // 名称一致チェック (共通)
-        const nameMatches = rowName.includes(searchName);
-
-        // テーブル行の表示・非表示を切り替え
-        rows.forEach(row => {
-            const stayTimeText = row.getAttribute('data-stay-time');
-            if (stayTimeText.includes(targetCategory)) {
-                row.style.display = '';
-            } else {
-                row.style.display = 'none';
+                searchBasic.style.display = 'none';
+                searchAddon.style.display = 'block';
             }
         });
     });
 
-    btnReset.addEventListener('click', () => {
-        document.getElementById('modal_start_time').value = "";
-        document.getElementById('modal_end_time').value = "";
-        rows.forEach(row => row.style.display = '');
+    // 3. 基本サービス検索 (時間)
+    const btnFilterBasic = document.getElementById('btn_filter_service');
+    if (btnFilterBasic) {
+        btnFilterBasic.addEventListener('click', () => {
+            const start = document.getElementById('modal_start_time').value;
+            const end = document.getElementById('modal_end_time').value;
+            const [h1, m1] = start.split(':').map(Number);
+            const [h2, m2] = end.split(':').map(Number);
+            const diffHours = ((h2 * 60 + m2) - (h1 * 60 + m1)) / 60;
+
+            let targetCategory = "";
+            if (diffHours < 3) targetCategory = "3時間以下";
+            else if (diffHours < 4) targetCategory = "3以上-4未満";
+            else if (diffHours < 5) targetCategory = "4以上-5未満";
+            else if (diffHours < 6) targetCategory = "5以上-6未満";
+            else if (diffHours < 7) targetCategory = "6以上-7未満";
+            else if (diffHours < 8) targetCategory = "7以上-8未満";
+            else if (diffHours < 9) targetCategory = "8以上-9未満";
+
+            document.querySelectorAll('.basic-row').forEach(row => {
+                const stayTime = row.getAttribute('data-stay-time');
+                row.style.display = stayTime.includes(targetCategory) ? '' : 'none';
+            });
+        });
+    }
+
+    // 4. AddOnサービス検索 (名称)
+    const btnFilterAddon = document.getElementById('btn_filter_addon');
+    if (btnFilterAddon) {
+        btnFilterAddon.addEventListener('click', () => {
+            const keyword = document.getElementById('addon_keyword').value.toLowerCase();
+            document.querySelectorAll('.addon-row').forEach(row => {
+                const name = row.getAttribute('data-name').toLowerCase();
+                row.style.display = name.includes(keyword) ? '' : 'none';
+            });
+        });
+    }
+
+    // 5. リセットボタン
+    document.getElementById('btn_reset_basic')?.addEventListener('click', () => {
+        document.querySelectorAll('.basic-row').forEach(row => row.style.display = '');
     });
+    document.getElementById('btn_reset_addon')?.addEventListener('click', () => {
+        document.getElementById('addon_keyword').value = "";
+        document.querySelectorAll('.addon-row').forEach(row => row.style.display = '');
+    });
+    // 5. フォーム送信時の確認
+    if (serviceForm) {
+        serviceForm.addEventListener('submit', (e) => {
+            // 送信のきっかけになったボタンを取得
+            const triggerButton = e.submitter;
+
+            if (triggerButton && triggerButton.closest('.modal-footer')) {
+                const selected = serviceForm.querySelector('input[name="selected_service"]:checked');
+                if (!selected) {
+                    e.preventDefault();
+                    alert('サービスを選択してください。');
+                    return;
+                }
+                if (selected.value.startsWith('addon_')) {
+                    // 確認ダイアログ
+                    if (!confirm(`この内容で追加サービスを追加しますか？`)) {
+                        e.preventDefault(); // キャンセル時は送信中止
+                    }
+                }
+                const start = document.getElementById('modal_start_time')?.value;
+                const end = document.getElementById('modal_end_time')?.value;
+                if (selected.value.startsWith('basic_')) {
+                    if (end === '00:00') {
+                        e.preventDefault();
+                        alert('時間を設定してください。');
+                        return;
+                    }
+                    // 確認ダイアログ
+                    if (end !== '00:00') {
+                        if (!confirm(`開始: ${start}\n終了: ${end}\nこの内容でサービスを追加しますか？`)) {
+                            e.preventDefault(); // キャンセル時は送信中止
+                        }
+                    }
+                }
+            }
+        });
+    }
 });
