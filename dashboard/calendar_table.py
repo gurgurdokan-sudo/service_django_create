@@ -22,3 +22,25 @@ def get_month_days(year, month):
                 "holiday_name": jpholiday.is_holiday_name(date),
             })
     return days
+ERA_TABLE = [
+    ("令和", 2019),
+    ("平成", 1989),
+    ("昭和", 1926),
+    ("大正", 1912),
+]
+
+def to_wareki(date: datetime.date) -> str:
+    year = date.year
+    for era_name, start_year in ERA_TABLE:
+        if year >= start_year:
+            era_year = year - start_year + 1
+            return f"{era_name}{era_year}年{date.month}月{date.day}日"
+    return f"{year}年{date.month}月{date.day}日"  # 明治以前は西暦のまま
+
+
+def from_wareki(era_name: str, era_year: int, month: int, day: int) -> datetime.date:
+    for name, start_year in ERA_TABLE:
+        if name == era_name:
+            year = start_year + era_year - 1
+            return datetime.date(year, month, day)
+    raise ValueError(f"不明な元号です: {era_name}")

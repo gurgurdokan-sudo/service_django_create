@@ -74,7 +74,10 @@ class ServicePlan(models.Model):
 
     schedule_json = models.JSONField(default=dict, blank=True)
     actual_json = models.JSONField(default=dict, blank=True)
-
+    # ここを追加
+    service_name = models.CharField(max_length=50,null=True, blank=True)
+    service_code = models.CharField(max_length=20,null=True, blank=True)
+    unit = models.IntegerField(null=True, blank=True)
     @property
     def stay_time_category(self):
         delta = datetime.combine(date.min, self.end_time) - datetime.combine(date.min, self.start_time)
