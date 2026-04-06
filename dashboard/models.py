@@ -65,7 +65,7 @@ class ServiceRecord(models.Model):
     def __str__(self):
         return str(self.user)
 class ServicePlan(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     this_year = datetime.now().year
     year = models.IntegerField(choices=[(i, f"{i}年") for i in range(this_year-1, this_year+1)], default=this_year)
     month = models.IntegerField(choices=[(i, f"{i}月") for i in range(1, 13)], default = datetime.now().month)
@@ -74,7 +74,10 @@ class ServicePlan(models.Model):
 
     schedule_json = models.JSONField(default=dict, blank=True)
     actual_json = models.JSONField(default=dict, blank=True)
-
+    # ここを追加
+    service_name = models.CharField(max_length=50,null=True, blank=True)
+    service_code = models.CharField(max_length=20,null=True, blank=True)
+    unit = models.IntegerField(null=True, blank=True)
     @property
     def stay_time_category(self):
         delta = datetime.combine(date.min, self.end_time) - datetime.combine(date.min, self.start_time)
