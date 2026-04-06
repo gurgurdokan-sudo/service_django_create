@@ -11,7 +11,7 @@ from .calendar_table import get_month_days
 def user_list(request):
     users = User.objects.all()
     for user in users:
-        user.has_plan = ServicePlan.objects.filter(user=user).exists()
+        user.has_plan = ServicePlan.objects.filter(user=user).first() is not None
     return render(request, 'dashboard/user_list.html', {'users': users})
 #新規作成
 def user_create(request):
@@ -31,6 +31,16 @@ def create_plan(request,user_id):
         if form.is_valid():
             plan = form.save(commit=False)
             plan.user_id = user_id
+            stay_cat = plan.stay_time_category
+            service_sq = ServiceMaster.objects.filter(
+                care_level = plan.user.care_level,
+                stay_time_category = stay_cat
+            )
+            service = service_sq.first() if service_sq else None
+            if service:
+                plan.service_name = service.service_name
+                plan.service_code = service.service_code
+                plan.unit = service.unit
             form.save()
             messages.success(request,'プランを作成しました')
             return redirect('dashboard:service',user_id=user_id)
@@ -77,20 +87,18 @@ def user_delete(request,user_id):
 #サービス提供票
 def user_service(request,user_id):
     target = get_object_or_404(User,id=user_id)
-    plan = ServicePlan.objects.filter(user=target).first()
+    plans = ServicePlan.objects.filter(user=target)
+    for plan in plans:
+        plan.schedule_json = json.dumps(plan.schedule_json)
+        plan.actual_json = json.dumps(plan.actual_json)
     service = ServiceMaster.objects.all()
     service = service.filter(care_level = target.care_level)
-    # sq = ServiceMaster.get_quer_plan(level=target.care_level,stay_time_category = plan.stay_time_category)
-    naiyou =  None
     calendar = get_month_days(2026,3) #todo:月は動的に
     context = {
         'user': target,
-        'plan': plan,
+        'plans': plans,
         'service': service,
-        'naiyou':naiyou,
         'calendar': calendar,
-        'schedule_json': json.dumps(plan.schedule_json),
-        'actual_json': json.dumps(plan.actual_json),
         'addon_service': AddOnService.objects.all(),
     }
     return render(request,'dashboard/user_service.html',context)

@@ -97,6 +97,8 @@ class ServicePlan(models.Model):
         elif 8 < hours <= 9:
             return '8-9'
         return None
+    def __str__(self):
+        return f"{self.user.name} - {self.year}年{self.month}月"
 class AddOnService(models.Model):
     code = models.CharField(max_length=20)
     service_name = models.CharField(max_length=100)

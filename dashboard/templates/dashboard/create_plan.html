@@ -5,6 +5,7 @@
 <form method="post" class="plan-form">
   {% csrf_token %}
   {{ form.as_p }}
+  <!-- todoラジオボタン加算のチェックボックスを追加 -->
   <button type="submit">保存</button>
 </form>
 </div>
