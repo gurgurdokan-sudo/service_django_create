@@ -43,13 +43,14 @@
   <!-- メインテーブルフォーム -->
   <form action="{% url 'dashboard:save' user.id %}" method="POST">
     {% csrf_token %}
+    {% comment %}
     <script>
       window.initialSchedule = {% if schedule_json %}JSON.parse('{{ schedule_json|safe }}'){% else %}{}{% endif %};
       window.initialActual = {% if actual_json %}JSON.parse('{{ actual_json|safe }}'){% else %}{}{% endif %};
     </script>
     <input type="hidden" name="schedule_json" id="schedule_json">
     <input type="hidden" name="actual_json" id="actual_json">
-
+{% endcomment %}
     <div class="table-wrapper">
       <table class="schedule-table">
         <thead>
@@ -76,10 +77,10 @@
           </tr>
         </thead>
         <tbody>
-          {% if naiyou %}
+          {% for plan in plans %}
           <tr>
             <td class="col-time">{{ plan.start_time }}〜<br />{{ plan.end_time }}</td>
-            <td class="col-service">{{ naiyou }}</td>
+            <td class="col-service">{{ plan.service_name }}</td>
             <td class="col-office">通所介護事務所<br />民の家</td>
             <td class="col-calendar">
               <div class="calendar-row data-row" data-row-type="schedule">
@@ -98,9 +99,9 @@
               </div>
             </td>
           </tr>
-          {% else %}
+          {% empty %}
           <tr class="no-data"><td colspan="5">データが見つかりません</td></tr>
-          {% endif %}
+          {% endfor %}
         </tbody>
       </table>
     </div>
