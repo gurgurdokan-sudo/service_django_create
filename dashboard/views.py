@@ -77,11 +77,11 @@ def user_delete(request,user_id):
 #サービス提供票
 def user_service(request,user_id):
     target = get_object_or_404(User,id=user_id)
-    plan = ServicePlan.objects.get(user=target)
+    plan = ServicePlan.objects.filter(user=target).first()
     service = ServiceMaster.objects.all()
     service = service.filter(care_level = target.care_level)
-    sq = ServiceMaster.get_quer_plan(level=target.care_level,stay_time_category = plan.stay_time_category)
-    naiyou = sq.first() if sq else None
+    # sq = ServiceMaster.get_quer_plan(level=target.care_level,stay_time_category = plan.stay_time_category)
+    naiyou =  None
     calendar = get_month_days(2026,3) #todo:月は動的に
     context = {
         'user': target,
@@ -224,7 +224,7 @@ def init_plan(request):
 #サービス提供の保存
 def save_service(request,user_id):
     target = get_object_or_404(User,id=user_id)
-    plan = ServicePlan.objects.get(user=target)
+    plan = ServicePlan.objects.filter(user=target).first()
     if request.method =='POST':
         print('------------------保存処理開始------------------')
         schedule_json = request.POST.get('schedule_json')
