@@ -35,77 +35,71 @@
     </div>
   </div>
 
-  <!-- ★ フォームの開始（全体を包む） -->
-  <form id="main-service-form" action="{% url 'dashboard:save' user.id %}" method="POST">
-    {% csrf_token %}
-  {% comment  %}
-    <script>
-      window.initialSchedule = {% if schedule_json %}JSON.parse('{{ schedule_json|safe }}'){% else %}{}{% endif %};
-      window.initialActual = {% if actual_json %}JSON.parse('{{ actual_json|safe }}'){% else %}{}{% endif %};
-    </script>
-    <input type="hidden" name="schedule_json" id="schedule_json">
-    <input type="hidden" name="actual_json" id="actual_json">
-  {% endcomment %}
-    <div class="table-wrapper">
-      <table class="schedule-table">
-        <thead>
-          <tr>
-            <th class="col-time">提供時間</th>
-            <th class="col-service">サービス内容</th>
-            <th class="col-office">事業所名</th>
-            <th class="col-calendar">
-              <div class="calendar-row date-row">
-                <div class="label-cell">日付</div>
-                {% for d in calendar %}
-                <div class="day-cell {% if d.is_sun %}sun{% elif d.is_sat %}sat{% elif d.is_holiday %}holi{% endif %}">{{ d.day }}</div>
-                {% endfor %}
-                <div class="total-cell">合計</div>
-              </div>
-              <div class="calendar-row weekday-row">
-                <div class="label-cell">曜日</div>
-                {% for d in calendar %}
-                <div class="day-cell {% if d.is_sun %}sun{% elif d.is_sat %}sat{% elif d.is_holiday %}holiday{% endif %}">{{ d.weekday_jp }}</div>
-                {% endfor %}
-                <div class="total-cell">回数</div>
-              </div>
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for plan in plans %}
-          <tr>
-            <td class="col-time">{{ plan.start_time }}〜<br />{{ plan.end_time }}</td>
-            <td class="col-service">{{ plan.service_name|default:"" }}</td>
-            <td class="col-office">通所介護事務所<br />民の家</td>
-            <td class="col-calendar">
-              <div class="calendar-row data-row" data-row-type="schedule">
-                <div class="label-cell">予定</div>
-                {% for d in calendar %}
-                  <div class="day-cell editable-cell {% if d.is_sun %}sun{% elif d.is_sat %}sat{% elif d.is_holiday %}holi{% endif %}" data-day="{{ d.day }}">
-                  {{ plan.schedule_dict|get_item:d.day }}
-                  </div>
-                {% endfor %}
-                <div class="total-cell">0</div>
-              </div>
-              <div class="calendar-row data-row" data-row-type="actual">
-                <div class="label-cell">実績</div>
-                {% for d in calendar %}
-                  <div class="day-cell editable-cell {% if d.is_sun %}sun{% elif d.is_sat %}sat{% elif d.is_holiday %}holi{% endif %}" data-day="{{ d.day }}">
-                  {{ plan.actual_dict|get_item:d.day|get_item:"main" }}
-                  </div>
-                {% endfor %}
-                <div class="total-cell">0</div>
-              </div>
-            </td>
-          </tr>
-          {% empty %}
-          <tr class="no-data"><td colspan="5">データが見つかりません</td></tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
+  <!-- planのテーブル -->
+  <div class="table-wrapper">
+    <table class="schedule-table">
+      <thead>
+        <tr>
+          <th class="col-time">提供時間</th>
+          <th class="col-service">サービス内容</th>
+          <th class="col-office">事業所名</th>
+          <th class="col-calendar">
+            <div class="calendar-row date-row">
+              <div class="label-cell">日付</div>
+              {% for d in calendar %}
+              <div class="day-cell {% if d.is_sun %}sun{% elif d.is_sat %}sat{% elif d.is_holiday %}holi{% endif %}">{{ d.day }}</div>
+              {% endfor %}
+              <div class="total-cell">合計</div>
+            </div>
+            <div class="calendar-row weekday-row">
+              <div class="label-cell">曜日</div>
+              {% for d in calendar %}
+              <div class="day-cell {% if d.is_sun %}sun{% elif d.is_sat %}sat{% elif d.is_holiday %}holiday{% endif %}">{{ d.weekday_jp }}</div>
+              {% endfor %}
+              <div class="total-cell">回数</div>
+            </div>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for plan in plans %}
+        <tr class="data-row" data-plan-id="{{ plan.id }}">
+          <td class="col-time">{{ plan.start_time }}〜<br />{{ plan.end_time }}</td>
+          <td class="col-service">{{ plan.service_name|default:"" }}</td>
+          <td class="col-office">通所介護事務所<br />民の家</td>
+          <td class="col-calendar">
+            <div class="calendar-row data-row" data-row-type="schedule">
+              <div class="label-cell">予定</div>
+              {% for d in calendar %}
+                <div class="day-cell editable-cell {% if d.is_sun %}sun{% elif d.is_sat %}sat{% elif d.is_holiday %}holi{% endif %}" data-day="{{ d.day }}">
+                {{ plan.schedule_dict|get_item:d.day }}
+                </div>
+              {% endfor %}
+              <div class="total-cell">0</div>
+            </div>
+            <div class="calendar-row data-row" data-row-type="actual_main">
+              <div class="label-cell">実績</div>
+              {% for d in calendar %}
+                <div class="day-cell editable-cell {% if d.is_sun %}sun{% elif d.is_sat %}sat{% elif d.is_holiday %}holi{% endif %}" data-day="{{ d.day }}">
+                {{ plan.actual_dict|get_item:d.day|get_item:"main" }}
+                </div>
+              {% endfor %}
+              <div class="total-cell">0</div>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr class="no-data"><td colspan="5">データが見つかりません</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 加算のカレンダーを追加 -->
 
     <!-- モーダル部分（フォームの中に含めることで確定時に一緒に送信される） -->
+    <form id="main-service-form" action="{% url 'dashboard:save' user.id %}" method="POST">
+    {% csrf_token %}
     <div id="serviceModalOverlay" class="modal-overlay" style="display: none;">
       <div class="modal-container">
         <div class="modal-header">
@@ -188,10 +182,6 @@
         </div>
       </div>
     </div> <!-- end modal-container -->
-    
-    <div style="margin-top: 20px; text-align: right;">
-      <input class="btn btn-create" type="submit" value="保存する">
-    </div>
   </form>
 </div>
 

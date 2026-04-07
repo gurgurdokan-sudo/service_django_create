@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             // ① planId を tr から取得
-            const planId = this.closest("tr").dataset.planId;
+            const planId = this.closest("tr").getAttribute("data-plan-id");
 
             // ② rowType と day を取得
             const rowType = this.parentElement.getAttribute('data-row-type');
@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
             this.innerText = newValue;
 
             // ④ REST API に保存
-            fetch(`/dashboard/api/plan/${planId}/update/`, {
+            fetch(`/api/plan/${planId}/update/`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({

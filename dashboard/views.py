@@ -91,9 +91,9 @@ def user_service(request,user_id):
     for plan in plans:
         schedule_dict = plan.schedule_json or {}
         actual_dict =  plan.actual_json or {}
-        plan.schedule_dict = {i: schedule_dict.get(str(i), "") for i in range(1, 32)}
+        plan.schedule_dict = {str(i): schedule_dict.get(str(i), "") for i in range(1, 32)}
         plan.actual_dict = {
-            i: actual_dict.get(str(i), {'main':"",'addon':[]}) for i in range(1, 32)
+            str(i): actual_dict.get(str(i), {'main':"",'addon':[]}) for i in range(1, 32)
         }
     service = ServiceMaster.objects.all()
     service = service.filter(care_level = target.care_level)
