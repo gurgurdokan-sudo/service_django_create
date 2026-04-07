@@ -1,5 +1,6 @@
 {% extends 'dashboard/base/base.html' %}
 {% load static %}
+{% load get_item %}
 {% block body %}
 <div class="container">
   <div class="header-container">
@@ -80,14 +81,18 @@
               <div class="calendar-row data-row" data-row-type="schedule">
                 <div class="label-cell">予定</div>
                 {% for d in calendar %}
-                  <div class="day-cell editable-cell {% if d.is_sun %}sun{% elif d.is_sat %}sat{% elif d.is_holiday %}holi{% endif %}" data-day="{{ d.day }}"></div>
+                  <div class="day-cell editable-cell {% if d.is_sun %}sun{% elif d.is_sat %}sat{% elif d.is_holiday %}holi{% endif %}" data-day="{{ d.day }}">
+                  {{ plan.schedule_dict|get_item:d.day }}
+                  </div>
                 {% endfor %}
                 <div class="total-cell">0</div>
               </div>
               <div class="calendar-row data-row" data-row-type="actual">
                 <div class="label-cell">実績</div>
                 {% for d in calendar %}
-                  <div class="day-cell editable-cell {% if d.is_sun %}sun{% elif d.is_sat %}sat{% elif d.is_holiday %}holi{% endif %}" data-day="{{ d.day }}"></div>
+                  <div class="day-cell editable-cell {% if d.is_sun %}sun{% elif d.is_sat %}sat{% elif d.is_holiday %}holi{% endif %}" data-day="{{ d.day }}">
+                  {{ plan.actual_dict|get_item:d.day|get_item:"main" }}
+                  </div>
                 {% endfor %}
                 <div class="total-cell">0</div>
               </div>
@@ -107,7 +112,7 @@
           <h2 class="page-title">サービス選択 ({{ user.care_level }})</h2>
           <button type="button" class="close-icon-btn" id="closeBtn">×</button>
         </div>
-        
+
         <div class="modal-tabs">
           <button type="button" class="tab-btn" data-tab="tab-basic">基本サービス</button>
           <button type="button" class="tab-btn active" data-tab="tab-addon">加算・自費サービス</button>

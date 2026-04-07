@@ -89,8 +89,12 @@ def user_service(request,user_id):
     target = get_object_or_404(User,id=user_id)
     plans = ServicePlan.objects.filter(user=target)
     for plan in plans:
-        plan.schedule_json = json.dumps(plan.schedule_json)
-        plan.actual_json = json.dumps(plan.actual_json)
+        schedule_dict = plan.schedule_json or {}
+        actual_dict =  plan.actual_json or {}
+        plan.schedule_dict = {i: schedule_dict.get(str(i), "") for i in range(1, 32)}
+        plan.actual_dict = {
+            i: actual_dict.get(str(i), {'main':"",'addon':[]}) for i in range(1, 32)
+        }
     service = ServiceMaster.objects.all()
     service = service.filter(care_level = target.care_level)
     calendar = get_month_days(2026,3) #todo:月は動的に
