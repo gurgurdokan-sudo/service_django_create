@@ -1,6 +1,6 @@
 from django.urls import path
 from . import views
-
+from . import api
 app_name = 'dashboard'
 urlpatterns = [
     path('users/', views.user_list, name='user_list'),
@@ -14,4 +14,6 @@ urlpatterns = [
     path('user/<int:user_id>/service/save', views.save_service, name='save'),
     path('user/<int:user_id>/create_plan/', views.create_plan, name='creatPlan'),
     path('user/test/', views.init_plan, name='plan'),
+# API
+    path("api/plan/<int:plan_id>/update/", api.update_schedule, name="update_schedule"),
 ]
