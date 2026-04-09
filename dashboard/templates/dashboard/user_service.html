@@ -125,7 +125,17 @@
           <div class="search-inputs">
             <label>キーワード: <input type="text" id="addon_keyword" class="form-input-sm" placeholder="サービス名で検索..."></label>
             <button type="button" id="btn_filter_addon" class="btn-filled blue">検索</button>
-            <button type="button" id="btn_reset_addon" class="btn">リセット</button>
+
+          <!-- 紐付け先プラン選択 -->
+            <div class="plan-selector">
+              <label for="main_plan">紐付け先:</label>
+              <select id="main_plan" name="target_plan_id" class="form-input-sm">
+                <option value="">（予定サービスを選択）</option>
+                {% for p in plans %}
+                <option value="{{ p.id }}">{{ p.service_name }} ({{ p.start_time }}〜{{ p.end_time }})</option>
+                {% endfor %}
+              </select>
+            </div>
           </div>
         </div>
 
