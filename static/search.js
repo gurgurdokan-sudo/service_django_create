@@ -94,45 +94,41 @@ document.addEventListener('DOMContentLoaded', () => {
             // 送信のきっかけになったボタンを取得
             const triggerButton = e.submitter;
 
-            if (triggerButton && triggerButton.closest('.modal-footer')) {
-                const selected = serviceForm.querySelector('input[name="selected_service"]:checked');
-                const planSelector = document.getElementById('plan-selector')
-                if (!selected) {
-                    e.preventDefault();
-                    alert('サービスを選択してください。');
-                    return;
-                }
-                    if (selected.value.startsWith('addon_')) {
-                        // 確認ダイアログ
-                        if (confirm(`この内容で追加サービスを追加しますか？`)) {
-                            addAddon(planId, day, selected.value)//
-                        } else {
-                            e.preventDefault(); // キャンセル時は送信中止
-                        }
+        if (triggerButton && triggerButton.closest('.modal-footer')) {
+            const selected = serviceForm.querySelector('input[name="selected_service"]:checked');
+            const planSelector = document.getElementById('plan-selector')
+            if (!selected) {
+                e.preventDefault();
+                alert('サービスを選択してください。');
+                return;
+            }
+                if (selected.value.startsWith('addon_')) {
+                    // 確認ダイアログ
+                    if (confirm(`この内容で追加サービスを追加しますか？`)) {
+                        addAddon(planId, day, selected.value)//
+                    } else {
+                        e.preventDefault(); // キャンセル時は送信中止
                     }
-                    const start = document.getElementById('modal_start_time')?.value;
-                    const end = document.getElementById('modal_end_time')?.value;
-                    if (selected.value.startsWith('basic_')) {
-                        if (end === '00:00') {
-                            e.preventDefault();
-                            alert('時間を設定してください。');
-                            return;
-                        }
-                        // 確認ダイアログ
-                        if (end !== '00:00') {
-                            if (!confirm(`開始: ${start}\n終了: ${end}\nこの内容でサービスを追加しますか？`)) {
-                                e.preventDefault(); // キャンセル時は送信中止
-                            }
+                }
+                const start = document.getElementById('modal_start_time')?.value;
+                const end = document.getElementById('modal_end_time')?.value;
+                if (selected.value.startsWith('basic_')) {
+                    if (end === '00:00') {
+                        e.preventDefault();
+                        alert('時間を設定してください。');
+                        return;
+                    }
+                    // 確認ダイアログ
+                    if (end !== '00:00') {
+                        if (!confirm(`開始: ${start}\n終了: ${end}\nこの内容でサービスを追加しますか？`)) {
+                            e.preventDefault(); // キャンセル時は送信中止
                         }
                     }
                 }
             }
-        )
-            ;
         }
-    }
-)
-    ;
+    );}
+});
 
     function addAddon(planId, day, addonName) {
         fetch(`/api/plan/${planId}/addon`, {

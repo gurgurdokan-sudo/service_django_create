@@ -97,6 +97,33 @@ class ServicePlan(models.Model):
         elif 8 < hours <= 9:
             return '8-9'
         return None
+    @property
+    def schedule_dict(self):
+        date = self.schedule_json or {}
+        return {str(i): date.get(str(i), "") for i in range(1, 32)}
+    @property
+    def actual_dict(self):
+        date = self.actual_json or {}
+        return {
+            str(i): date.get(str(i), {'main':"",'addon':[]}) for i in range(1, 32)
+        }
+    def get_total_count(self,row_type):
+        if row_type == "schedule":
+            date = self.schedule_dict
+            return sum(1 for v in date.values() if v=='1')
+        elif row_type == "actual":
+            date = self.actual_dict
+            total = 0
+            for key in date.values():
+                if key.get("main") == '1':
+                    total += 1
+            return total
+        elif row_type == "addon":
+            date = self.actual_dict
+            total = 0
+            for key in date.values():
+                total += len(key.get("addon", []))
+            return total
     def __str__(self):
         return f"{self.user.name} - {self.year}年{self.month}月"
 class AddOnService(models.Model):

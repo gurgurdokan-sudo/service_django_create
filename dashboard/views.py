@@ -88,13 +88,6 @@ def user_delete(request,user_id):
 def user_service(request,user_id):
     target = get_object_or_404(User,id=user_id)
     plans = ServicePlan.objects.filter(user=target)
-    for plan in plans:
-        schedule_dict = plan.schedule_json or {}
-        actual_dict =  plan.actual_json or {}
-        plan.schedule_dict = {str(i): schedule_dict.get(str(i), "") for i in range(1, 32)}
-        plan.actual_dict = {
-            str(i): actual_dict.get(str(i), {'main':"",'addon':[]}) for i in range(1, 32)
-        }
     service = ServiceMaster.objects.all()
     service = service.filter(care_level = target.care_level)
     calendar = get_month_days(2026,3) #todo:月は動的に
@@ -235,24 +228,23 @@ def init_plan(request):
     return render(request, 'dashboard/base/test.html', {'message': 'マスタデータの登録が完了しました'})
 #サービス提供の保存
 def save_service(request,user_id):
-    target = get_object_or_404(User,id=user_id)
-    plan = ServicePlan.objects.filter(user=target).first()
+    target_user = get_object_or_404(User,id=user_id)
     if request.method =='POST':
-        print('------------------保存処理開始------------------')
-        schedule_json = request.POST.get('schedule_json')
-        print('schedule_json:', schedule_json)
-        actual_json = request.POST.get('actual_json')
-        if schedule_json and actual_json:
-            plan.schedule_json = json.loads(schedule_json)
-            plan.actual_json = json.loads(actual_json)
-            plan.save()
-            messages.success(request,'サービス提供内容を保存しました')
-            return redirect('dashboard:user_list') 
-        add_on_services = request.POST.get('selected_service')
-        add_on_id = add_on_services.replace('addon_','') if add_on_services else None
-        if add_on_id:
-            add_on_service = get_object_or_404(AddOnService, id=add_on_id)
-            print('選択された追加サービス:', add_on_service.service_name)
-            messages.success(request,f'追加サービスを保存しました: {add_on_service.service_name}')
+        print('------------------保存処理開始------------------', flush=True)
+        master_id = request.POST.get('selected_service', '').split('_')[1]  # "plan_1"
+        if master_id:
+            master = get_object_or_404(ServiceMaster, id=master_id)
+            new_plan = ServicePlan.objects.create(
+                user=target_user,
+                year="2026", ##todo:動的に
+                month="3",
+                start_time=request.POST.get('start_time'),
+                end_time=request.POST.get('end_time'),
+                service_name=master.service_name,
+                service_code=master.service_code,
+                unit=master.unit,
+            )
+            messages.success(request,'サービスを追加しました')
             return redirect('dashboard:service', user_id=user_id)
-    return render(request,'dashboard/user_list.html')
+    messages.error(request,'プランIDが見つかりませんでした')
+    return redirect('dashboard:user_list')

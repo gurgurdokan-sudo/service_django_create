@@ -75,7 +75,7 @@
                 {{ plan.schedule_dict|get_item:d.day }}
                 </div>
               {% endfor %}
-              <div class="total-cell">0</div>
+              <div class="total-cell">{{ plan|total_count:"schedule" }}</div>
             </div>
             <div class="calendar-row data-row" data-row-type="actual_main">
               <div class="label-cell">実績</div>
@@ -84,7 +84,7 @@
                 {{ plan.actual_dict|get_item:d.day|get_item:"main" }}
                 </div>
               {% endfor %}
-              <div class="total-cell">0</div>
+              <div class="total-cell">{{ plan|total_count:"actual" }}</div>
             </div>
           </td>
         </tr>
@@ -167,6 +167,7 @@
                 <tr><th>選択</th><th>名称</th><th>単価/単位</th><th>区分/頻度</th></tr>
               </thead>
               <tbody>
+                <input type="hidden" value="{{ user.id }}" id="user_id_hidden" name="user_id">
                 {% for a in addon_service %}
                 <!-- addon-row クラスと data-name を付与 -->
                 <tr class="service-row addon-row" data-name="{{ a.service_name }}">
@@ -191,10 +192,10 @@
           <button type="submit" class="btn btn-create">選択を確定する</button>
         </div>
       </div>
-    </div> <!-- end modal-container -->
-  </form>
+    </form>
+  </div> <!-- end modal-container -->
 </div>
 
 <script src="{% static 'edit.js' %}"></script>
-<script src="{% static 'search.js' %}"></script>
+<script src="{% static 'modal.js' %}"></script>
 {% endblock %}
