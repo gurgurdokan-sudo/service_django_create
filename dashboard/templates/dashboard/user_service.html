@@ -4,13 +4,13 @@
 {% block body %}
 <div class="container">
   <div class="header-container">
-    <h2 class="page-title">{{ user.name }} さんのサービス一覧</h2>
+    <h2 id="userid" data-user-id="{{ user.id }}" class="page-title" >{{ user.name }} さんのサービス一覧</h2>
   </div>
 
   {% if messages %}
   <ul class="messages">
     {% for message in messages %}
-      <li class="{{ message.tags }}">{{ message }}</li>        
+    <li class="{{ message.tags }}">{{ message }}</li>
     {% endfor %}
   </ul>
   {% endif %}
@@ -40,6 +40,7 @@
     <table class="schedule-table">
       <thead>
         <tr>
+          <th class="col-delete">消去</th>
           <th class="col-time">提供時間</th>
           <th class="col-service">サービス内容</th>
           <th class="col-office">事業所名</th>
@@ -47,14 +48,17 @@
             <div class="calendar-row date-row">
               <div class="label-cell">日付</div>
               {% for d in calendar %}
-              <div class="day-cell {% if d.is_sun %}sun{% elif d.is_sat %}sat{% elif d.is_holiday %}holi{% endif %}">{{ d.day }}</div>
+              <div class="day-cell {% if d.is_sun %}sun{% elif d.is_sat %}sat{% elif d.is_holiday %}holi{% endif %}">
+              {{ d.day }}
+              </div>
               {% endfor %}
               <div class="total-cell">合計</div>
             </div>
             <div class="calendar-row weekday-row">
               <div class="label-cell">曜日</div>
               {% for d in calendar %}
-              <div class="day-cell {% if d.is_sun %}sun{% elif d.is_sat %}sat{% elif d.is_holiday %}holiday{% endif %}">{{ d.weekday_jp }}</div>
+              <div class="day-cell {% if d.is_sun %}sun{% elif d.is_sat %}sat{% elif d.is_holiday %}holiday{% endif %}">
+                {{ d.weekday_jp }}</div>
               {% endfor %}
               <div class="total-cell">回数</div>
             </div>
@@ -64,6 +68,11 @@
       <tbody>
         {% for plan in plans %}
         <tr class="data-row" data-plan-id="{{ plan.id }}">
+          <td class="col-delete">
+            <button type="button" class="btn-delete-row" onclick="deletePlan({{ plan.id }})">
+              <i class="fas fa-trash-alt"></i> <!-- FontAwesome等のアイコン -->
+            </button>
+          </td>
           <td class="col-time">{{ plan.start_time }}〜<br />{{ plan.end_time }}</td>
           <td class="col-service">{{ plan.service_name|default:"" }}</td>
           <td class="col-office">通所介護事務所<br />民の家</td>
@@ -71,36 +80,94 @@
             <div class="calendar-row data-row" data-row-type="schedule">
               <div class="label-cell">予定</div>
               {% for d in calendar %}
-                <div class="day-cell editable-cell {% if d.is_sun %}sun{% elif d.is_sat %}sat{% elif d.is_holiday %}holi{% endif %}" data-day="{{ d.day }}">
+              <div class="day-cell editable-cell {% if d.is_sun %}sun{% elif d.is_sat %}sat{% elif d.is_holiday %}holi{% endif %}" data-day="{{ d.day }}">
                 {{ plan.schedule_dict|get_item:d.day }}
-                </div>
+              </div>
               {% endfor %}
               <div class="total-cell">{{ plan|total_count:"schedule" }}</div>
             </div>
             <div class="calendar-row data-row" data-row-type="actual_main">
               <div class="label-cell">実績</div>
               {% for d in calendar %}
-                <div class="day-cell editable-cell {% if d.is_sun %}sun{% elif d.is_sat %}sat{% elif d.is_holiday %}holi{% endif %}" data-day="{{ d.day }}">
+              <div
+                class="day-cell editable-cell {% if d.is_sun %}sun{% elif d.is_sat %}sat{% elif d.is_holiday %}holi{% endif %}"
+                data-day="{{ d.day }}">
                 {{ plan.actual_dict|get_item:d.day|get_item:"main" }}
-                </div>
+              </div>
               {% endfor %}
               <div class="total-cell">{{ plan|total_count:"actual" }}</div>
             </div>
           </td>
         </tr>
         {% empty %}
-        <tr class="no-data"><td colspan="5">データが見つかりません</td></tr>
+        <tr class="no-data">
+          <td colspan="5">データが見つかりません</td>
+        </tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
 
-  <!-- 加算のカレンダーを追加 -->
-
-    <!-- モーダル部分（フォームの中に含めることで確定時に一緒に送信される） -->
-    <form id="main-service-form" action="{% url 'dashboard:save' user.id %}" method="POST">
-    {% csrf_token %}
+  <!-- 加算のカレンダー -->
+  {% if plan.is_addon %}
+    
+  <div class="table-wrapper">
+    <table class="schedule-table addon-table">
+      <thead class="red-header">
+        <tr>
+          <th class="col-delete">消去</th>
+          <th class="col-time">提供時間</th>
+          <th class="col-service">サービス内容</th>
+          <th class="col-office">事業所名</th>
+          <th class="col-calendar">
+            <div class="calendar-row date-row">
+              <div class="label-cell">日付</div>
+              {% for d in calendar %}
+                <div class="day-cell {% if d.is_sun %}sun{% endif %}">{{ d.day }}</div>
+              {% endfor %}
+              <div class="total-cell">合計</div>
+            </div>
+            <div class="calendar-row weekday-row">
+              <div class="label-cell">曜日</div>
+              {% for d in calendar %}
+                <div class="day-cell {% if d.is_sun %}sun{% endif %}">{{ d.weekday_jp }}</div>
+              {% endfor %}
+              <div class="total-cell">回数</div>
+            </div>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for plan in plans %}
+        {% for name, days in plan.get_addon_summary.items %}
+        <tr class="addon-data-row mt-4" data-plan-id="{{ plan.id }}" data-addon-name="{{ name }}">
+          <td class="col-delete">
+            <button type="button" class="btn-delete-row" onclick="deleteAddon({{ plan.id }}, '{{ name }}')">🗑</button>
+          </td>
+          <td class="col-time">-</td>
+          <td class="col-service">{{ name }}</td>
+          <td class="col-office">民の家</td>
+          <td class="col-calendar">
+            <div class="calendar-row data-row" data-row-type="actual_addon">
+              <div class="label-cell">実績</div>
+              {% for d in calendar %}
+              <div class="day-cell editable-cell {% if d.is_sun %}sun{% endif %}" data-day="{{ d.day }}">
+                {{ days|get_item:d.day }}
+              </div>
+              {% endfor %}
+              <div class="total-cell">0</div> <!-- 合計計算はJS/Filterで -->
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+  <!-- モーダル部分（フォームの中に含めることで確定時に一緒に送信される） -->
     <div id="serviceModalOverlay" class="modal-overlay" style="display: none;">
+    {% csrf_token %}
       <div class="modal-container">
         <div class="modal-header">
           <h2 class="page-title">サービス選択 ({{ user.care_level }})</h2>
@@ -114,8 +181,12 @@
 
         <div id="search-bar-basic" class="modal-search-bar" style="display: none;">
           <div class="search-inputs">
-            <label>開始時間: <input type="time" id="modal_start_time" name="start_time" class="form-input-sm" value="09:00"></label>
-            <label>終了時間: <input type="time" id="modal_end_time" name="end_time" class="form-input-sm" value="00:00"></label>
+            <label>開始時間: 
+              <input type="time" id="modal_start_time" name="start_time" class="form-input-sm"value="09:00">
+            </label>
+            <label>終了時間: 
+              <input type="time" id="modal_end_time" name="end_time" class="form-input-sm"value="00:00">
+            </label>
             <button type="button" id="btn_filter_service" class="btn-filled blue">時間で絞り込み</button>
             <button type="button" id="btn_reset_basic" class="btn">リセット</button>
           </div>
@@ -126,7 +197,7 @@
             <label>キーワード: <input type="text" id="addon_keyword" class="form-input-sm" placeholder="サービス名で検索..."></label>
             <button type="button" id="btn_filter_addon" class="btn-filled blue">検索</button>
 
-          <!-- 紐付け先プラン選択 -->
+            <!-- 紐付け先プラン選択 -->
             <div class="plan-selector">
               <label for="main_plan">紐付け先:</label>
               <select id="main_plan" name="target_plan_id" class="form-input-sm">
@@ -143,13 +214,19 @@
           <div class="table-scroll-container">
             <table class="data-table select-table">
               <thead>
-                <tr><th>選択</th><th>サービス内容</th><th>利用時間</th><th>単位</th></tr>
+                <tr>
+                  <th>選択</th>
+                  <th>サービス内容</th>
+                  <th>利用時間</th>
+                  <th>単位</th>
+                </tr>
               </thead>
               <tbody>
                 {% for s in service %}
                 <!-- basic-row クラスと data-stay-time を付与 -->
                 <tr class="service-row basic-row" data-stay-time="{{ s.get_stay_time_category_display }}">
-                  <td class="text-center"><input type="radio" name="selected_service" value="basic_{{ s.id }}" id="s_{{ s.id }}"></td>
+                  <td class="text-center"><input type="radio" name="selected_service" value="basic_{{ s.id }}"
+                      id="s_{{ s.id }}"></td>
                   <td><label for="s_{{ s.id }}">{{ s.service_name }}</label></td>
                   <td>{{ s.get_stay_time_category_display }}</td>
                   <td>{{ s.unit }}</td>
@@ -164,18 +241,24 @@
           <div class="table-scroll-container">
             <table class="data-table select-table">
               <thead>
-                <tr><th>選択</th><th>名称</th><th>単価/単位</th><th>区分/頻度</th></tr>
+                <tr>
+                  <th>選択</th>
+                  <th>名称</th>
+                  <th>単価/単位</th>
+                  <th>区分/頻度</th>
+                </tr>
               </thead>
               <tbody>
                 <input type="hidden" value="{{ user.id }}" id="user_id_hidden" name="user_id">
                 {% for a in addon_service %}
                 <!-- addon-row クラスと data-name を付与 -->
                 <tr class="service-row addon-row" data-name="{{ a.service_name }}">
-                  <td class="text-center"><input type="radio" name="selected_service" value="addon_{{ a.id }}" id="a_{{ a.id }}"></td>
+                  <td class="text-center"><input type="radio" name="selected_service" value="addon_{{ a.id }}"
+                      id="a_{{ a.id }}"></td>
                   <td>
                     <label for="a_{{ a.id }}">
-                    <span class="badge {{ a.insurance_type }}">{{ a.get_insurance_type_display }}</span>
-                    {{ a.service_name }}
+                      <span class="badge {{ a.insurance_type }}">{{ a.get_insurance_type_display }}</span>
+                      {{ a.service_name }}
                     </label>
                   </td>
                   <td>{{ a.price|default:a.unit }}円</td>
@@ -189,10 +272,9 @@
 
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" id="cancelBtn">キャンセル</button>
-          <button type="submit" class="btn btn-create">選択を確定する</button>
+          <button type="button" class="btn btn-create" id="service-btn">選択を確定する</button>
         </div>
       </div>
-    </form>
   </div> <!-- end modal-container -->
 </div>
 

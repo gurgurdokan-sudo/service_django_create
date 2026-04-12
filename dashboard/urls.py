@@ -16,4 +16,5 @@ urlpatterns = [
     path('user/test/', views.init_plan, name='plan'),
 # API
     path("api/plan/<int:plan_id>/update/", api.update_schedule, name="update_schedule"),
+    path("api/plan/<int:user_id>/create/", api.create_plan, name="api_create_plan"),
 ]

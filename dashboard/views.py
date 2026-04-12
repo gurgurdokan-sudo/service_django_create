@@ -228,23 +228,4 @@ def init_plan(request):
     return render(request, 'dashboard/base/test.html', {'message': 'マスタデータの登録が完了しました'})
 #サービス提供の保存
 def save_service(request,user_id):
-    target_user = get_object_or_404(User,id=user_id)
-    if request.method =='POST':
-        print('------------------保存処理開始------------------', flush=True)
-        master_id = request.POST.get('selected_service', '').split('_')[1]  # "plan_1"
-        if master_id:
-            master = get_object_or_404(ServiceMaster, id=master_id)
-            new_plan = ServicePlan.objects.create(
-                user=target_user,
-                year="2026", ##todo:動的に
-                month="3",
-                start_time=request.POST.get('start_time'),
-                end_time=request.POST.get('end_time'),
-                service_name=master.service_name,
-                service_code=master.service_code,
-                unit=master.unit,
-            )
-            messages.success(request,'サービスを追加しました')
-            return redirect('dashboard:service', user_id=user_id)
-    messages.error(request,'プランIDが見つかりませんでした')
-    return redirect('dashboard:user_list')
+    pass

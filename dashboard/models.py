@@ -99,8 +99,7 @@ class ServicePlan(models.Model):
         return None
     @property
     def schedule_dict(self):
-        date = self.schedule_json or {}
-        return {str(i): date.get(str(i), "") for i in range(1, 32)}
+        return self.schedule_json or {}
     @property
     def actual_dict(self):
         date = self.actual_json or {}
@@ -124,6 +123,24 @@ class ServicePlan(models.Model):
             for key in date.values():
                 total += len(key.get("addon", []))
             return total
+    @property
+    def get_addon_summary(self):
+        date = self.actual_dict
+        addon_summary = {}
+        for key in date.values():
+            for addon in key.get("addon", []):
+                if addon in addon_summary:
+                    addon_summary[addon] += 1
+                else:
+                    addon_summary[addon] = 1
+        return addon_summary
+    @property
+    def is_addon(self):
+        date = self.actual_dict
+        for key in date.values():
+            if key.get("addon", []):
+                return True
+        return False
     def __str__(self):
         return f"{self.user.name} - {self.year}年{self.month}月"
 class AddOnService(models.Model):

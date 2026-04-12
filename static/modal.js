@@ -2,7 +2,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     const modalOverlay = document.getElementById('serviceModalOverlay');
     const openBtn = document.getElementById('openServiceModal');
-    const serviceForm = document.getElementById('main-service-form');
+    const serviceBtn = document.getElementById('service-btn');
     const closeBtn = document.getElementById('closeBtn');
     const cancelBtn = document.getElementById('cancelBtn');
 
@@ -48,7 +48,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const diffHours = ((h2 * 60 + m2) - (h1 * 60 + m1)) / 60;
 
             let targetCategory = "";
-            if (diffHours < 3) targetCategory = "3時間以下";
+            if (diffHours < 0) targetCategory = "error";
+            else if (diffHours < 3) targetCategory = "3時間以下";
             else if (diffHours < 4) targetCategory = "3以上-4未満";
             else if (diffHours < 5) targetCategory = "4以上-5未満";
             else if (diffHours < 6) targetCategory = "5以上-6未満";
@@ -74,41 +75,56 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     document.getElementById('btn_reset_basic')?.addEventListener('click',()=>{
-        document.querySelectorAll('.basic-row').forEach(row=> row.style.display = '');
+    document.querySelectorAll('.basic-row').forEach(row=> row.style.display = '');
     });
 
     // ここからフォーム送信処理
-    if (serviceForm) {
-        serviceForm.addEventListener('submit', async (e) => {
-            const selected = serviceForm.querySelector('input[name="selected_service"]:checked');
+    if (serviceBtn) {
+        serviceBtn.addEventListener('click', async (e) => {
+            const selected = document.querySelector('input[name="selected_service"]:checked');
             if (!selected) return alert("サービスを選択してください");
+            const isAddon = selected.value.startsWith('addon_');
+            const userIdInput = document.getElementById('user_id_hidden');
+            const userId = userIdInput ? userIdInput.value : null;
+            const planId = document.getElementById('main_plan').value;
+            const days = [1]; // 例: 複数日分のデータを想定
             const startTime = document.getElementById('modal_start_time').value;
             const endTime = document.getElementById('modal_end_time').value;
-            const isBasic = selected.value.startsWith('basic_');
-            if (isBasic) {
+            if (!isAddon) {
                 if (endTime === '00:00') {
-                    e.preventDefault();
                     return alert('時間を設定してください。');
                 }else if (!confirm(`開始: ${startTime}\n終了: ${endTime}\nこの内容でサービスを追加しますか？`)) {
-                    e.preventDefault(); // 通常の送信をキャンセル
                     return;
+                }
+                // API送信
+                const response = await fetch(`/api/plan/${userId}/create/`, {
+                    method: "PATCH",
+                    headers: { 
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": document.querySelector('[name=csrfmiddlewaretoken]').value
+                    },
+                    body: JSON.stringify({
+                        selected_service: selected.value,
+                        start_time: startTime,
+                        end_time: endTime,
+                    })
+                }); 
+                if (response.ok) {
+                    location.reload(); // 成功したら新しいPlanを表示する
                 }
                 return;
             }
-            const isAddon = selected.value.startsWith('addon_');
-            const planId = document.getElementById('main_plan').value;
+            
 
+            
             // バリデーション: 加算なのにプランが選ばれていない
             if (isAddon && !planId) {
-                e.preventDefault();
                 return alert("加算を紐付ける予定サービスを選択してください");
             }else if(isAddon){
-                e.preventDefault(); // 通常の送信をキャンセル
                 if (!confirm("この内容で登録しますか？")) return;
                 // API送信
-                const url = isAddon ? `/api/user/${userId}/add-addon/` : `/api/user/${userId}/create-basic/`;
-                const response = await fetch(url, {
-                    method: "POST",
+                const response = await fetch(`/api/plan/${userId}/update/`, {
+                    method: "PATCH",
                     headers: { 
                         "Content-Type": "application/json",
                         "X-CSRFToken": document.querySelector('[name=csrfmiddlewaretoken]').value
@@ -116,14 +132,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     body: JSON.stringify({
                         service_id: selected.value.split('_')[1],
                         plan_id: planId,
-                        start_time: startTime,
-                        end_time: endTime
+                        day: day,
+                        row_type: 'actual_addon'
                     })
                 });
                 
                 if (response.ok) {
                     location.reload(); // 成功したらリロードして新しい行を表示
                 }
+                return;
             }
         });
     }
