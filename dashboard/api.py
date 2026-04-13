@@ -2,14 +2,15 @@
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
-from .models import ServicePlan,AddOnService
+from .models import ServicePlan,AddOnService,User,ServiceMaster
 
 @api_view(['PATCH'])
-def update_schedule(request, plan_id):
+def update_schedule(request, user_id):
+    plan_id = request.data.get("plan_id")
     plan = get_object_or_404(ServicePlan, id=plan_id)
+    value = request.data.get("value", "")
 
     day = request.data.get("day")
-    value = request.data.get("value")
     row_type = request.data.get("row_type")  # "schedule" or "actual"
     total = None
     try:
@@ -31,12 +32,18 @@ def update_schedule(request, plan_id):
 
         # 実績（actual）の addon を追加
         elif row_type == "actual_addon":
-            addon = get_object_or_404(AddOnService, id = plan_id)
+            plan = get_object_or_404(ServicePlan, id=plan_id)
+            addon = request.data.get("service_id", "")
+            addon = AddOnService.objects.filter(id=addon).first()
+            if not addon or not plan:
+                return Response({"status": "error", "message": "AddOnService or ServicePlan not found"}, status=404)
+            days = request.data.get("days", [])
+            value = addon.service_name  # main の場合はサービス名を使用
             data = plan.actual_json or {}
             for d in days:
                 day_data = data.get(d, {"main": "", "addon": []})
                 if value not in day_data["addon"]:
-                    day_data["addon"].append(addon.service_name)
+                    day_data["addon"].append(value)
                 data[d] = day_data
                 plan.actual_json = data
 
@@ -58,9 +65,12 @@ def update_schedule(request, plan_id):
 
 @api_view(['PATCH'])
 def create_plan(request, user_id):
+    print(user_id,flush=True)
     target_user = get_object_or_404(User, id=user_id)
-    master_id = request.data.get('selected_service', '').split('_')[1]  # "plan_1"
+    messages = f'APIでユーザーID {target_user.name} のサービスプランを作成する処理が呼び出されました。'
+    master_id = request.data.get('selected_service', '')  # "1"
     if master_id:
+        pass
         master = get_object_or_404(ServiceMaster, id=master_id)
         new_plan = ServicePlan.objects.create(
             user=target_user,
@@ -72,8 +82,6 @@ def create_plan(request, user_id):
             service_code=master.service_code,
             unit=master.unit,
         )
-        # messages.success(request, "新しいサービスプランが作成されました。")
     else:
-        # messages.error(request, "サービスが作成されていません。")
-        pass
-    return Response({"status": "ok"})
+        return Response({"status": "error", "message": "invalid selected_service"}, status=400)
+    return Response({"status": "ok", "message": messages})
