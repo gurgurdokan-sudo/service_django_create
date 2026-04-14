@@ -107,6 +107,25 @@
       </tbody>
     </table>
   </div>
+<!-- ▼▼ ここにアクションバーを追加 ▼▼form -->
+
+<div class="action-bar">
+  <div class="action-left">
+    <label for="plan_select">紐づけPlan:</label>
+    <select id="plan_select" name="plan_select" class="form-select">
+      {% for plan in plans %}
+        <option value="{{ plan.id }}">{{ plan.service_name }}（{{ plan.start_time }}〜{{ plan.end_time }}）</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="action-right">
+    <button type="button" id="btn_create_addon" class="btn-filled blue">
+      ［新しい加算を作成］
+    </button>
+  </div>
+</div>
+<!-- ▲▲ アクションバーここまで ▲▲ -->
 
   <!-- 加算のカレンダー -->
   <div class="table-wrapper">
