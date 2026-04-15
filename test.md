@@ -1,3 +1,4 @@
+```mermaid
 flowchart TD
     %% 1. 基幹ソース (SQL抽出層)
     subgraph Sources ["1. 基幹ソース (SQL抽出層)"]
@@ -49,3 +50,4 @@ flowchart TD
     style H_Panel fill:#bbdefb,stroke:#1976d2,stroke-width:2px
     style F_SMILE fill:#fff3e0,stroke:#ef6c00
     style O_Servair fill:#f3e5f5,stroke:#7b1fa2
+```
