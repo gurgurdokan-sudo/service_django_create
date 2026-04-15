@@ -63,7 +63,7 @@ def update_schedule(request, user_id):
     except ServicePlan.DoesNotExist:
         return Response({"status": "error", "message": "ServicePlan not found"}, status=404)
 
-@api_view(['PATCH'])
+@api_view(['POST'])
 def create_plan(request, user_id):
     print(user_id,flush=True)
     target_user = get_object_or_404(User, id=user_id)

@@ -15,25 +15,43 @@
   </ul>
   {% endif %}
 
-  <!-- アクションバー -->
-  <div class="action-bar">
-    <div class="left-group">
-      <button type="button" id="openServiceModal" class="btn-outline blue-text">
-        <span class="icon">＋</span><span>サービス追加</span>
-      </button>
-      <button type="button" id="copyPlannedToActual" class="btn-outline blue-text">
-        <span class="icon">✔</span><span>予定通り</span>
-      </button>
-      <button type="button" class="btn-outline blue-text">
-        <span class="icon">▶</span><span>入力チェック</span>
-      </button>
-    </div>
-    <div class="right-group">
-      <a href="#" class="btn-outline green-text">
-        <span>月間カレンダー</span><span class="icon">↗</span>
-      </a>
-    </div>
+<!-- アクションバー -->
+<div class="action-bar">
+  <div class="left-group">
+    <button type="button" id="openServiceModal" class="btn-outline blue-text">
+      <span class="icon">＋</span><span>サービス追加</span>
+    </button>
+    <button type="button" id="copyPlannedToActual" class="btn-outline blue-text">
+      <span class="icon">✔</span><span>予定通り</span>
+    </button>
+    <button type="button" class="btn-outline blue-text">
+      <span class="icon">▶</span><span>入力チェック</span>
+    </button>
   </div>
+
+  <div class="right-group month-controller">
+    <div class="month-tabs">
+      <button class="tab-btn" id="btn_prev_month">◀ 先月</button>
+      <button class="tab-btn" id="btn_current_month">今月</button>
+      <button class="tab-btn" id="btn_next_month">来月 ▶</button>
+    </div>
+
+    <select id="month_selector" class="month-select">
+      {% for y in year_range %}
+        {% for m in month_range %}
+          <option value="{{ y }}-{{ m }}"
+            {% if y == current_year and m == current_month %}selected{% endif %}>
+            {{ y }}年{{ m }}月
+          </option>
+        {% endfor %}
+      {% endfor %}
+    </select>
+    <a href="#" class="btn-outline green-text">
+      <span>月間カレンダー</span><span class="icon">↗</span>
+    </a>
+  </div>
+</div><!--  endアクションバー  -->
+
 
   <!-- planのテーブル -->
   <div class="table-wrapper">
@@ -107,6 +125,24 @@
       </tbody>
     </table>
   </div>
+<!-- ▼▼ ここにアクションバーを追加 ▼▼form -->
+<div class="action-bar">
+  <div class="action-left">
+    <label for="plan_select">紐づけPlan:</label>
+    <select id="plan_select" name="plan_select" class="form-select">
+      {% for plan in plans %}
+        <option value="{{ plan.id }}">{{ plan.service_name }}（{{ plan.start_time }}〜{{ plan.end_time }}）</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="action-right">
+    <button type="button" id="btn_create_addon" class="btn-filled blue">
+      ［新しい加算を作成］
+    </button>
+  </div>
+</div>
+<!-- ▲▲ アクションバーここまで ▲▲ -->
 
   <!-- 加算のカレンダー -->
   <div class="table-wrapper">

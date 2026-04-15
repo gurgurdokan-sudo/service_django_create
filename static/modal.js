@@ -98,7 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }else{
                     // API送信
                     const response = await fetch(`/api/plan/${user_id}/create/`, {
-                        method: "PATCH",
+                        method: "POST",
                         headers: { 
                             "Content-Type": "application/json",
                             "X-CSRFToken": document.querySelector('[name=csrfmiddlewaretoken]').value
