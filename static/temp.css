@@ -1,5 +1,4 @@
 /* --- フラッシュメッセージ（通知） --- */
-/* --- フラッシュメッセージを最前面に浮かせる --- */
 .messages {
     position: fixed;            /* 画面に対して固定位置 */
     top: 20px;                  /* 画面上部からの距離 */
@@ -64,23 +63,57 @@
 .detail-card label { display: inline-block; width: 150px; font-weight: bold; border-right: 2px solid #2c3e50; margin-right: 15px; }
 .detail-item p { border-bottom: 1px solid #eee; padding: 8px 0; }
 /* --- モーダル表示・制御 --- */
-.modal-overlay.is-open {
-    display: flex; /* JSでこのクラスを付け外しする */
+.modal-overlay {
+    position: fixed;         /* 画面に対して固定 */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6); /* 背景を少し暗めにして中身を強調 */
+    z-index: 9999;           /* ★ 非常に高い値を設定し、他の何よりも前に出す */
+    display: none;           /* 初期は非表示 */
+    justify-content: center; /* 横方向中央 */
+    align-items: flex-start; /* ★ 縦方向を「上」に寄せる */
+    padding-top: 20px;       /* ★ 画面の最上部から少しだけ隙間を空ける（お好みで0でも可） */
 }
+
+/* モーダルが開いている時のクラス（JSで制御） */
+.modal-overlay.is-open {
+    display: flex; 
+}
+
+/* --- モーダル本体の箱 --- */
 .modal-container {
     background: #fff;
-    width: 95%;
-    max-width: 1400px;
-    max-height: 80%;
-    overflow-y: auto; /* 以前は scroll でしたが auto が一般的です */
+    width: 95%;            
+    max-width: 1400px;     
+    max-height: 90vh;        /* ★ 画面の高さの90%までに制限して、はみ出さないようにする */
+    overflow-y: auto;        /* ★ 中身が多い場合は箱の中でスクロールさせる */
     border-radius: 4px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-    animation: slideInDown 0.3s ease-out;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5); /* 強めの影をつけて「前に出ている感」を出す */
+    animation: slideInDown 0.3s ease-out;    /* 上からスッと降りてくるアニメーション */
+    position: relative;
 }
+
+/* 上から降りてくるアニメーション */
 @keyframes slideInDown {
-    from { transform: translateY(-50px); opacity: 0; }
+    from { transform: translateY(-100%); opacity: 0; }
     to { transform: translateY(0); opacity: 1; }
 }
+
+/* ヘッダー部分はスクロールしても隠れないように固定 */
+.modal-header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #f8f9fa;
+    padding: 15px 20px;
+    border-bottom: 2px solid #2c3e50;
+}
+
 .close-icon-btn {
     background: none;
     border: none;
