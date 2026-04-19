@@ -1,68 +1,79 @@
-/* レイアウト基本 */
+/* --- レイアウト基本 --- */
 .table-wrapper {
     overflow-x: auto; /* 横長テーブルに対応 */
     border: 1px solid #000000;
+    margin-bottom: 20px;
+    background-color: #fff;
 }
 
 .schedule-table {
-    width: 100%;
-    max-width: 1400px; /* 必要に応じて調整 */
-    border-collapse: collapse; /* 隙間をなくす */
+    /* 各固定列の合計：消去(40)+時間(100)+内容(160)+事業所(150)+カレンダー(885) = 1335px */
+    width: 1335px !important;
+    min-width: 1335px !important;
+    border-collapse: collapse;
     font-size: 0.85rem;
     font-family: "Yu Gothic", "Meiryo", sans-serif;
-    min-width: 1200px; /* カレンダーを潰さないための最小幅 */
+    /* テーブルレイアウトを固定にすることで、幅の指定を厳格に守らせる */
+    table-layout: fixed; 
 }
 
-/* ヘッダーデザイン */
+/* --- ヘッダーデザイン --- */
 .schedule-table th {
     background-color: #2c3e50;
     color: white;
     border: 1px solid #455a64;
-    padding: 8px 4px;
+    padding: 0; /* paddingを0にして内部のgridと合わせる */
     vertical-align: middle;
     text-align: center;
-}
-/* 消去ボタンのスタイル */
-.col-delete {
-    width: 40px;
-    text-align: center;
-}
-.btn-delete-row:hover {
-    color: #e63946; /* ホバーで赤く */
-}
-.btn-delete-row {
-    background: none;
-    border: none;
-    color: #999;
-    cursor: pointer;
-    font-size: 1.1rem;
-    transition: color 0.2s;
+    height: 40px;
 }
 
-/* カレンダーグリッド (日付と曜日を横並びにする) */
+/* --- 特定列の幅固定（TH/TD共通） --- */
+.col-delete { width: 40px !important; }
+.col-time   { width: 100px !important; }
+.col-service { width: 160px !important; }
+.col-office  { width: 150px !important; }
+.col-calendar { width: 885px !important; padding: 0 !important; }
+
+/* --- カレンダーグリッド (日付・曜日・データ共通) --- */
 .calendar-row {
     display: grid;
-    /* ラベル(50px) + 31日分(各25px) + 合計(40px) の構成例 */
-    grid-template-columns: 50px repeat(31, minmax(25px, 1fr)) 50px;
-    width: 100%;
+    /* ラベル(50px) + 25px×31日 + 合計(60px) ＝ 885px */
+    grid-template-columns: 50px repeat(31, 25px) 60px; 
+    width: 885px;
+    margin: 0 ;
+    padding: 0;
 }
 
 .calendar-row div {
-    border-right: 1px solid #455a64;
+     border-right: 1px solid #455a64;
     border-bottom: 1px solid #455a64;
-    height: 30px;
+    height: 35px;
     display: flex;
     align-items: center;
     justify-content: center;
+    overflow: hidden; /* はみ出し防止 */
+    /* width: 50px; などの指定があればここで消してください */
 }
 
+/* 最後（合計列）の右ボーダーは不要 */
+.calendar-row div:last-child {
+    border-right: none;
+}
 
+/* --- 文字が縦にならないための設定 --- */
+.total-cell, .label-cell {
+    white-space: nowrap !important;
+    font-weight: bold;
+    width: 60px;
+}
+.total-cell{ border-right: none;}
 
-/* 曜日・日付の装飾 */
-.day-cell.sun { background-color: #fdeaea; color: #d32f2f; } /* 日曜：薄赤 */
-.day-cell.holi { background-color: #fdeaea; color: #d32f2f; } /* 日曜：薄赤 */
-.day-cell.sat { background-color: #eaf2fd; color: #1976d2; } /* 土曜：薄青 */
-.holiday{
+/* --- 曜日・日付の装飾 --- */
+.day-cell.sun, .day-cell.holi { background-color: #fdeaea; color: #d32f2f; }
+.day-cell.sat { background-color: #eaf2fd; color: #1976d2; }
+
+.holiday {
     border: 1px solid #d32f2f;
     border-radius: 50%;
     width: 20px;
@@ -72,54 +83,59 @@
     justify-content: center;
     background-color: #fdeaea;
     color: #d32f2f;
+    font-size: 0.75rem;
 }
 
-/* ボディ（データ行） */
+/* --- ボディ（データ行） --- */
 .schedule-table td {
     border: 1px solid #000000;
+    padding: 0; /* paddingをなくしてグリッドを密着させる */
+    vertical-align: middle;
 }
 
+.data-row-group td {
+    height: 80px; /* 予定と実績の2段分 */
+}
+
+/* TD内の枠線を黒にする（データ行用） */
 .col-calendar .data-row div {
     border-right: 1px solid #000000;
+    border-bottom: 1px solid #000000;
     height: 40px;
+    width: 25px;
+}
+.col-calendar .data-row:last-child div {
+    border-bottom: none;
 }
 
-/* 特定列の幅調整 */
-.col-time { width: 100px; text-align: left; padding-left: 6px;}
-.col-service { width: 160px; size: 0.6rem; }
-.col-office { width: 150px; text-align: left; padding-left: 6px;}
-
-/* データなし表示 */
-.no-data td {
-    text-align: center;
-    padding: 40px;
+/* --- ボタン類 --- */
+.btn-delete-row {
+    background: none;
+    border: none;
     color: #999;
+    cursor: pointer;
+    font-size: 1.1rem;
+    transition: color 0.2s;
+    width: 100%;
 }
-/* 編集可能なセルへのスタイル */
+.btn-delete-row:hover { color: #e63946; }
+
+/* --- セルの状態 --- */
 .editable-cell {
     cursor: pointer;
-    user-select: none; /* テキスト選択を防ぐ */
+    user-select: none;
     transition: background-color 0.2s;
-    min-height: 30px;
 }
+.editable-cell:hover { background-color: #f0f7ff !important; }
+.editable-cell:not(:empty) { font-weight: bold; color: #2c3e50; }
 
-.editable-cell:hover {
-    background-color: #f0f7ff !important; /* ホバー時に薄い水色 */
-}
-
-/* 値が入っている時の強調 */
-.editable-cell:not(:empty) {
-    font-weight: bold;
-    color: #2c3e50;
-}
-/* 加算ヘッダーの指定 */
+/* --- 加算テーブル（赤） --- */
 .red-header th {
-    background-color: #a51212 !important; /* 濃い赤 */
+    background-color: #a51212 !important;
     color: white;
     border-color: #8a0e0e;
 }
 
-/* サービス内容のバッジ */
 .badge-main {
     font-size: 0.7rem;
     background: #f39c12;
@@ -128,6 +144,16 @@
     border-radius: 3px;
     margin-left: 5px;
 }
-.mt-4 {
-    margin-top: 4% !important;
+
+.mt-4 { margin-top: 20px !important; }
+
+/* --- 個別列の調整 --- */
+.col-time { text-align: left; padding-left: 6px !important; }
+.col-service { font-size: 0.8rem; text-align: left; padding-left: 6px !important; }
+.col-office { text-align: left; padding-left: 6px !important; }
+
+.no-data td {
+    text-align: center;
+    padding: 40px !important;
+    color: #999;
 }

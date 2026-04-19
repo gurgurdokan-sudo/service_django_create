@@ -51,7 +51,11 @@ def update_schedule(request, user_id):
         elif row_type == "actual_addon_remove":
             data = plan.actual_json or {}
             day_data = data.get(day, {"main": "", "addon": []})
-            if value in day_data["addon"]:
+            if day=='all':
+                for i,data in enumerate(day_data):
+                    if data in "addon":
+                        day_data["addon"].remove(value)
+            elif value in day_data["addon"]:
                 day_data["addon"].remove(value)
             data[day] = day_data
             plan.actual_json = data

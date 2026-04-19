@@ -90,13 +90,18 @@ def user_service(request,user_id):
     plans = ServicePlan.objects.filter(user=target)
     service = ServiceMaster.objects.all()
     service = service.filter(care_level = target.care_level)
-    calendar = get_month_days(2026,3) #todo:月は動的に
+    now_ = datetime.now()
+    calendar = get_month_days(now_.year, now_.month)
     context = {
         'user': target,
         'plans': plans,
         'service': service,
         'calendar': calendar,
         'addon_service': AddOnService.objects.all(),
+        'year_range': range(now_.year - 1, now_.year + 1),
+        'month_range': range(1, 13),
+        'current_year': now_.year,
+        'current_month': now_.month,
     }
     return render(request,'dashboard/user_service.html',context)
 

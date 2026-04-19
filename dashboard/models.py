@@ -127,12 +127,9 @@ class ServicePlan(models.Model):
     def get_addon_summary(self):
         date = self.actual_dict
         addon_summary = {}
-        for key in date.values():
+        for day,key in date.items():
             for addon in key.get("addon", []):
-                if addon in addon_summary:
-                    addon_summary[addon] += 1
-                else:
-                    addon_summary[addon] = 1
+                addon_summary.setdefault(addon,[]).append(str(day))
         return addon_summary
     @property
     def is_addon(self):

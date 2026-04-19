@@ -1,284 +1,117 @@
-/* Classic Style */
-.container { font-family: "Times New Roman", "Yu Mincho", serif; padding: 20px;max-width: 1500px; }
-.page-title { border-left: 8px solid #2c3e50; padding-left: 15px; font-size: 1.5rem; color: #2c3e50; }
+/* --- 基本レイアウト --- */
+.container { font-family: "Yu Gothic", "Meiryo", sans-serif; padding: 20px; max-width: 1600px; margin: 0 auto; }
+.header-container { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #2c3e50; padding-bottom: 10px; margin-bottom: 20px; }
+.page-title { margin: 0; font-size: 1.4rem; color: #2c3e50; border-left: 6px solid #2c3e50; padding-left: 15px; }
 
+/* --- アクションバー --- */
+.action-bar { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; margin-bottom: 15px; }
+.left-group, .right-group { display: flex; gap: 8px; align-items: center; }
 
-/* Buttons */
-.btn { border: 1px solid #ccc; padding: 4px 10px; text-decoration: none; color: #333; background: #fff; font-size: 0.85em; }
-.btn:hover { background: #eee; }
-.btn-create {
-    background-color: #2c3e50;
-    color: #fff !important;
-    padding: 8px 20px;
-    text-decoration: none;
-    font-size: 0.9rem;
-    font-weight: bold;
-    border-radius: 2px;
-    transition: background 0.3s;
-}
-.btn-create:hover {
-    background-color: #455a64;
-}
-/* --- レイアウト調整 --- */
-.header-container {
-    display: flex;
-    justify-content: space-between; /* 両端に配置 */
-    align-items: center;           /* 垂直方向中央 */
-    margin-bottom: 20px;
-    border-bottom: 2px solid #2c3e50;
-    padding-bottom: 10px;
-}
+.btn-outline { border: 1px solid #ccc; background: #fff; padding: 5px 12px; font-size: 13px; border-radius: 4px; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; }
+.blue-text { color: #1a73e8; border-color: #1a73e8; }
+.green-text { color: #2e7d32; border-color: #2e7d32; }
+.btn-filled.blue { background: #1a73e8; color: #fff; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
 
-.page-title {
-    margin: 0;
-    font-size: 1.5rem;
-    color: #2c3e50;
-    border: none; /* 前回のボーダーをリセット */
-}
-/* --- フラッシュメッセージ（水色・消えるアニメーション） --- */
-.messages {
-    list-style: none;
-    padding: 0;
-    margin-bottom: 20px;
-    position: absolute;
-}
-.success{
-    background-color: #e3f2fd; /* 明るい水色 */
-    color: #0d47a1;            /* 濃い青色の文字 */
-    border: 1px solid #90caf9;
-    padding: 12px 20px;
-    margin-bottom: 10px;
-    border-radius: 4px;
-    position: relative;
-    animation: fadeOutContainer 5s forwards;
-}
-.error{
-    background-color: #fcc7c7; /* 明るい */
-    color: #9f0404;            /* 濃い赤色の文字 */
-    border: 1px solid #f96262;
-    padding: 12px 20px;
-    margin-bottom: 10px;
-    border-radius: 4px;
-    position: relative;
-    animation: fadeOutContainer 5s forwards;
-}
-/* メッセージが消えるアニメーション */
-@keyframes fadeOutContainer {
-    0% { opacity: 1; transform: translateY(0); }
-    80% { opacity: 1; transform: translateY(0); } /* 4秒間はそのまま */
-    100% { 
-        opacity: 0; 
-        transform: translateY(-10px); 
-        display: none;
-        /* 高さをゼロにして下の要素を詰めたい場合 */
-        margin: 0;
-        padding: 0;
-        height: 0;
-        border: none;
-        overflow: hidden;
-    }
-}
-/* Detail */
-.detail-card { border: 1px solid #ccc; padding: 20px; background: #fff; }
-.detail-card label { display: inline-block; width: 150px; font-weight: bold; border-right: 2px solid #2c3e50; margin-right: 15px; }
-.detail-item p { border-bottom: 1px solid #eee; padding: 8px 0; }
-/* Table */
-.data-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-.data-table th { background: #2c3e50; color: white; padding: 10px; text-align: left; }
-.data-table td { border-bottom: 1px solid #ddd; padding: 10px; }
-.data-table tr:nth-child(even) { background: #f9f9f9; }
-/* モーダル外側の暗い背景 */
-.modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5); /* 半透明の黒 */
-    z-index: 1000;
-    justify-content: center; /* 横方向の中央寄せ */
-    align-items: flex-start; /* ★ポイント：縦方向を上寄せにする */
-    padding-top: 50px;       /* ★画面上端からの余白 */
+/* --- テーブル構造（ここが重要） --- */
+.table-wrapper { overflow-x: auto; border: 1px solid #000; background: #fff; }
+/* .schedule-table { width: 1335px; border-collapse: collapse; table-layout: fixed; font-size: 0.85rem; }
+.schedule-table th, .schedule-table td { border: 1px solid #000; box-sizing: border-box !important; } */
+
+/* 列幅指定 */
+.col-delete { width: 40px; text-align: center; }
+.col-time { width: 90px; text-align: center; }
+.col-service { width: 180px; padding: 5px; }
+.col-office { width: 140px; text-align: center; }
+.col-calendar { width: 885px; padding: 0 !important; }
+
+/* ヘッダー */
+.navy-header th { background: #2c3e50; color: #fff; height: 40px; font-weight: normal; }
+.red-header th { background: #a51212 !important; color: #fff; }
+
+/* カレンダーグリッド */
+.calendar-row { display: grid; grid-template-columns: 50px repeat(31, 25px) 60px; width: 885px; }
+.calendar-row div { border-right: 1px solid #455a64; height: 35px; display: flex; align-items: center; justify-content: center; border-bottom: 1px solid #455a64; }
+/* .calendar-row div:last-child { border-right: none; } */
+/* .label-cell { background: #34495e; color: #fff; font-weight: bold; width: 50px; } */
+
+/* 加算行のスタイル */
+.addon-row { background-color: #fff5f5; }
+.service-addon-name { color: #a51212; font-weight: bold; padding-left: 20px !important; }
+
+/* 日付色 */
+.sun, .holi { color: #ff8a8a; }
+.sat { color: #8ad4ff; }
+.sun-bg { background-color: #fff0f2; }
+.sat-bg { background-color: #f0faff; }
+
+/* 編集セル */
+.editable-cell { cursor: pointer; }
+.editable-cell:hover { background-color: #e3f2fd !important; }
+
+/* --- 1. 全ての要素の幅計算を「線を含めた幅」に固定する --- */
+.schedule-table,
+.schedule-table *,
+.calendar-row,
+.calendar-row div {
+    box-sizing: border-box !important;
 }
 
-/* モーダルが開いている時のクラス */
-.modal-overlay.is-open {
-    display: flex; /* JavaScriptでこのクラスを付け外しする */
-}
-
-/* モーダル本体の箱（幅を広げる） */
-.modal-container {
-    background: #fff;
-    width: 95%;            /* 画面のほぼ横いっぱいまで広げる */
-    max-width: 1400px;     /* 以前の800pxから約1.7倍以上の最大幅へ */
-    max-height: 80%;
-    overflow: scroll;
-    border-radius: 4px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-    animation: slideInDown 0.3s ease-out;
-}
-/* タブのスタイル */
-.modal-tabs {
-    display: flex;
-    background-color: #e9ecef;
-    padding: 10px 20px 0 20px;
-    border-bottom: 1px solid #ccc;
-}
-.tab-btn {
-    padding: 10px 25px;
-    border: 1px solid #ccc;
-    border-bottom: none;
-    background-color: #dee2e6;
-    cursor: pointer;
-    font-size: 0.9rem;
-    border-radius: 5px 5px 0 0;
-    margin-right: 5px;
-    transition: 0.2s;
-}
-.tab-btn.active {
-    background-color: #fff;
-    border-bottom: 2px solid #fff; /* 下線を消して一体化 */
-    margin-bottom: -1px;           /* 境界線に重ねる */
-    font-weight: bold;
-    color: #2c3e50;
-}
-/* 上から降りてくる動き */
-@keyframes slideInDown {
-    from { transform: translateY(-50px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
-}
-
-/* ヘッダー部分 */
-.modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background-color: #f8f9fa;
-    padding: 15px 20px;
-    border-bottom: 2px solid #2c3e50;
-}
-
-.close-icon-btn {
-    background: none;
-    border: none;
-    font-size: 24px;
-    cursor: pointer;
-    color: #666;
-}
-
-/* テーブルエリア */
-.table-scroll-container {
-    max-height: 60%; /* 画面の高さの60%までに制限 */
-    overflow-y: auto;
-    padding: 15px;
-}
-
-.select-table {
-    width: 100%;
+/* --- 2. テーブル全体の幅を微調整 (余裕を持たせる) --- */
+.schedule-table {
+    /* 左側合計(450px) + カレンダー(900px) = 1350px */
+    width: 1350px !important;
+    min-width: 1350px !important;
+    table-layout: fixed;
     border-collapse: collapse;
 }
 
-.select-table th {
-    background-color: #2c3e50;
-    color: white;
-    position: sticky;
-    top: 0;
-    padding: 10px;
-    z-index: 1;
+/* --- 3. カレンダー列の親(td/th)を固定 --- */
+.col-calendar {
+    width: 900px !important; /* 885pxから少し広げて余裕を持たせる */
+    min-width: 900px !important;
+    padding: 0 !important;
 }
 
-
-/* モーダル内検索エリア */
-.modal-search-bar {
-    background-color: #f0f4f8;
-    padding: 15px 20px;
-    border-bottom: 1px solid #ccc;
+/* --- 4. Gridの定義を修正 --- */
+.calendar-row {
+    display: grid;
+    /* ラベル(50px) + 25px×31日 + 合計(75pxに広げる) = 900px */
+    grid-template-columns: 50px repeat(31, 25px) 75px; 
+    width: 900px;
+    height: 100%;
 }
 
-.search-inputs {
+.calendar-row div {
+    border-right: 1px solid #455a64;
+    border-bottom: 1px solid #455a64;
     display: flex;
-    gap: 15px;
     align-items: center;
-    margin-bottom: 5px;
+    justify-content: center;
+    height: 35px;
 }
 
-.form-input-sm {
-    padding: 4px;
-    border: 1px solid #ccc;
-    border-radius: 3px;
-}
-
-.search-hint {
+/* --- 5. 合計セル(最後の列)の崩れを防止する --- */
+.total-cell,
+.calendar-row div:last-child {
+    width: 75px !important;   /* 幅をしっかり確保 */
+    min-width: 75px !important;
+    border-right: none;      /* 一番右端の線は不要（親のtdの線があるため） */
+    white-space: nowrap !important; /* ★文字が縦になるのを絶対に防ぐ */
     font-size: 0.8rem;
-    color: #666;
-}
-/* パネルの表示制御 */
-.tab-panel {
-    display: none; /* 初期は非表示 */
+    padding: 0 2px;
 }
 
-.tab-panel.active {
-    display: block; /* activeクラスがついたものだけ表示 */
+/* 曜日の「合計回数」など、文字数が多い場合の調整 */
+.calendar-row.weekday-row div:last-child {
+    font-size: 11px; /* 「合計回数」の4文字が入るように少し小さく */
+    line-height: 1.1;
 }
-/* バッジの装飾 (保険内/外) */
-.badge {
-    font-size: 0.7rem;
-    padding: 2px 5px;
-    border-radius: 3px;
-    margin-right: 5px;
+
+/* --- 6. 左側ラベル(予定・実績)の文字位置 --- */
+.label-cell {
+    width: 50px !important;
+    min-width: 50px !important;
+    background-color: #34495e;
     color: white;
-}
-.badge.insurance { background-color: #2c3e50; }
-.badge.self_pay { background-color: #e67e22; }
-/* フッター（キャンセル・確定ボタン） */
-.modal-footer {
-    padding: 15px 20px;
-    background-color: #f8f9fa;
-    text-align: right;
-    border-top: 1px solid #ddd;
-    border-radius: 0 0 4px 4px;
-}
-.action-bar {
-    display: flex;
-    justify-content: space-between;
-    padding: 10px 0;
-    font-family: sans-serif;
-}
-
-/* アクションバーのアイコン補足 */
-.action-bar .icon {
-    font-weight: bold;
-    margin-right: 4px;
-}
-.left-group{
-    display: flex;
-    gap: 5px;
-}
-
-.sort-group { margin-left: 15px; }
-
-/* 共通ボタンスタイル */
-.btn-outline, .btn-filled {
-    border-radius: 4px;
-    padding: 4px 10px;
-    font-size: 13px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    font-weight: 500;
-}
-
-/* 枠線ボタン（青） */
-.btn-outline.blue-text {
-    border: 1px solid #1a73e8;
-    background: #fff;
-    color: #1a73e8;
-}
-
-/* 月間カレンダーボタン（緑） */
-.btn-outline.green-text {
-    border: 1px solid #7cb342;
-    background: #fff;
-    color: #7cb342;
+    font-size: 12px;
 }

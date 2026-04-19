@@ -26,27 +26,29 @@ document.addEventListener('DOMContentLoaded', () => {
             this.innerText = newValue;
 
             // REST API へ送信
+            if (rowType === 'schedule') {
             try {
-                const response = await fetch(`/api/plan/${planId}/update/`, {
-                    method: "PATCH",
-                    headers: { 
-                        "Content-Type": "application/json",
-                        "X-CSRFToken": document.querySelector('[name=csrfmiddlewaretoken]').value
-                    },
-                    body: JSON.stringify({ day, value: newValue, row_type: rowType })
-                });
-                const data = await response.json();
-                    // 応答がエラー（404や500）の場合は、JSONパース前にテキストとして確認
-                if (!response.ok) {
-                    const errorHtml = await response.text();
-                    console.error("Server Error HTML:", errorHtml);
-                    throw new Error("サーバーエラーが発生しました");
+                    const response = await fetch(`/api/plan/${planId}/update/`, {
+                        method: "PATCH",
+                        headers: { 
+                            "Content-Type": "application/json",
+                            "X-CSRFToken": document.querySelector('[name=csrfmiddlewaretoken]').value
+                        },
+                        body: JSON.stringify({ day, value: newValue, row_type: rowType })
+                    });
+                    const data = await response.json();
+                        // 応答がエラー（404や500）の場合は、JSONパース前にテキストとして確認
+                    if (!response.ok) {
+                        const errorHtml = await response.text();
+                        console.error("Server Error HTML:", errorHtml);
+                        throw new Error("サーバーエラーが発生しました");
+                    }
+                    // 合計値をAPIからの戻り値で更新
+                    this.parentElement.querySelector('.total-cell').innerText = data.total;
+                } catch (err) {
+                    console.error("保存失敗", err);
+                    alert("通信エラーが発生しました");
                 }
-                // 合計値をAPIからの戻り値で更新
-                this.parentElement.querySelector('.total-cell').innerText = data.total;
-            } catch (err) {
-                console.error("保存失敗", err);
-                alert("通信エラーが発生しました");
             }
         });
     });
