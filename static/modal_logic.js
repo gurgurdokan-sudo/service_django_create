@@ -84,7 +84,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const selected = document.querySelector('input[name="selected_service"]:checked');
             if (!selected) return alert("サービスを選択してください");
             const isAddon = selected.value.startsWith('addon_');
-            const userIdInput = document.getElementById('user_id_hidden');
+            const userIdInput = document.getElementById('userid').getAttribute("data-user-id");
             const user_id = userIdInput ? userIdInput.value : null;
             const planId = document.getElementById('main_plan').value;
             const day = 1;

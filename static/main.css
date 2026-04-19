@@ -31,9 +31,6 @@
 /* カレンダーグリッド */
 .calendar-row { display: grid; grid-template-columns: 50px repeat(31, 25px) 60px; width: 885px; }
 .calendar-row div { border-right: 1px solid #455a64; height: 35px; display: flex; align-items: center; justify-content: center; border-bottom: 1px solid #455a64; }
-/* .calendar-row div:last-child { border-right: none; } */
-/* .label-cell { background: #34495e; color: #fff; font-weight: bold; width: 50px; } */
-
 /* 加算行のスタイル */
 .addon-row { background-color: #fff5f5; }
 .service-addon-name { color: #a51212; font-weight: bold; padding-left: 20px !important; }
@@ -48,7 +45,7 @@
 .editable-cell { cursor: pointer; }
 .editable-cell:hover { background-color: #e3f2fd !important; }
 
-/* --- 1. 全ての要素の幅計算を「線を含めた幅」に固定する --- */
+/* ---  全ての要素の幅計算を「線を含めた幅」に固定する --- */
 .schedule-table,
 .schedule-table *,
 .calendar-row,
@@ -56,7 +53,7 @@
     box-sizing: border-box !important;
 }
 
-/* --- 2. テーブル全体の幅を微調整 (余裕を持たせる) --- */
+/* ---  テーブル全体の幅を微調整 (余裕を持たせる) --- */
 .schedule-table {
     /* 左側合計(450px) + カレンダー(900px) = 1350px */
     width: 1350px !important;
@@ -65,17 +62,16 @@
     border-collapse: collapse;
 }
 
-/* --- 3. カレンダー列の親(td/th)を固定 --- */
+/* --- カレンダー列の親(td/th)を固定 --- */
 .col-calendar {
     width: 900px !important; /* 885pxから少し広げて余裕を持たせる */
     min-width: 900px !important;
     padding: 0 !important;
 }
 
-/* --- 4. Gridの定義を修正 --- */
+/* --- Gridの定義を修正 --- */
 .calendar-row {
     display: grid;
-    /* ラベル(50px) + 25px×31日 + 合計(75pxに広げる) = 900px */
     grid-template-columns: 50px repeat(31, 25px) 75px; 
     width: 900px;
     height: 100%;
@@ -90,7 +86,7 @@
     height: 35px;
 }
 
-/* --- 5. 合計セル(最後の列)の崩れを防止する --- */
+/* --- 合計セル(最後の列)の崩れを防止する --- */
 .total-cell,
 .calendar-row div:last-child {
     width: 75px !important;   /* 幅をしっかり確保 */
@@ -107,7 +103,7 @@
     line-height: 1.1;
 }
 
-/* --- 6. 左側ラベル(予定・実績)の文字位置 --- */
+/* --- 左側ラベル(予定・実績)の文字位置 --- */
 .label-cell {
     width: 50px !important;
     min-width: 50px !important;

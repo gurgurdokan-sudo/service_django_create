@@ -89,6 +89,7 @@
         {% for plan in plans %}
         <!-- 基本サービス行 -->
         <tr class="main-row" data-plan-id="{{ plan.id }}">
+        {% csrf_token %}
           <td class="col-delete">
             <button type="button" class="btn-delete-row" onclick="deletePlan({{ plan.id }})">🗑</button>
           </td>
@@ -120,7 +121,7 @@
           </td>
         </tr>
 
-        <!-- このプランに紐づく加算行（入れ子） -->
+        <!-- このプランに紐づく加算行 -->
         {% for addon_name, day_array in plan.get_addon_summary.items %}
         <tr class="addon-row" data-plan-id="{{ plan.id }}" data-addon-name="{{ addon_name }}">
           <td class="col-delete">
@@ -174,7 +175,7 @@
         <div id="search-bar-basic" class="modal-search-bar" style="display: none;">
           <div class="search-inputs">
             <label>開始: <input type="time" id="modal_start_time" class="form-input-sm" value="09:00"></label>
-            <label>終了: <input type="time" id="modal_end_time" class="form-input-sm" value="17:00"></label>
+            <label>終了: <input type="time" id="modal_end_time" class="form-input-sm" value="00:00"></label>
             <button type="button" id="btn_filter_service" class="btn-filled blue">時間絞り込み</button>
             <button type="button" id="btn_reset_basic" class="btn">リセット</button>
           </div>

@@ -15,6 +15,7 @@ def update_schedule(request, user_id):
     total = None
     try:
         if row_type == "schedule":
+            print(plan.service_name)
             data = plan.schedule_json
             data[day] = value
             if value == '':
@@ -32,20 +33,17 @@ def update_schedule(request, user_id):
 
         # 実績（actual）の addon を追加
         elif row_type == "actual_addon":
-            plan = get_object_or_404(ServicePlan, id=plan_id)
-            addon = request.data.get("service_id", "")
-            addon = AddOnService.objects.filter(id=addon).first()
-            if not addon or not plan:
-                return Response({"status": "error", "message": "AddOnService or ServicePlan not found"}, status=404)
-            days = request.data.get("days", [])
-            value = addon.service_name  # main の場合はサービス名を使用
             data = plan.actual_json or {}
-            for d in days:
-                day_data = data.get(d, {"main": "", "addon": []})
-                if value not in day_data["addon"]:
-                    day_data["addon"].append(value)
-                data[d] = day_data
-                plan.actual_json = data
+            day_data = data.get(day, {"main": "", "addon": []})
+            if value in day_data["addon"]:
+                day_data["addon"].remove(value)
+            else:
+                day_data["addon"].append(value)
+            data[day] = day_data
+            if day_data["main"] == '' and len(day_data["addon"])== 0:
+                data.pop(day,None)
+            plan.actual_json = data
+            
 
         # 実績（actual）の addon を削除
         elif row_type == "actual_addon_remove":
@@ -62,14 +60,14 @@ def update_schedule(request, user_id):
         plan.save()
         row_type = row_type.split("_")[0]  # "schedule" または "actual" に変換
         total = plan.get_total_count(row_type)
-        print(total,flush=True)
+        print('トータルを更新',total,flush=True)
         return Response({"status": "ok","total":total})
     except ServicePlan.DoesNotExist:
         return Response({"status": "error", "message": "ServicePlan not found"}, status=404)
 
 @api_view(['POST'])
 def create_plan(request, user_id):
-    print(user_id,flush=True)
+    print(user_id,"POSTの呼び出し",flush=True)
     target_user = get_object_or_404(User, id=user_id)
     messages = f'APIでユーザーID {target_user.name} のサービスプランを作成する処理が呼び出されました。'
     master_id = request.data.get('selected_service', '')  # "1"
