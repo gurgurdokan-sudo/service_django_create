@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import Sum
 from datetime import datetime, date
 
 LEVEL_CHOICES = [('要支護1', '要支護1'),('要支護2', '要支護2'),('要介護1', '要介護1'),('要介護2', '要介護2'),('要介護3', '要介護3'),('要介護4', '要介護4'),('要介護5', '要介護5'),]
@@ -125,12 +126,47 @@ class ServicePlan(models.Model):
             return total
     @property
     def get_addon_summary(self):
-        date = self.actual_dict
-        addon_summary = {}
-        for day,key in date.items():
-            for addon in key.get("addon", []):
-                addon_summary.setdefault(addon,[]).append(str(day))
-        return addon_summary
+        date_data = self.actual_dict
+        all_addon_ids = set()
+        for day_info in date_data.values():
+            all_addon_ids.update(day_info.get("addon", []))
+
+        # マスタから名前を引くための辞書
+        master = {a.id: a.service_name for a in AddOnService.objects.filter(id__in=all_addon_ids)}
+
+        summary = {}
+        for day, day_info in date_data.items():
+            for addon_id in day_info.get("addon", []):
+                name = master.get(int(addon_id))
+                if name:
+                    if name not in summary: summary[name] = []
+                    summary[name].append(str(day))
+        return summary
+
+    @property
+    def total_actual_units(self):
+        date_data = self.actual_dict
+        total_units = 0
+        #プランに含まれる全加算IDを抽出
+        all_addon_ids = set()
+        for day_info in date_data.values():
+            all_addon_ids.update(day_info.get("addon", []))
+
+        addon_master = {
+            a.id: a.unit for a in AddOnService.objects.filter(id__in=all_addon_ids)
+        }
+        # 日ごとにループ
+        for day_info in date_data.values():
+            # --- 基本サービス
+            if day_info.get("main") == "1":
+                # self.unit は ServicePlan 作成時にマスタからコピーされた基本単位数
+                total_units += (self.unit or 0)
+                # --- 加算サービス
+                for addon_id in day_info.get("addon", []):
+                    # マスタから単位数を取得して加算
+                    total_units += addon_master.get(int(addon_id), 0)
+        return total_units
+
     @property
     def is_addon(self):
         date = self.actual_dict
@@ -144,7 +180,7 @@ class AddOnService(models.Model):
     code = models.CharField(max_length=20)
     service_name = models.CharField(max_length=100)
     price = models.IntegerField(null=True, blank=True) # 単価（1000円 など）
-    unit = models.IntegerField()
+    unit = models.IntegerField() #無いとエラーになる
     category = models.CharField(max_length=20)
     is_tax = models.BooleanField(max_length=20,default=False, verbose_name='課税')  # 非課税 / 課税
     insurance_type = models.CharField(max_length=20, verbose_name='保険適用',choices=[

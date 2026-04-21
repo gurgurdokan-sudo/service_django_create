@@ -84,18 +84,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const selected = document.querySelector('input[name="selected_service"]:checked');
             if (!selected) return alert("サービスを選択してください");
             const isAddon = selected.value.startsWith('addon_');
-            const userIdInput = document.getElementById('userid').getAttribute("data-user-id");
-            const user_id = userIdInput ? userIdInput.value : null;
-            const planId = document.getElementById('main_plan').value;
+            const user_id = document.getElementById('userid').getAttribute("data-user-id");
+            const planId = document.getElementById('main_plan_select').value;
             const day = 1;
             const startTime = document.getElementById('modal_start_time').value;
             const endTime = document.getElementById('modal_end_time').value;
             if (!isAddon) {
-                if (endTime === '00:00') {
-                    return alert('時間を設定してください。');
-                }else if (!confirm(`開始: ${startTime}\n終了: ${endTime}\nこの内容でサービスを追加しますか？`)) {
-                    return;
-                }else{
+                if (endTime === '00:00') return alert('時間を設定してください。');
+                if (!confirm(`開始: ${startTime}\n終了: ${endTime}\nこの内容でサービスを追加しますか？`)) return;
                     // API送信
                     const response = await fetch(`/api/plan/${user_id}/create/`, {
                         method: "POST",
@@ -114,8 +110,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     location.reload(); // 成功したら新しいPlanを表示する
                 }
                 return;
-                }
             }
+
 
             
             // バリデーション: 加算なのにプランが選ばれていない
