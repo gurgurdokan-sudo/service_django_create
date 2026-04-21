@@ -33,6 +33,7 @@ def update_schedule(request, user_id):
 
         # 実績（actual）の addon を追加
         elif row_type == "actual_addon":
+            print('------------actual_addon------------',flush=True)
             data = plan.actual_json or {}
             day_data = data.get(day, {"main": "", "addon": []})
             if value in day_data["addon"]:

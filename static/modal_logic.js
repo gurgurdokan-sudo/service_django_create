@@ -116,12 +116,12 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // バリデーション: 加算なのにプランが選ばれていない
             if (isAddon && !planId) {
-                e.preventDefault();
                 return alert("加算を紐付ける予定サービスを選択してください");
-            }else if(isAddon){
-                e.preventDefault(); // 通常の送信をキャンセル
+            }
+            if(isAddon){
                 if (!confirm("この内容で登録しますか？")) return;
                 // API送信
+                const new_value = selected.value.split("_")[1];
                 const response = await fetch(`/api/plan/${user_id}/update/`, {
                     method: "PATCH",
                     headers: { 
@@ -132,7 +132,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         plan_id: planId,
                         service_id: selected.value.split('_')[1],
                         days: [1,2,3,4,5,6,7], // todo:mainの実績行に加算を追加する場合、全ての日にちに追加する仕様になっている。将来的にはUIで選択できるようにするかも
-                        row_type: 'actual_addon'
+                        row_type: 'actual_addon',
+                        value:new_value
                     })
                 });
                 
