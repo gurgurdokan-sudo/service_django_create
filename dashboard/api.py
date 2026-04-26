@@ -1,13 +1,11 @@
-
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from .models import ServicePlan,AddOnService,User,ServiceMaster
 
 @api_view(['PATCH'])
-def update_schedule(request, user_id):
-    plan_id = request.data.get("plan_id")
-    plan = get_object_or_404(ServicePlan, id=plan_id)
+def update_schedule(request, planId):
+    plan = get_object_or_404(ServicePlan, id=planId)
     value = request.data.get("value", "")
 
     day = request.data.get("day")
@@ -31,38 +29,75 @@ def update_schedule(request, user_id):
                 data.pop(day, None)  # main と addon が両方空の場合はキーを削除
             plan.actual_json = data
 
-        # 実績（actual）の addon を追加
+         # 実績（actual）の addon を追加
         elif row_type == "actual_addon":
-            print('------------actual_addon------------',flush=True)
+            addon_id = str(request.data.get("addon_id"))
+            #全autal
             data = plan.actual_json or {}
-            day_data = data.get(day, {"main": "", "addon": []})
-            if value in day_data["addon"]:
-                day_data["addon"].remove(value)
+            day_actual = data.get(day, {"main": "", "addon": {} })
+            addon = day_actual.get("addon")
+            if addon_id in addon:
+                addon.pop(addon_id)
             else:
-                day_data["addon"].append(value)
-            data[day] = day_data
+                addon_obj = get_object_or_404(AddOnService,id= addon_id)
+                addon[addon_id] = addon_obj.service_name
+                day_actual["addon"] = addon
+
+            #空なら削除
             if day_data["main"] == '' and len(day_data["addon"])== 0:
                 data.pop(day,None)
+            else:
+                data[day] = day_actual
             plan.actual_json = data
-            
+            plan.save()
+
+        #実績FULLバージョン
+        elif row_type == "actual_full":
+            print("actual_fullの処理", flush=True)
+
+            addon_id = str(request.data.get("addon_id"))
+            addon_obj = get_object_or_404(AddOnService, id=addon_id)
+
+            days = request.data.get("days", [])
+            data = plan.actual_json or {}
+
+            for d in days:
+                d = str(d)
+                day_data = data.get(d, {"main": "", "addon": {}})
+                addon_dict = day_data.get("addon", {})
+
+                addon_dict[addon_id] = addon_obj.service_name
+
+                day_data["addon"] = addon_dict
+                data[d] = day_data
+
+            plan.actual_json = data
+            plan.save()
 
         # 実績（actual）の addon を削除
         elif row_type == "actual_addon_remove":
             data = plan.actual_json or {}
-            day_data = data.get(day, {"main": "", "addon": []})
-            if day=='all':
-                for i,data in enumerate(day_data):
-                    if data in "addon":
-                        day_data["addon"].remove(value)
-            elif value in day_data["addon"]:
-                day_data["addon"].remove(value)
-            data[day] = day_data
+            addon_name = request.data.get("addon_name")
+            target_ids = set()
+            for day_info in data.values():
+                for addon_id, name in day_info.get("addon").items():
+                    if name == addon_name:
+                        target_ids.add(addon_id)
+            if not target_ids:
+                return Response({"status": "ok"})
+            for day in list(data.keys()):
+                day_data = data.get(str(day), {"main": "", "addon":{}})
+                addon_dict = day_data.get("addon",{})
+                for aid in target_ids:
+                    addon_dict.pop(aid,None)
+                if day_data["main"]=="" and len(addon_dict)==0:
+                    data.pop(str(day),None)
+                else:
+                    day_data["addon"] = addon_dict
+                    data[str(day)] = day_data
             plan.actual_json = data
-        plan.save()
-        row_type = row_type.split("_")[0]  # "schedule" または "actual" に変換
-        total = plan.get_total_count(row_type)
-        print('トータルを更新',total,flush=True)
-        return Response({"status": "ok","total":total})
+            plan.save()
+        return Response({"status": "ok"})
     except ServicePlan.DoesNotExist:
         return Response({"status": "error", "message": "ServicePlan not found"}, status=404)
 
@@ -88,3 +123,12 @@ def create_plan(request, user_id):
     else:
         return Response({"status": "error", "message": "invalid selected_service"}, status=400)
     return Response({"status": "ok", "message": messages})
+
+@api_view(['DELETE'])
+def delete_plan(request, planId):
+    try:
+        plan = ServicePlan.objects.get(id=planId)
+        plan.delete()
+        return Response({"status": "ok", "message": f"ServicePlan {planId} deleted"})
+    except ServicePlan.DoesNotExist:
+        return Response({"status": "error", "message": "ServicePlan not found"}, status=404)

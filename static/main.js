@@ -45,7 +45,6 @@ async function deleteAddon(planId, addonName) {
     }
 
     try {
-        // 提供されたPythonの update_schedule エンドポイントを叩く
         const response = await fetch(`/api/plan/${planId}/update/`, {
             method: "PATCH",
             headers: {
@@ -54,8 +53,7 @@ async function deleteAddon(planId, addonName) {
             },
             body: JSON.stringify({
                 row_type: "actual_addon_remove",
-                value: addonName,
-                day: "all" 
+                addon_name: addonName,
             })
         });
 

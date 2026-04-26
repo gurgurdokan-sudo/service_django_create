@@ -218,7 +218,7 @@
             <tbody>
               {% for s in service %}
               <tr class="service-row basic-row" data-stay-time="{{ s.get_stay_time_category_display }}">
-                <td class="text-center"><input type="radio" name="selected_service" value="basic_{{ s.id }}"></td>
+                <td class="text-center"><input type="radio" name="selected_basic" value="basic_{{ s.id }}"></td>
                 <td>{{ s.service_name }}</td>
                 <td>{{ s.get_stay_time_category_display }}</td>
                 <td>{{ s.unit }}</td>
@@ -243,7 +243,7 @@
             <tbody>
               {% for a in addon_service %}
               <tr class="service-row addon-row" data-name="{{ a.service_name }}">
-                <td class="text-center"><input type="radio" name="selected_service" value="addon_{{ a.id }}"></td>
+                <td class="text-center"><input type="radio" name="selected_addon" value="addon_{{ a.id }}"></td>
                 <td><span class="badge {{ a.insurance_type }}">{{ a.get_insurance_type_display }}</span> {{ a.service_name }}</td>
                 <td>{{ a.price|default:a.unit }}円</td>
                 <td>{{ a.category }}</td>

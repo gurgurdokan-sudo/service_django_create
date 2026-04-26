@@ -129,14 +129,14 @@ class ServicePlan(models.Model):
         date_data = self.actual_dict
         all_addon_ids = set()
         for day_info in date_data.values():
-            all_addon_ids.update(day_info.get("addon", []))
+            all_addon_ids.update(day_info.get("addon", {}))
 
         # マスタから名前を引くための辞書
         master = {a.id: a.service_name for a in AddOnService.objects.filter(id__in=all_addon_ids)}
 
         summary = {}
         for day, day_info in date_data.items():
-            for addon_id in day_info.get("addon", []):
+            for addon_id in day_info.get("addon", {}):
                 name = master.get(int(addon_id))
                 if name:
                     if name not in summary: summary[name] = []

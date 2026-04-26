@@ -32,9 +32,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if(target==='tab-basic'){
                 searchBasic.style.display = 'block';
                 searchAddon.style.display = 'none';
-            }else{
+                document.querySelectorAll('input[name="selected_addon"]').forEach(r => r.checked = false);
+            } else {
                 searchBasic.style.display = 'none';
                 searchAddon.style.display = 'block';
+                document.querySelectorAll('input[name="selected_basic"]').forEach(r => r.checked = false);
             }
         });
     });
@@ -81,29 +83,27 @@ document.addEventListener('DOMContentLoaded', () => {
     // ここからフォーム送信処理
     if (serviceBtn) {
         serviceBtn.addEventListener('click', async (e) => {
-            const selected = document.querySelector('input[name="selected_service"]:checked');
+            const selected_basic = document.querySelector('input[name="selected_basic"]:checked');
+            const selected_addon = document.querySelector('input[name="selected_addon"]:checked');
+            const selected = selected_basic || selected_addon;
             if (!selected) return alert("サービスを選択してください");
-            const isAddon = selected.value.startsWith('addon_');
-            const user_id = document.getElementById('userid').getAttribute("data-user-id");
-            const planId = document.getElementById('main_plan_select').value;
-            const day = 1;
+            const userId = document.getElementById('userid').getAttribute("data-user-id");
             const startTime = document.getElementById('modal_start_time').value;
             const endTime = document.getElementById('modal_end_time').value;
-            if (!isAddon) {
+            if (selected_basic) {
                 if (endTime === '00:00') return alert('時間を設定してください。');
                 if (!confirm(`開始: ${startTime}\n終了: ${endTime}\nこの内容でサービスを追加しますか？`)) return;
-                    // API送信
-                    const response = await fetch(`/api/plan/${user_id}/create/`, {
+                // API送信
+                    const response = await fetch(`/api/plan/${userId}/create/`, {
                         method: "POST",
                         headers: { 
                             "Content-Type": "application/json",
                             "X-CSRFToken": document.querySelector('[name=csrfmiddlewaretoken]').value
                         },
                         body: JSON.stringify({
-                            selected_service: selected.value.split('_')[1],
+                            selected_service: selected_basic.value.split('_')[1],
                             start_time: startTime,
                             end_time: endTime,
-                            day: day
                         })
                     }); 
                 if (response.ok) {
@@ -113,27 +113,24 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
 
-            
-            // バリデーション: 加算なのにプランが選ばれていない
-            if (isAddon && !planId) {
+            const planId = document.getElementById('main_plan_select').value;
+            if (selected_addon && !planId) {
                 return alert("加算を紐付ける予定サービスを選択してください");
             }
-            if(isAddon){
+            if(selected_addon){
                 if (!confirm("この内容で登録しますか？")) return;
                 // API送信
-                const new_value = selected.value.split("_")[1];
-                const response = await fetch(`/api/plan/${user_id}/update/`, {
+                console.log("planId:", planId);
+                const response = await fetch(`/api/plan/${planId}/update/`, {
                     method: "PATCH",
-                    headers: { 
+                    headers: {
                         "Content-Type": "application/json",
                         "X-CSRFToken": document.querySelector('[name=csrfmiddlewaretoken]').value
                     },
                     body: JSON.stringify({
-                        plan_id: planId,
-                        service_id: selected.value.split('_')[1],
+                        addon_id: selected_addon.value.split('_')[1],
                         days: [1,2,3,4,5,6,7], // todo:mainの実績行に加算を追加する場合、全ての日にちに追加する仕様になっている。将来的にはUIで選択できるようにするかも
-                        row_type: 'actual_addon',
-                        value:new_value
+                        row_type: 'actual_full',
                     })
                 });
                 

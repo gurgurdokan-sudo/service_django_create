@@ -27,18 +27,22 @@ document.addEventListener('DOMContentLoaded', () => {
             this.innerText = newValue;
 
             // REST API へ送信
-            if (rowType === 'actual_addon') newValue = this.getAttribute('data-addon-name');
+            // if (rowType === 'actual_addon') newValue = this.getAttribute('data-addon-name');
             try {
-                const response = await fetch(`/api/plan/${userId}/update/`, {
+                const response = await fetch(`/api/plan/${planId}/update/`, {
                     method: "PATCH",
                     headers: { 
                         "Content-Type": "application/json",
                         "X-CSRFToken": document.querySelector('[name=csrfmiddlewaretoken]').value
                     },
-                    body: JSON.stringify({ day:day, value: newValue, row_type: rowType, plan_id:planId})
+                    body: JSON.stringify({ 
+                        day:day,
+                        value: newValue,
+                        row_type: rowType,
+                    })
                 });
                 const data = await response.json();
-                    // 応答がエラー（404や500）の場合は、JSONパース前にテキストとして確認
+                // 応答がエラー（404や500）の場合は、JSONパース前にテキストとして確認
                 if (!response.ok) {
                     const errorHtml = await response.text();
                     console.error("Server Error HTML:", errorHtml);
