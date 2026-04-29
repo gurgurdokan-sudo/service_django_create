@@ -120,7 +120,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if(selected_addon){
                 if (!confirm("この内容で登録しますか？")) return;
                 // API送信
-                console.log("planId:", planId);
+                console.log("error", planId);
+
                 const response = await fetch(`/api/plan/${planId}/update/`, {
                     method: "PATCH",
                     headers: {

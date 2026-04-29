@@ -10,16 +10,20 @@ def update_schedule(request, planId):
 
     day = request.data.get("day")
     row_type = request.data.get("row_type")  # "schedule" or "actual"
-    total = None
     try:
+        #予定を変更
         if row_type == "schedule":
             print(plan.service_name)
             data = plan.schedule_json
-            data[day] = value
+            day_data = data.get(day, {"main":"", "addon": {}})
+            day_data["main"] == value
+            data = day_data
             if value == '':
-                del data[day]  # 空文字の場合はキーを削除
+                del data[day]
             plan.schedule_json = data
-            # 実績（actual）の main を更新
+            plan.save()
+            return Response({"status": "ok"})
+        # 実績（actual）の main を更新
         elif row_type == "actual_main":
             data = plan.actual_json or {}
             day_data = data.get(day, {"main": "", "addon": []})
@@ -28,7 +32,7 @@ def update_schedule(request, planId):
             if day_data["main"] == '' and  len(day_data["addon"]) == 0:
                 data.pop(day, None)  # main と addon が両方空の場合はキーを削除
             plan.actual_json = data
-
+            return Response({"status": "ok"})
          # 実績（actual）の addon を追加
         elif row_type == "actual_addon":
             addon_id = str(request.data.get("addon_id"))
@@ -38,23 +42,25 @@ def update_schedule(request, planId):
             addon = day_actual.get("addon")
             if addon_id in addon:
                 addon.pop(addon_id)
+                if not addon :
+                    if not actual_addon:
+                        data.pop(day,None)
+                    else:
+                        day_actual["addon"] = {}
+                        data[day] =day_actual
+                else:
+                    day_actual["addon"] =addon
+                    data[day]= day_actual
             else:
                 addon_obj = get_object_or_404(AddOnService,id= addon_id)
                 addon[addon_id] = addon_obj.service_name
                 day_actual["addon"] = addon
-
-            #空なら削除
-            if day_data["main"] == '' and len(day_data["addon"])== 0:
-                data.pop(day,None)
-            else:
-                data[day] = day_actual
             plan.actual_json = data
             plan.save()
-
+            return Response({"status": "ok"})
         #実績FULLバージョン
         elif row_type == "actual_full":
             print("actual_fullの処理", flush=True)
-
             addon_id = str(request.data.get("addon_id"))
             addon_obj = get_object_or_404(AddOnService, id=addon_id)
 
@@ -73,7 +79,7 @@ def update_schedule(request, planId):
 
             plan.actual_json = data
             plan.save()
-
+            return Response({"status": "ok"})
         # 実績（actual）の addon を削除
         elif row_type == "actual_addon_remove":
             data = plan.actual_json or {}
@@ -97,7 +103,10 @@ def update_schedule(request, planId):
                     data[str(day)] = day_data
             plan.actual_json = data
             plan.save()
-        return Response({"status": "ok"})
+            return Response({"status": "ok"})
+        else:
+            print("処理error　rowtypeがない", flush=True)
+            return Response({"status": "error", "message": "rowtype not found"}, status=404)    
     except ServicePlan.DoesNotExist:
         return Response({"status": "error", "message": "ServicePlan not found"}, status=404)
 

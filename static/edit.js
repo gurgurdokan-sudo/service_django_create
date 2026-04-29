@@ -27,8 +27,9 @@ document.addEventListener('DOMContentLoaded', () => {
             this.innerText = newValue;
 
             // REST API へ送信
-            // if (rowType === 'actual_addon') newValue = this.getAttribute('data-addon-name');
+            if (rowType === 'actual_addon') newValue = this.getAttribute('data-addon-name');
             try {
+                console.log("Sending update:", { planId, day, newValue, rowType });
                 const response = await fetch(`/api/plan/${planId}/update/`, {
                     method: "PATCH",
                     headers: { 
@@ -51,7 +52,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 // 合計値をAPIからの戻り値で更新
                 this.parentElement.querySelector('.total-cell').innerText = data.total;
             } catch (err) {
-                console.error("保存失敗", err);
                 alert("通信エラーが発生しました");
             }
         });
