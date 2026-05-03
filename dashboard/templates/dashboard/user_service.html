@@ -37,7 +37,7 @@
     <div class="right-group month-controller">
       <select id="month_selector" class="classic-select">
         {% for y in year_range %}{% for m in month_range %}
-        {#  <option value="{{ y }}-{{ m }}" {% if y==current_year and m==current_month %}selected{% endif %}>  #}
+        <option value="{{ y }}-{{ m|stringformat:'02d' }}" {% if y == current_year and m == current_month %}selected{% endif %}>
           {{ y }}年{{ m }}月
         </option>
         {% endfor %}{% endfor %}
@@ -51,7 +51,7 @@
     </div>
   </div>
 
-  <!-- メインテーブル（1つに統合） -->
+  <!-- メインテーブル -->
   <div class="table-wrapper">
     <table class="schedule-table">
       <thead>
@@ -163,103 +163,7 @@
       </tbody>
     </table>
   </div>
-
-  <!-- サービス選択モーダル -->
-  <div id="serviceModalOverlay" class="modal-overlay" style="display: none;">
-    {% csrf_token %}
-    <div class="modal-container">
-      <div class="modal-header">
-        <h2 class="page-title">サービス選択</h2>
-        <button type="button" class="close-icon-btn" id="closeBtn">×</button>
-      </div>
-
-      <div class="modal-tabs">
-        <button type="button" class="tab-btn" data-tab="tab-basic">基本サービス</button>
-        <button type="button" class="tab-btn active" data-tab="tab-addon">加算・自費サービス</button>
-      </div>
-
-      <!-- 基本サービス用検索 -->
-      <div id="search-bar-basic" class="modal-search-bar" style="display: none;">
-        <div class="search-inputs">
-          <label>開始: <input type="time" id="modal_start_time" class="form-input-sm" value="09:00"></label>
-          <label>終了: <input type="time" id="modal_end_time" class="form-input-sm" value="00:00"></label>
-          <button type="button" id="btn_filter_service" class="btn-filled blue">時間絞り込み</button>
-          <button type="button" id="btn_reset_basic" class="btn">リセット</button>
-        </div>
-      </div>
-
-      <!-- 加算用検索 -->
-      <div id="search-bar-addon" class="modal-search-bar">
-        <div class="search-inputs">
-          <input type="text" id="addon_keyword" class="form-input-sm" placeholder="サービス名で検索...">
-          <button type="button" id="btn_filter_addon" class="btn-filled blue">検索</button>
-
-          <div class="plan-selector">
-            <label>紐付け先:</label>
-            <select id="main_plan_select" class="form-input-sm">
-              <option value="">-- プランを選択 --</option>
-              {% for p in plans %}<option value="{{ p.id }}">{{ p.service_name }}</option>{% endfor %}
-            </select>
-          </div>
-        </div>
-      </div>
-
-      <div id="tab-basic" class="tab-panel">
-        <div class="table-scroll-container">
-          <table class="data-table select-table">
-            <thead>
-              <tr>
-                <th>選択</th>
-                <th>内容</th>
-                <th>時間</th>
-                <th>単位</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for s in service %}
-              <tr class="service-row basic-row" data-stay-time="{{ s.get_stay_time_category_display }}">
-                <td class="text-center"><input type="radio" name="selected_basic" value="basic_{{ s.id }}"></td>
-                <td>{{ s.service_name }}</td>
-                <td>{{ s.get_stay_time_category_display }}</td>
-                <td>{{ s.unit }}</td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div id="tab-addon" class="tab-panel active">
-        <div class="table-scroll-container">
-          <table class="data-table select-table">
-            <thead>
-              <tr>
-                <th>選択</th>
-                <th>名称</th>
-                <th>単価</th>
-                <th>区分</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for a in addon_service %}
-              <tr class="service-row addon-row" data-name="{{ a.service_name }}">
-                <td class="text-center"><input type="radio" name="selected_addon" value="addon_{{ a.id }}"></td>
-                <td><span class="badge {{ a.insurance_type }}">{{ a.get_insurance_type_display }}</span> {{ a.service_name }}</td>
-                <td>{{ a.price|default:a.unit }}円</td>
-                <td>{{ a.category }}</td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" id="cancelBtn">キャンセル</button>
-        <button type="submit" class="btn btn-create" id="service-btn">選択を確定する</button>
-      </div>
-
-    </div>
+  {% include "dashboard/components/service_modal.html" %}
   </div>
 </div>
 

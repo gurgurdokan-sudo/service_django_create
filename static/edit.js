@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 newValue = (currentValue === "") ? "1" : "";
             }
-
+            console.log(`${rowType}の編集, currentValue: ${currentValue}, newValue: ${newValue}`);
             // UIを即座に更新（楽観的アップデート）
             this.innerText = newValue;
 
