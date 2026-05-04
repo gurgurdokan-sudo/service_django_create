@@ -18,6 +18,14 @@ class UserForm(forms.ModelForm):
         'date_of_birth': forms.DateInput(attrs={'type': 'date'}),
         }
 class PlanForm(forms.ModelForm):
+    WEEKDAY_CHOICES = [("0", "月"),("1", "火"),("2", "水"),("3", "木"),("4", "金"),("5", "土"),("6", "日"),]
+
+    weekdays = forms.MultipleChoiceField(
+        required=False,
+        widget=forms.CheckboxSelectMultiple,
+        choices=WEEKDAY_CHOICES,
+        label="通う曜日"
+    )
     def __init__(self, *args, user_id=None, **kwargs):
         super().__init__(*args, **kwargs)
         if user_id:
@@ -31,6 +39,7 @@ class PlanForm(forms.ModelForm):
             'start_time': '開始時間',
             'end_time': '終了時間',
         }
+
         widgets = {
         'start_time': forms.TimeInput(attrs={'type': 'time'}),
         'end_time': forms.TimeInput(attrs={'type': 'time'}),

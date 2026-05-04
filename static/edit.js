@@ -40,6 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         day:day,
                         value: newValue,
                         row_type: rowType,
+                        total: parseInt(this.parentElement.querySelector('.total-cell').innerText.trim().replace(/[^0-9]/g, '')) // 現在の合計値を送信
                     })
                 });
                 const data = await response.json();
@@ -50,7 +51,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     throw new Error("サーバーエラーが発生しました");
                 }
                 // 合計値をAPIからの戻り値で更新
+                if (rowType === 'actual_addon') {
+                this.parentElement.querySelector('.total-cell').innerText = data.total+' 単位';
+                }else{    
                 this.parentElement.querySelector('.total-cell').innerText = data.total;
+                }
             } catch (err) {
                 alert("通信エラーが発生しました");
             }

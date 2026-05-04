@@ -13,6 +13,8 @@ class User(models.Model):
     date_of_birth = models.DateField(blank=True, null=True,verbose_name='生年月日')
     GENDER_CHOICES = [('male', '男性'),('female', '女性'),]
     gender = models.CharField(max_length=10, choices=GENDER_CHOICES, blank=True, default="female",verbose_name='性別')
+    BURDEN_CHOICES = [(1, "1割"),(2, "2割"),(3, "3割")]
+    burden_rate = models.IntegerField(choices=BURDEN_CHOICES, default=1)
     notes = models.TextField(blank=True,default="",verbose_name='メモ')
     def __str__(self):
         return self.name
@@ -178,9 +180,11 @@ class ServicePlan(models.Model):
         return f"{self.user.name} - {self.year}年{self.month}月"
 class AddOnService(models.Model):
     code = models.CharField(max_length=20)
+    type = models.CharField(choices=[("unit", "単位"), ("rate", "率")])
+    unit = models.IntegerField( null=True, blank=True) 
+    rate = models.DecimalField(max_digits=5, decimal_places=3, null=True, blank=True)
     service_name = models.CharField(max_length=100)
     price = models.IntegerField(null=True, blank=True) # 単価（1000円 など）
-    unit = models.IntegerField() #無いとエラーになる
     category = models.CharField(max_length=20)
     is_tax = models.BooleanField(max_length=20,default=False, verbose_name='課税')  # 非課税 / 課税
     insurance_type = models.CharField(max_length=20, verbose_name='保険適用',choices=[
@@ -198,3 +202,23 @@ class AddOnService(models.Model):
 class UserAddOnService(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     addon = models.ForeignKey(AddOnService, on_delete=models.CASCADE)
+class Office(models.Model):
+    name = models.CharField(max_length=100)
+    defalt_service = models.ForeignKey(AddOnService, on_delete=models.SET_NULL, null=True, blank=True)
+    #地域区分
+    area_code = models.IntegerField(choices= [(i, f"{i}地域") for i in range(1, 8)])
+    # 地域区分ごとの単位単価テーブル
+    UNIT_PRICE_TABLE = {
+        1: 11.40,
+        2: 10.90,
+        3: 10.45,
+        4: 10.25,
+        5: 10.15,
+        6: 10.10,
+        7: 10.00,
+    }
+    @property
+    def unit_price(self):
+        return self.UNIT_PRICE_TABLE.get(self.area_code, 0)  
+    def __str__(self):
+        return self.name

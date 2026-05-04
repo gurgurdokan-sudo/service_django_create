@@ -37,15 +37,24 @@ def create_plan(request,user_id):
                 stay_time_category = stay_cat
             )
             service = service_sq.first() if service_sq else None
+            weekdays = form.cleaned_data.get('weekdays', [])
+            year = form.cleaned_data['year']
+            month = form.cleaned_data['month']
+            json = {}
+            col = get_month_days(year, month)
+            for day in col:
+                if str(day['weekday']) in weekdays:
+                    json[str(day['day'])] = '1'
             if service:
                 plan.service_name = service.service_name
                 plan.service_code = service.service_code
                 plan.unit = service.unit
+                plan.schedule_json = json
             form.save()
             messages.success(request,'プランを作成しました')
             return redirect('dashboard:service',user_id=user_id)
     else:
-        form = PlanForm()
+        form = PlanForm(user_id=user_id)
     return render(request,'dashboard/create_plan.html', {'form': form})
 #Excel出力
 def export_service_sheet(request, user_id, year, month):
@@ -106,6 +115,10 @@ def user_service(request,user_id):
     return render(request,'dashboard/user_service.html',context)
 
 def init_plan(request):
+    # AddOnService.objects.update(type="unit")
+    # AddOnService.objects.filter(code="6107").update(type="rate", rate=0.045)
+    # AddOnService.objects.filter(code="6600").update(type="rate", rate=0.03)
+    # AddOnService.objects.filter(code__in=["6364","6365","6366","6367"]).update(type="rate", rate=-0.01)
     # AddOnService.objects.all().delete()
     # services = [
     #     AddOnService(code='0', service_name='値引き', price=-1000, unit=1, category='自費', is_tax=False, insurance_type='self_pay', apply_unit='per_service', medical_deduction=False),
