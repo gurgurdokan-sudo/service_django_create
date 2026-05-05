@@ -1,7 +1,8 @@
 from django.shortcuts import render,redirect, get_object_or_404
 from django.utils import timezone
-from .calendar_table import get_month_days
-from .models import User, ServiceMaster, ServicePlan, AddOnService
+
+from dashboard.models import User, ServicePlan, ServiceMaster, AddOnService
+from dashboard.calendar_table import get_month_days
 
 def user_service(request,user_id):
     target = get_object_or_404(User,id=user_id)

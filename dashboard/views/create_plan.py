@@ -2,9 +2,9 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.utils import timezone
 
-from .models import User, ServicePlan, ServiceMaster
-from .forms import PlanForm
-from .calendar_table import get_month_days
+from dashboard.models import User, ServicePlan, ServiceMaster
+from dashboard.forms import PlanForm
+from dashboard.calendar_table import get_month_days
 
 def create_plan(request,user_id):
     if request.method == 'POST':

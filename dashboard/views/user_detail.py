@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 
-from .models import User
+from dashboard.models import User
 
 #詳細
 def user_detail(request,user_id):

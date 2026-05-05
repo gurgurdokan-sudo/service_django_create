@@ -94,6 +94,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (endTime === '00:00') return alert('時間を設定してください。');
                 if (!confirm(`開始: ${startTime}\n終了: ${endTime}\nこの内容でサービスを追加しますか？`)) return;
                 // API送信
+                    const [year,month] = document.getElementById('month_selector').value.split('-');
+                    
                     const response = await fetch(`/api/plan/${userId}/create/`, {
                         method: "POST",
                         headers: { 
@@ -104,6 +106,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             selected_service: selected_basic.value.split('_')[1],
                             start_time: startTime,
                             end_time: endTime,
+                            year: year,
+                            month: month,
                         })
                     }); 
                 if (response.ok) {
@@ -120,8 +124,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if(selected_addon){
                 if (!confirm("この内容で登録しますか？")) return;
                 // API送信
-                console.log("error", planId);
-
                 const response = await fetch(`/api/plan/${planId}/update/`, {
                     method: "PATCH",
                     headers: {
@@ -130,7 +132,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     },
                     body: JSON.stringify({
                         addon_id: selected_addon.value.split('_')[1],
-                        days: [1,2,3,4,5,6,7], // todo:mainの実績行に加算を追加する場合、全ての日にちに追加する仕様になっている。将来的にはUIで選択できるようにするかも
+                        days: [1,2,3,4,5,6,7], // mainのscheに合わせる
                         row_type: 'actual_full',
                     })
                 });

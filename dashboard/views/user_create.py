@@ -1,6 +1,6 @@
 from django.shortcuts import render,redirect
 from django.contrib import messages
-from .forms import UserForm
+from dashboard.forms import UserForm
 
 #新規作成
 def user_create(request):
