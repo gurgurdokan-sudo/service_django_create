@@ -158,7 +158,7 @@
                 {% endif %}
               </div>
               {% endfor %}
-              <div class="total-cell">{{ plan.total_actual_units }} 単位</div>
+              <div class="total-cell">{{ monthly_addon_totals|get_item:addon_name }} 単位</div>
             </div>
           </td>
         </tr>
@@ -174,8 +174,23 @@
   {% include "dashboard/components/service_modal.html" %}
   </div>
 </div>
-
+<ul>
+  {% for plan in plans %}
+  <li>{{ plan.service_name }}: {{ plan.unit }}単位</li>
+  <dd>サービスコード: {{ office.service_type_code }}{{ plan.service_code }}</dd>
+  {% endfor %}
+  {% for service_name, unit in all_addon_units.items %}
+  <li>{{ service_name }}: {{ unit }}単位</li>
+  {% for name,code in add_codes.items %}
+    <dd>サービスコード: {{ office.service_type_code }}{% if service_name == name %}{{ code }}{% endif %}</dd>
+  {% endfor %}
+  {% endfor %}
+  <li>回数</li>
+  <li>単位数</li>
+  <li>加算</li>
+  <li>合計単位数</li>
+</ul>
 <script src="{% static 'edit.js' %}?v=1"></script>
-<script src="{% static 'modal_logic.js' %}?v=2"></script>
+<script src="{% static 'modal_logic.js' %}?v=3"></script>
 <script src="{% static 'main.js' %}?v=1"></script>
 {% endblock %}

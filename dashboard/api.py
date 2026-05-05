@@ -143,7 +143,7 @@ def update_schedule(request, planId):
             plan.save()
             return Response({"status": "ok"})
         else:
-            print("処理error　rowtypeがない", flush=True)
+            print("処理error rowtypeがない", flush=True)
             return Response(
                 {"status": "error", "message": "rowtype not found"}, status=404
             )

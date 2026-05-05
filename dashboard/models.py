@@ -77,7 +77,6 @@ class ServicePlan(models.Model):
 
     schedule_json = models.JSONField(default=dict, blank=True)
     actual_json = models.JSONField(default=dict, blank=True)
-    # ここを追加
     service_name = models.CharField(max_length=50,null=True, blank=True)
     service_code = models.CharField(max_length=20,null=True, blank=True)
     unit = models.IntegerField(null=True, blank=True)
@@ -199,14 +198,13 @@ class AddOnService(models.Model):
     medical_deduction = models.BooleanField(default=False,null=True, blank=True, verbose_name='医療費控除対象') # 医療費控除対象
     def __str__(self):
         return self.service_name
-class UserAddOnService(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    addon = models.ForeignKey(AddOnService, on_delete=models.CASCADE)
 class Office(models.Model):
     name = models.CharField(max_length=100)
     defalt_service = models.ForeignKey(AddOnService, on_delete=models.SET_NULL, null=True, blank=True)
     #地域区分
     area_code = models.IntegerField(choices= [(i, f"{i}地域") for i in range(1, 8)])
+    SERVICE_TYPE_CHOICES = [(78, "地域密着型通所介護"),(79, "通所介護（通常規模）"),(80, "通所介護（大規模Ⅰ）"),(81, "通所介護（大規模Ⅱ）"),]
+    service_type_code = models.IntegerField(choices=SERVICE_TYPE_CHOICES,default=78, verbose_name = '種類コード') #種類コード: 78 （地域密着型通所介護）
     # 地域区分ごとの単位単価テーブル
     UNIT_PRICE_TABLE = {
         1: 11.40,

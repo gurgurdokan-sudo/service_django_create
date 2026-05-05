@@ -118,7 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
             const planId = document.getElementById('main_plan_select').value;
-            if (selected_addon && !planId) {
+            if (selected_addon && !planId ) {
                 return alert("加算を紐付ける予定サービスを選択してください");
             }
             if(selected_addon){

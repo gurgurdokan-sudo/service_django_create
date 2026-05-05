@@ -6,4 +6,7 @@ admin.site.register(ServiceMaster)
 admin.site.register(ServicePlan)
 admin.site.register(ServiceRecord)
 admin.site.register(AddOnService)
-admin.site.register(Office)
+
+@admin.register(Office)
+class OfficeAdmin(admin.ModelAdmin):
+    readonly_fields = ("id",)
