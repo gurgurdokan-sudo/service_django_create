@@ -1,4 +1,8 @@
 {% extends "dashboard/base/base.html" %}
+{% block css %}
+{% load static %}
+<link rel="stylesheet" href="{% static 'main.css' %}">
+{% endblock %}
 {% block body %}
 <div class="container">
   <div class="header-container">
@@ -32,7 +36,7 @@
       {% if  user.has_plan %}
       <td><a href="{% url 'dashboard:service' user.id %}" class="btn">サービス提供票</a></td>
       {% else %}
-      <td><a href="{% url 'dashboard:creatPlan' user.id %}" class="btn">サービス提供票</a></td>
+      <td><a href="{% url 'dashboard:createPlan' user.id %}" class="btn">サービス提供票</a></td>
       {% endif %}
       </td>
     </tr>

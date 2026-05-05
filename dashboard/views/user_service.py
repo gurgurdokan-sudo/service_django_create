@@ -6,13 +6,18 @@ from dashboard.calendar_table import get_month_days
 
 def user_service(request,user_id):
     target = get_object_or_404(User,id=user_id)
+    year = request.GET.get('year')
+    month = request.GET.get('month')
+    print(year,month,"が表示される",flush=True)
     now = timezone.now()
     plans = ServicePlan.objects.filter(
         user = target,
-        year = now.year,
-        month = now.month
+        year = int(year) if year else now.year,
+        month = int(month) if month else now.month
         )
-    user_code = plans.values_list("service_code",flat=True)
+    if not plans and (int(year)+int(month))>(now.year+now.month):
+        plan = PlanForm()
+    user_code = plans.values_list("service_code",flat=True) #userチェック済みのサービスコード
     all_plans = (ServiceMaster.objects
         .exclude(service_code__in = user_code)
         .filter(care_level = target.care_level)

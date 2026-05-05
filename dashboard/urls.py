@@ -20,7 +20,7 @@ urlpatterns = [
     path('user/<int:user_id>/edit/', user_update, name='update'),
     path('user/<int:user_id>/delete/', user_delete, name='delete'),
     path('user/<int:user_id>/service/', user_service, name='service'),
-    path('user/<int:user_id>/create_plan/', create_plan, name='creatPlan'),
+    path('user/<int:user_id>/create_plan/', create_plan, name='createPlan'),
     
 # API
     path("api/plan/<int:planId>/update/", api.update_schedule, name="update_schedule"),

@@ -6,7 +6,7 @@ function getCsrfToken() {
 }
 
 /**
- * 1. 基本プラン（行全体）の削除
+ * 基本プランの削除
  */
 async function deletePlan(planId) {
     if (!confirm("このサービス予定および実績データをすべて削除しますか？\n(この操作は取り消せません)")) {
@@ -35,9 +35,7 @@ async function deletePlan(planId) {
 }
 
 /**
- * 2. 加算（特定の加算名）の削除
- * 画面上の加算行は「その月のその加算全て」を指すため、
- * 全日程からその加算名を削除するリクエストを送ります。
+ * 加算行削除
  */
 async function deleteAddon(planId, addonName) {
     if (!confirm(`「${addonName}」をこのプランの実績からすべて削除しますか？`)) {
@@ -65,5 +63,52 @@ async function deleteAddon(planId, addonName) {
     } catch (error) {
         console.error("Delete Addon Error:", error);
         alert("通信ERORRが発生しました");
+    }
+}
+
+function nextMonth(userId,action) {
+    console.log(action);
+    let [year,month] = document.getElementById('month_selector').value.split('-');
+    year = parseInt(year);
+    month = parseInt(month);
+    const nowYear = parseInt(document.getElementById('current_year').value);
+    const nowMonth = parseInt(document.getElementById('current_month').value);
+
+    try{
+        if (action === 'current'){
+            if ( nowYear === year && nowMonth === month){
+            alert("既に今月を表示");
+            return;
+            }
+            window.location.href = `/user/${userId}/service/?year=${nowYear}&month=${String(nowMonth).padStart(2, '0')}`;            
+            return;
+        }
+        if(action === 'prev'){
+            month -= 1;
+            if (month === 0){
+                month = 12;
+                year -=1;
+                window.location.href = `/user/${userId}/service/?year=${year}&month=${String(month).padStart(2,'0')}`;
+                return;
+            }
+            window.location.href = `/user/${userId}/service/?year=${year}&month=${String(month).padStart(2,'0')}`;
+            return;
+        }
+        if (action === 'next'){
+            month += 1;
+            if (month === 13){
+                month = 1;
+                year += 1;
+                window.location.href = `/user/${userId}/service/?year=${year}&month=${String(month).padStart(2,'0')}`;
+                return;
+            }
+            window.location.href = `/user/${userId}/service/?year=${year}&month=${String(month).padStart(2,'0')}`;
+            return;
+        }
+        else{
+            console.log(`${action}が押されました`)
+        }
+    } catch(error){
+        alert(`${error}errorが発生`);
     }
 }
