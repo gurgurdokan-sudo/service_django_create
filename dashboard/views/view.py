@@ -7,112 +7,120 @@ from .forms import UserForm, PlanForm
 from datetime import datetime
 import json
 from .calendar_table import get_month_days
-#利用者一覧
-def user_list(request):
-    users = User.objects.all()
-    for user in users:
-        user.has_plan = ServicePlan.objects.filter(user=user).first() is not None
-    return render(request, 'dashboard/user_list.html', {'users': users})
+# #利用者一覧
+# def user_list(request):
+#     users = User.objects.all()
+#     for user in users:
+#         user.has_plan = ServicePlan.objects.filter(user=user).first() is not None
+#     return render(request, 'dashboard/user_list.html', {'users': users})
 #新規作成
-def user_create(request):
-    if request.method == 'POST':
-        form = UserForm(request.POST)
-        if form.is_valid():
-            form.save()
-            messages.success(request,'新規登録完了しました')
-            return redirect('dashboard:user_list')
-    else:
-        form = UserForm()
-    return render(request,'dashboard/user_form.html', {'form': form})
+# def user_create(request):
+#     if request.method == 'POST':
+#         form = UserForm(request.POST)
+#         if form.is_valid():
+#             form.save()
+#             messages.success(request,'新規登録完了しました')
+#             return redirect('dashboard:user_list')
+#     else:
+#         form = UserForm()
+#     return render(request,'dashboard/user_form.html', {'form': form})
 #Plan作成
-def create_plan(request,user_id):
-    if request.method == 'POST':
-        form = PlanForm(request.POST,user_id=user_id)
-        if form.is_valid():
-            plan = form.save(commit=False)
-            plan.user_id = user_id
-            stay_cat = plan.stay_time_category
-            service_sq = ServiceMaster.objects.filter(
-                care_level = plan.user.care_level,
-                stay_time_category = stay_cat
-            )
-            service = service_sq.first() if service_sq else None
-            weekdays = form.cleaned_data.get('weekdays', [])
-            year = form.cleaned_data['year']
-            month = form.cleaned_data['month']
-            json = {}
-            col = get_month_days(year, month)
-            for day in col:
-                if str(day['weekday']) in weekdays:
-                    json[str(day['day'])] = '1'
-            if service:
-                plan.service_name = service.service_name
-                plan.service_code = service.service_code
-                plan.unit = service.unit
-                plan.schedule_json = json
-            form.save()
-            messages.success(request,'プランを作成しました')
-            return redirect('dashboard:service',user_id=user_id)
-    else:
-        form = PlanForm(user_id=user_id)
-    return render(request,'dashboard/create_plan.html', {'form': form})
-#Excel出力
-def export_service_sheet(request, user_id, year, month):
-    user = User.objects.get(id=user_id)
-    wb = create_service_sheet(user, year, month)
+# def create_plan(request,user_id):
+#     if request.method == 'POST':
+#         form = PlanForm(request.POST,user_id=user_id)
+#         if form.is_valid():
+#             plan = form.save(commit=False)
+#             plan.user_id = user_id
+#             stay_cat = plan.stay_time_category
+#             service_sq = ServiceMaster.objects.filter(
+#                 care_level = plan.user.care_level,
+#                 stay_time_category = stay_cat
+#             )
+#             service = service_sq.first() if service_sq else None
+#             weekdays = form.cleaned_data.get('weekdays', [])
+#             year = form.cleaned_data['year']
+#             month = form.cleaned_data['month']
+#             json = {}
+#             col = get_month_days(year, month)
+#             for day in col:
+#                 if str(day['weekday']) in weekdays:
+#                     json[str(day['day'])] = '1'
+#             if service:
+#                 plan.service_name = service.service_name
+#                 plan.service_code = service.service_code
+#                 plan.unit = service.unit
+#                 plan.schedule_json = json
+#             form.save()
+#             messages.success(request,'プランを作成しました')
+#             return redirect('dashboard:service',user_id=user_id)
+#     else:
+#         form = PlanForm(user_id=user_id)
+#     return render(request,'dashboard/create_plan.html', {'form': form})
+# #Excel出力
+# def export_service_sheet(request, user_id, year, month):
+#     user = User.objects.get(id=user_id)
+#     wb = create_service_sheet(user, year, month)
 
-    response = HttpResponse(
-        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    )
-    response['Content-Disposition'] = 'attachment; filename="【様式】サービス提供票・別表"'
+#     response = HttpResponse(
+#         content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+#     )
+#     response['Content-Disposition'] = 'attachment; filename="【様式】サービス提供票・別表"'
 
-    wb.save(f'サービス提供表_{user.name}_{year}_{month}.xlsx')
-    return response
-#更新
-def user_update(request, user_id):
-    user = get_object_or_404(User,id=user_id)
-    if request.method == 'POST':
-        form = UserForm(request.POST, instance=user)
-        if form.is_valid():
-            form.save()
-            messages.success(request,f'{user.name}さんを更新されました')
-            return redirect('dashboard:user_list')
-    else:
-        form = UserForm(instance=user)
-    return render(request, 'dashboard/user_form.html', {'form': form})
-#詳細
-def user_detail(request,user_id):
-    target = get_object_or_404(User,id=user_id)
-    labels = {f.name: f.verbose_name for f in target._meta.fields}
-    return render(request,'dashboard/user_detail.html',{'user': target,'labels': labels,})
+#     wb.save(f'サービス提供表_{user.name}_{year}_{month}.xlsx')
+#     return response
+# #更新
+# def user_update(request, user_id):
+#     user = get_object_or_404(User,id=user_id)
+#     if request.method == 'POST':
+#         form = UserForm(request.POST, instance=user)
+#         if form.is_valid():
+#             form.save()
+#             messages.success(request,f'{user.name}さんを更新されました')
+#             return redirect('dashboard:user_list')
+#     else:
+#         form = UserForm(instance=user)
+#     return render(request, 'dashboard/user_form.html', {'form': form})
+# #詳細
+# def user_detail(request,user_id):
+#     target = get_object_or_404(User,id=user_id)
+#     labels = {f.name: f.verbose_name for f in target._meta.fields}
+#     return render(request,'dashboard/user_detail.html',{'user': target,'labels': labels,})
 #消去
-def user_delete(request,user_id):
-    target = get_object_or_404(User,id=user_id)
-    if request.method=='POST':
-        messages.error(request,f'{target.name}さんを消去しました')
-        target.delete()
-        return redirect('dashboard:user_list')
-    return render(request,'dashboard/user_delete.html',{'user':target})
+# def user_delete(request,user_id):
+#     target = get_object_or_404(User,id=user_id)
+#     if request.method=='POST':
+#         messages.error(request,f'{target.name}さんを消去しました')
+#         target.delete()
+#         return redirect('dashboard:user_list')
+#     return render(request,'dashboard/user_delete.html',{'user':target})
 #サービス提供票
-def user_service(request,user_id):
-    target = get_object_or_404(User,id=user_id)
-    plans = ServicePlan.objects.filter(user=target)
-    service = ServiceMaster.objects.all()
-    service = service.filter(care_level = target.care_level)
-    now_ = datetime.now()
-    calendar = get_month_days(now_.year, now_.month)
-    context = {
-        'user': target,
-        'plans': plans,
-        'service': service,
-        'calendar': calendar,
-        'addon_service': AddOnService.objects.all(),
-        'year_range': range(now_.year - 1, now_.year + 1),
-        'month_range': range(1, 13),
-        'current_year': now_.year,
-        'current_month': now_.month,
-    }
-    return render(request,'dashboard/user_service.html',context)
+# def user_service(request,user_id):
+#     target = get_object_or_404(User,id=user_id)
+#     now_ = datetime.now()
+#     plans = ServicePlan.objects.filter(
+#         user = target,
+#         year = now_.year,
+#         month = now_.month
+#         )
+#     user_code = plans.values_list("service_code",flat=True)
+#     all_plans = (ServiceMaster.objects
+#         .exclude(service_code__in = user_code)
+#         .filter(care_level = target.care_level)
+#         )
+
+#     calendar = get_month_days(now_.year, now_.month)
+#     context = {
+#         'user': target,
+#         'plans': plans, 
+#         'service': all_plans, #userの対象全プラン #userの対象全プラン
+#         'calendar': calendar,
+#         'addon_service': AddOnService.objects.all(),
+#         'year_range': range(now_.year - 1, now_.year + 1),
+#         'month_range': range(1, 13),
+#         'current_year': now_.year,
+#         'current_month': now_.month,
+#     }
+#     return render(request,'dashboard/user_service.html',context)
 
 def init_plan(request):
     # AddOnService.objects.update(type="unit")

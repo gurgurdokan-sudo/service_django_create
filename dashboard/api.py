@@ -81,10 +81,17 @@ def update_schedule(request, planId):
         #実績FULLバージョン
         elif row_type == "actual_full":
             print("actual_fullの処理", flush=True)
+            data = plan.schedule_json or None
+            if data:
+                days =set()
+                for k, v in data.items():
+                    if v == '1':
+                        days.add(str(k))
+            else:
+                days = request.data.get("days", [])
             addon_id = str(request.data.get("addon_id"))
             addon_obj = get_object_or_404(AddOnService, id=addon_id)
             
-            days = request.data.get("days", [])
             data = plan.actual_json or {}
 
             for d in days:
@@ -99,7 +106,7 @@ def update_schedule(request, planId):
 
             plan.actual_json = data
             plan.save()
-            return Response({"status": "ok", "total": total})
+            return Response({"status": "ok"})
         # 実績（actual）の addon を削除
         elif row_type == "actual_addon_remove":
             data = plan.actual_json or {}

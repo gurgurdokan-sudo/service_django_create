@@ -14,7 +14,7 @@ class User(models.Model):
     GENDER_CHOICES = [('male', '男性'),('female', '女性'),]
     gender = models.CharField(max_length=10, choices=GENDER_CHOICES, blank=True, default="female",verbose_name='性別')
     BURDEN_CHOICES = [(1, "1割"),(2, "2割"),(3, "3割")]
-    burden_rate = models.IntegerField(choices=BURDEN_CHOICES, default=1)
+    burden_rate = models.IntegerField(choices=BURDEN_CHOICES, default=1, verbose_name='負担割合')
     notes = models.TextField(blank=True,default="",verbose_name='メモ')
     def __str__(self):
         return self.name
@@ -160,7 +160,7 @@ class ServicePlan(models.Model):
         # 日ごとにループ
         for day_info in date_data.values():
             # --- 基本サービス
-            if day_info.get("main") == "1":
+            if str(day_info.get("main")) == "1":
                 # self.unit は ServicePlan 作成時にマスタからコピーされた基本単位数
                 total_units += (self.unit or 0)
                 # --- 加算サービス
