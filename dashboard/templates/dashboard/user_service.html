@@ -179,16 +179,10 @@
   <li>{{ plan.service_name }}: {{ plan.unit }}単位</li>
   <dd>サービスコード: {{ office.service_type_code }}{{ plan.service_code }}</dd>
   {% endfor %}
-  {% for service_name, unit in all_addon_units.items %}
-  <li>{{ service_name }}: {{ unit }}単位</li>
-  {% for name,code in add_codes.items %}
-    <dd>サービスコード: {{ office.service_type_code }}{% if service_name == name %}{{ code }}{% endif %}</dd>
+  {% for service_name, item in add_codes.items %}
+  <li>{{ service_name }}: {{ item.unit }}単位</li>
+  <dd>サービスコード: {{ office.service_type_code }}{{ item.code }}</dd>
   {% endfor %}
-  {% endfor %}
-  <li>回数</li>
-  <li>単位数</li>
-  <li>加算</li>
-  <li>合計単位数</li>
 </ul>
 <script src="{% static 'edit.js' %}?v=1"></script>
 <script src="{% static 'modal_logic.js' %}?v=3"></script>

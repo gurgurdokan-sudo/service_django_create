@@ -3,7 +3,7 @@ from django.db.models import Sum
 from datetime import datetime, date
 
 LEVEL_CHOICES = [('要支護1', '要支護1'),('要支護2', '要支護2'),('要介護1', '要介護1'),('要介護2', '要介護2'),('要介護3', '要介護3'),('要介護4', '要介護4'),('要介護5', '要介護5'),]
-
+UNIT_PRICE_TABLE = {1: 11.40,2: 10.90,3: 10.45,4: 10.25,5: 10.15,6: 10.10,7: 10.00}
 class User(models.Model): 
     '''被保険者の情報を管理するモデル'''
     name = models.CharField(max_length=100,verbose_name='被保険者氏名')
@@ -15,6 +15,8 @@ class User(models.Model):
     gender = models.CharField(max_length=10, choices=GENDER_CHOICES, blank=True, default="female",verbose_name='性別')
     BURDEN_CHOICES = [(1, "1割"),(2, "2割"),(3, "3割")]
     burden_rate = models.IntegerField(choices=BURDEN_CHOICES, default=1, verbose_name='負担割合')
+    BENEFIT_RATE_CHOICES = [(0.9, "給付率90%（1割負担）"),(0.8, "給付率80%（2割負担）"),(0.7, "給付率70%（3割負担）")]
+    benefit_rate = models.FloatField(choices=BENEFIT_RATE_CHOICES, verbose_name = '給付率')
     notes = models.TextField(blank=True,default="",verbose_name='メモ')
     def __str__(self):
         return self.name
@@ -198,25 +200,25 @@ class AddOnService(models.Model):
     medical_deduction = models.BooleanField(default=False,null=True, blank=True, verbose_name='医療費控除対象') # 医療費控除対象
     def __str__(self):
         return self.service_name
+class Municipality(models.Model):
+    municipality_code = models.CharField(max_length=6, unique=True)  # 112300
+    prefecture = models.CharField(max_length=50, blank=True, null=True, verbose_name = '都道府県')
+    name = models.CharField(max_length=50, verbose_name = '市区町村')  # 新座市
+    area_grade = models.IntegerField(choices=[(i, f"{i}地域") for i in range(1, 8)], verbose_name = '地域区分')
+
+    def __str__(self):
+        return f"{self.name}（{self.municipality_code}）"
 class Office(models.Model):
     name = models.CharField(max_length=100)
+    municipality = models.ForeignKey(Municipality, on_delete=models.PROTECT)
     defalt_service = models.ForeignKey(AddOnService, on_delete=models.SET_NULL, null=True, blank=True)
-    #地域区分
-    area_code = models.IntegerField(choices= [(i, f"{i}地域") for i in range(1, 8)])
+    area_code = models.IntegerField(choices= [(i, f"{i}地域") for i in range(1, 8)],verbose_name = '地域区分')
     SERVICE_TYPE_CHOICES = [(78, "地域密着型通所介護"),(79, "通所介護（通常規模）"),(80, "通所介護（大規模Ⅰ）"),(81, "通所介護（大規模Ⅱ）"),]
     service_type_code = models.IntegerField(choices=SERVICE_TYPE_CHOICES,default=78, verbose_name = '種類コード') #種類コード: 78 （地域密着型通所介護）
-    # 地域区分ごとの単位単価テーブル
-    UNIT_PRICE_TABLE = {
-        1: 11.40,
-        2: 10.90,
-        3: 10.45,
-        4: 10.25,
-        5: 10.15,
-        6: 10.10,
-        7: 10.00,
-    }
-    @property
+    
+    @property # 地域区分ごとの単位単価テーブル
     def unit_price(self):
         return self.UNIT_PRICE_TABLE.get(self.area_code, 0)  
     def __str__(self):
         return self.name
+

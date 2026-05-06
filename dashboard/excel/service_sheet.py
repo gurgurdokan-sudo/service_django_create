@@ -12,7 +12,7 @@ def create_service_sheet(user, year, month):
     ws['Aj6'] = '' #介護事業担当者
     ws['AX7'] = f"{to_nengo(year)}年{month}月"
 
-    insured_number = str(user.insured_number) #被保険者番号
+    insured_number = str(user.insured_number) #被保険者番号AH2別シート
     for i,d in enumerate(insured_number):
         cell = f"{chr(ord('G')+i)}7"
         ws[cell] = d
