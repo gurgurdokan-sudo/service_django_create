@@ -11,11 +11,12 @@ def user_service(request,user_id):
     print(year,month,"が表示される",flush=True)
     now = timezone.now()
     calendar = get_month_days(now.year, now.month)
-
+    year = int(year) if year else now.year
+    month = int(month) if month else now.month
     plans = ServicePlan.objects.filter(
         user = target,
-        year = int(year) if year else now.year,
-        month = int(month) if month else now.month
+        year = year,
+        month = month,
         )
         
     user_code = plans.values_list("service_code",flat=True) #userチェック済みのサービスコード
@@ -39,6 +40,8 @@ def user_service(request,user_id):
         'plans': plans, 
         'service': all_plans, #userの対象全プラン
         'calendar': calendar,
+        'year': year,
+        'month': month,
         'current_year': now.year,
         'current_month': now.month,
         'year_range': range(now.year - 1, now.year + 1),

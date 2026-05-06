@@ -67,14 +67,14 @@ async function deleteAddon(planId, addonName) {
 }
 
 function nextMonth(userId,action) {
-    console.log(action);
     let [year,month] = document.getElementById('month_selector').value.split('-');
     year = parseInt(year);
     month = parseInt(month);
+    console.log(`${action}${year}${month}`);
     const nowYear = parseInt(document.getElementById('current_year').value);
     const nowMonth = parseInt(document.getElementById('current_month').value);
 
-    try{
+        try{
         if (action === 'current'){
             if ( nowYear === year && nowMonth === month){
             alert("既に今月を表示");
@@ -112,3 +112,9 @@ function nextMonth(userId,action) {
         alert(`${error}errorが発生`);
     }
 }
+// function toExecl(){
+//     const nowYear = parseInt(document.getElementById('current_year').value);
+//     const nowMonth = parseInt(document.getElementById('current_month').value);
+
+
+// }

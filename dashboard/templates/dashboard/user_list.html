@@ -28,12 +28,11 @@
   {% if users %}
     {% for user in users %}
     <tr>
-      {% comment %} <td>{{ user.id }}</td> {% endcomment %}
       <td class="badge">{{ user.care_level }}</td>
       <td><a href="{% url 'dashboard:detail' user.id %}" class="link-name">{{ user.name }}</a></td>
-      <td><a href="{% url 'dashboard:export_service_sheet' user.id 2026 3 %}" class="btn btn-excel">Excel出力</a></td>
+      <td><a href="{% url 'dashboard:export_service_sheet' user.id %}" class="btn btn-excel">Excel出力</a></td>
       <td><a href="{% url 'dashboard:update' user.id %}" class="btn btn-edit">編集</a></td>
-      {% if  user.has_plan %}
+      {% if  user.has_plan %} {# user_service_viewで定義 #}
       <td><a href="{% url 'dashboard:service' user.id %}" class="btn">サービス提供票</a></td>
       {% else %}
       <td><a href="{% url 'dashboard:createPlan' user.id %}" class="btn">サービス提供票</a></td>

@@ -43,7 +43,7 @@
     <div class="right-group month-controller">
       <select id="month_selector" class="classic-select" disabled>
         {% for y in year_range %}{% for m in month_range %}
-        <option value="{{ y }}-{{ m|stringformat:'02d' }}" {% if y == current_year and m == current_month %}selected{% endif %}>
+        <option value="{{ y }}-{{ m|stringformat:'02d' }}" {% if y == year and m == month %}selected{% endif %}>
           {{ y }}年{{ m }}月
         </option>
         {% endfor %}{% endfor %}
@@ -184,7 +184,8 @@
   <dd>サービスコード: {{ office.service_type_code }}{{ item.code }}</dd>
   {% endfor %}
 </ul>
+<input type="button" id="btn-excel" class="btn btn-excel" value="Excel出力">
 <script src="{% static 'edit.js' %}?v=1"></script>
-<script src="{% static 'modal_logic.js' %}?v=3"></script>
-<script src="{% static 'main.js' %}?v=1"></script>
+<script src="{% static 'modal_logic.js' %}?v=2"></script>
+<script src="{% static 'main.js' %}?v=2"></script>
 {% endblock %}

@@ -1,8 +1,11 @@
 from openpyxl import load_workbook
+from dashboard.models import User, Office
 
 def create_service_sheet(user, year, month):
     wb = load_workbook('templatesExcel/service_template.xlsx')
     ws = wb.active
+    ws,title = 'スケジュール'
+    ws['B2'] = '認定済'
     siyaku_number = '112300' #一旦新座市固定
     for i,d in enumerate(siyaku_number):
         cell = f'{chr(ord('K')+i)}5'
