@@ -184,8 +184,8 @@
   <dd>サービスコード: {{ office.service_type_code }}{{ item.code }}</dd>
   {% endfor %}
 </ul>
-<input type="button" id="btn-excel" class="btn btn-excel" value="Excel出力">
+<input type="button" id="btn-excel" class="btn btn-excel" value="Excel出力" onclick="toExecl({{user.id}})">
 <script src="{% static 'edit.js' %}?v=1"></script>
-<script src="{% static 'modal_logic.js' %}?v=2"></script>
-<script src="{% static 'main.js' %}?v=2"></script>
+<script src="{% static 'modal_logic.js' %}?v=1"></script>
+<script src="{% static 'main.js' %}?v=3"></script>
 {% endblock %}

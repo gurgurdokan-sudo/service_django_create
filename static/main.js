@@ -112,9 +112,9 @@ function nextMonth(userId,action) {
         alert(`${error}errorが発生`);
     }
 }
-// function toExecl(){
-//     const nowYear = parseInt(document.getElementById('current_year').value);
-//     const nowMonth = parseInt(document.getElementById('current_month').value);
-
-
-// }
+function toExecl(userId){
+    const nowYear = parseInt(document.getElementById('current_year').value);
+    const nowMonth = parseInt(document.getElementById('current_month').value);
+    window.location.href = `/user/${userId}/export/?year=${nowYear}&month=${String(nowMonth).padStart(2,'0')}`;
+    return;
+}

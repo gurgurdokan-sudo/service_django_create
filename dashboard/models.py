@@ -4,8 +4,18 @@ from datetime import datetime, date
 
 LEVEL_CHOICES = [('要支護1', '要支護1'),('要支護2', '要支護2'),('要介護1', '要介護1'),('要介護2', '要介護2'),('要介護3', '要介護3'),('要介護4', '要介護4'),('要介護5', '要介護5'),]
 UNIT_PRICE_TABLE = {1: 11.40,2: 10.90,3: 10.45,4: 10.25,5: 10.15,6: 10.10,7: 10.00}
+class CareManager(models.Model):
+    name = models.CharField(max_length=100, verbose_name='担当者名')
+    office_name = models.CharField(max_length=200, verbose_name='居宅介護支援事業所名')  # 居宅介護支援事業所名
+    tel = models.CharField(max_length=20, blank=True, null=True)
+    fax = models.CharField(max_length=20, blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.name}（{self.office_name}）"
+
 class User(models.Model): 
     '''被保険者の情報を管理するモデル'''
+    care_manager = models.ForeignKey(CareManager,on_delete=models.SET_NULL,null=True)
     name = models.CharField(max_length=100,verbose_name='被保険者氏名')
     name_kana = models.CharField(max_length=100,verbose_name='フリガナ')
     care_level = models.CharField(max_length=10,choices=LEVEL_CHOICES,verbose_name='要介護状態区分')  # 要介護1など
@@ -201,7 +211,7 @@ class AddOnService(models.Model):
     def __str__(self):
         return self.service_name
 class Municipality(models.Model):
-    municipality_code = models.CharField(max_length=6, unique=True)  # 112300
+    municipality_code = models.CharField(max_length=6, unique=True, verbose_name='保険者番号')  # 112300
     prefecture = models.CharField(max_length=50, blank=True, null=True, verbose_name = '都道府県')
     name = models.CharField(max_length=50, verbose_name = '市区町村')  # 新座市
     area_grade = models.IntegerField(choices=[(i, f"{i}地域") for i in range(1, 8)], verbose_name = '地域区分')
@@ -210,6 +220,7 @@ class Municipality(models.Model):
         return f"{self.name}（{self.municipality_code}）"
 class Office(models.Model):
     name = models.CharField(max_length=100)
+    defalt_service = models.IntegerField()
     municipality = models.ForeignKey(Municipality, on_delete=models.PROTECT)
     defalt_service = models.ForeignKey(AddOnService, on_delete=models.SET_NULL, null=True, blank=True)
     area_code = models.IntegerField(choices= [(i, f"{i}地域") for i in range(1, 8)],verbose_name = '地域区分')

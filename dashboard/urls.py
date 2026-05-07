@@ -5,7 +5,7 @@ from .views.export_service_sheet import export_service_sheet
 from .views.user_detail import user_detail
 from .views.user_update import user_update
 from .views.user_delete import user_delete
-from .views.user_service_view import user_service
+from .views.user_service_view import user_service, export_excel
 from .views.create_plan import create_plan
 # from .views.init_plan import init_plan
 
@@ -15,7 +15,7 @@ app_name = 'dashboard'
 urlpatterns = [
     path('users/', user_list, name='user_list'),
     path('users/user_create', user_create, name='create'),
-    path('users/<int:user_id>/export/', export_service_sheet, \
+    path('user/<int:user_id>/export/', export_excel, \
         name='export_service_sheet'),
     path('user/<int:user_id>/detail/', user_detail, name='detail'),
     path('user/<int:user_id>/edit/', user_update, name='update'),
