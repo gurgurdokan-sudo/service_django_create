@@ -3,7 +3,7 @@ from django.db.models import Sum
 from datetime import datetime, date
 
 LEVEL_CHOICES = [('要支護1', '要支護1'),('要支護2', '要支護2'),('要介護1', '要介護1'),('要介護2', '要介護2'),('要介護3', '要介護3'),('要介護4', '要介護4'),('要介護5', '要介護5'),]
-UNIT_PRICE_TABLE = {1: 11.40,2: 10.90,3: 10.45,4: 10.25,5: 10.15,6: 10.10,7: 10.00}
+
 class CareManager(models.Model):
     name = models.CharField(max_length=100, verbose_name='担当者名')
     office_name = models.CharField(max_length=200, verbose_name='居宅介護支援事業所名')  # 居宅介護支援事業所名
@@ -91,7 +91,7 @@ class ServicePlan(models.Model):
     actual_json = models.JSONField(default=dict, blank=True)
     service_name = models.CharField(max_length=50,null=True, blank=True)
     service_code = models.CharField(max_length=20,null=True, blank=True)
-    unit = models.IntegerField(null=True, blank=True)
+    unit = models.IntegerField(default=0)
     @property
     def stay_time_category(self):
         delta = datetime.combine(date.min, self.end_time) - datetime.combine(date.min, self.start_time)
@@ -113,14 +113,14 @@ class ServicePlan(models.Model):
         return None
     @property
     def schedule_dict(self):
-        return self.schedule_json or {}
+        return self.schedule_json or {} #keyが日付、valueが'1'（サービスあり）か''（なし）
     @property
-    def actual_dict(self):
-        date = self.actual_json or {}
+    def actual_dict(self): #-> { "1": {"main": "1", "addon": [1,2]}, "5": {"main": "1", "addon": []}, "12": {"main": "", "addon": [2]} }
+        date = self.actual_json or {} #keyが日付、valueが{"main": "1" or "", "addon": [加算IDのリスト]}
         return {
             str(i): date.get(str(i), {'main':"",'addon':[]}) for i in range(1, 32)
         }
-    def get_total_count(self,row_type):
+    def get_total_count(self,row_type)->int: #scheduleなら予定の回数、actualなら実績の回数、addonなら全ての加算回数
         if row_type == "schedule":
             date = self.schedule_dict
             return sum(1 for v in date.values() if v=='1')
@@ -131,15 +131,15 @@ class ServicePlan(models.Model):
                 if key.get("main") == '1':
                     total += 1
             return total
-        elif row_type == "addon":
+        elif row_type == "addon":  #全てのaddon
             date = self.actual_dict
             total = 0
             for key in date.values():
                 total += len(key.get("addon", []))
             return total
     @property
-    def get_addon_summary(self):
-        date_data = self.actual_dict
+    def get_addon_summary(self):  #->{ "加算1": ["1", "5", "12"],"加算2": ["1"] }
+        date_data = self.actual_dict 
         all_addon_ids = set()
         for day_info in date_data.values():
             all_addon_ids.update(day_info.get("addon", {}))
@@ -154,7 +154,7 @@ class ServicePlan(models.Model):
                 if name:
                     if name not in summary: summary[name] = []
                     summary[name].append(str(day))
-        return summary
+        return summary #keyが加算サービス名、valueがその加算が入った日付のリスト
 
     @property
     def total_actual_units(self):
@@ -209,7 +209,7 @@ class AddOnService(models.Model):
     ],null=True, blank=True)
     medical_deduction = models.BooleanField(default=False,null=True, blank=True, verbose_name='医療費控除対象') # 医療費控除対象
     def __str__(self):
-        return self.service_name
+        return self.service_name+' ('+self.type+')'
 class Municipality(models.Model):
     municipality_code = models.CharField(max_length=6, unique=True, verbose_name='保険者番号')  # 112300
     prefecture = models.CharField(max_length=50, blank=True, null=True, verbose_name = '都道府県')
@@ -219,10 +219,12 @@ class Municipality(models.Model):
     def __str__(self):
         return f"{self.name}（{self.municipality_code}）"
 class Office(models.Model):
+    UNIT_PRICE_TABLE = {1: 11.40,2: 10.90,3: 10.45,4: 10.25,5: 10.15,6: 10.10,7: 10.00}
+
     name = models.CharField(max_length=100)
-    defalt_service = models.IntegerField()
+    office_number = models.IntegerField()
     municipality = models.ForeignKey(Municipality, on_delete=models.PROTECT)
-    defalt_service = models.ForeignKey(AddOnService, on_delete=models.SET_NULL, null=True, blank=True)
+    default_service = models.ForeignKey(AddOnService, on_delete=models.SET_NULL, null=True, blank=True)
     area_code = models.IntegerField(choices= [(i, f"{i}地域") for i in range(1, 8)],verbose_name = '地域区分')
     SERVICE_TYPE_CHOICES = [(78, "地域密着型通所介護"),(79, "通所介護（通常規模）"),(80, "通所介護（大規模Ⅰ）"),(81, "通所介護（大規模Ⅱ）"),]
     service_type_code = models.IntegerField(choices=SERVICE_TYPE_CHOICES,default=78, verbose_name = '種類コード') #種類コード: 78 （地域密着型通所介護）

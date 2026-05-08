@@ -30,7 +30,7 @@ def build_user_service_context(user_id, year, month):
         addon_units = {a.service_name: a.unit for a in AddOnService.objects.filter(service_name__in=addon_names.keys())}
         for addon_name,days in addon_names.items():
             addon = AddOnService.objects.get(service_name = addon_name)
-            add_codes[addon_name] = {"unit": addon.unit, "code": addon.code}
+            add_codes[addon_name] = {"unit": addon.unit, "code": addon.code, "count": len(days)}
             monthly_addon_totals[addon_name] = monthly_addon_totals.get(addon_name,0) + addon.unit * len(days)
     
     now = timezone.now()
@@ -47,7 +47,7 @@ def build_user_service_context(user_id, year, month):
         'year_range': range(now.year - 1, now.year + 1),
         'month_range': range(1, 13),
         'add_codes': add_codes, #excleテスト用
-        'addon_service': AddOnService.objects.all(),
+        'addon_service': AddOnService.objects.exclude(code__in=['6102','6100','6099']),
         'monthly_addon_totals': monthly_addon_totals, #tableのtotal
     }
     
