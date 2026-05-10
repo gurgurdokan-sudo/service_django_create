@@ -1,5 +1,5 @@
 from django import forms
-from .models import User, ServicePlan
+from .models import User, ServicePlan, Certificate
 
 class UserForm(forms.ModelForm):
     class Meta:
@@ -44,3 +44,7 @@ class PlanForm(forms.ModelForm):
         'start_time': forms.TimeInput(attrs={'type': 'time'}),
         'end_time': forms.TimeInput(attrs={'type': 'time'}),
         }
+class CertificateForm(forms.ModelForm):
+    class Meta:
+        model = Certificate
+        fields ='__all__'

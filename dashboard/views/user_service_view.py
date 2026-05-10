@@ -2,14 +2,13 @@ from django.shortcuts import render,redirect, get_object_or_404
 from django.utils import timezone
 from django.contrib import messages
 
-from dashboard.models import User, ServicePlan, ServiceMaster, AddOnService, Office
+from dashboard.models import User, ServicePlan, ServiceMaster, AddOnService, Office, Certificate
 from dashboard.calendar_table import get_month_days
 from dashboard.excel.service_sheet import create_service_sheet
 
 def build_user_service_context(user_id, year, month):
     target = get_object_or_404(User,id=user_id)
     office = Office.objects.get(id=1) #todoログインユーザー事務所
-    
     plans = ServicePlan.objects.filter(
         user = target,
         year = year,
@@ -23,7 +22,7 @@ def build_user_service_context(user_id, year, month):
         )
 
     monthly_addon_totals = {}
-    add_codes = {}
+    add_codes = {} #todo　Excelではcode=0
 
     for plan in plans:
         addon_names = plan.get_addon_summary

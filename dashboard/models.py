@@ -1,14 +1,15 @@
 from django.db import models
 from django.db.models import Sum
+from django.utils import timezone
 from datetime import datetime, date
-
-LEVEL_CHOICES = [('要支護1', '要支護1'),('要支護2', '要支護2'),('要介護1', '要介護1'),('要介護2', '要介護2'),('要介護3', '要介護3'),('要介護4', '要介護4'),('要介護5', '要介護5'),]
-
+LEVEL_CHOICES = [('要支援1', '要支援1'),('要支援2', '要支援2'),('要介護1', '要介護1'),('要介護2', '要介護2'),('要介護3', '要介護3'),('要介護4', '要介護4'),('要介護5', '要介護5'),]
 class CareManager(models.Model):
     name = models.CharField(max_length=100, verbose_name='担当者名')
     office_name = models.CharField(max_length=200, verbose_name='居宅介護支援事業所名')  # 居宅介護支援事業所名
     tel = models.CharField(max_length=20, blank=True, null=True)
     fax = models.CharField(max_length=20, blank=True, null=True)
+    care_management_office_number = models.CharField(max_length=20,verbose_name="居宅介護支援事業所番号", blank=True, null=True)
+    care_manager_number = models.CharField(max_length=20,verbose_name="居宅介護支援専門員番号", blank=True, null=True) #todo
 
     def __str__(self):
         return f"{self.name}（{self.office_name}）"
@@ -18,42 +19,59 @@ class User(models.Model):
     care_manager = models.ForeignKey(CareManager,on_delete=models.SET_NULL,null=True)
     name = models.CharField(max_length=100,verbose_name='被保険者氏名')
     name_kana = models.CharField(max_length=100,verbose_name='フリガナ')
-    care_level = models.CharField(max_length=10,choices=LEVEL_CHOICES,verbose_name='要介護状態区分')  # 要介護1など
     insured_number = models.CharField(max_length=10, blank=True, default="",verbose_name='被保険者番号')
     date_of_birth = models.DateField(blank=True, null=True,verbose_name='生年月日')
     GENDER_CHOICES = [('male', '男性'),('female', '女性'),]
     gender = models.CharField(max_length=10, choices=GENDER_CHOICES, blank=True, default="female",verbose_name='性別')
-    BURDEN_CHOICES = [(1, "1割"),(2, "2割"),(3, "3割")]
-    burden_rate = models.IntegerField(choices=BURDEN_CHOICES, default=1, verbose_name='負担割合')
+
     BENEFIT_RATE_CHOICES = [(0.9, "給付率90%（1割負担）"),(0.8, "給付率80%（2割負担）"),(0.7, "給付率70%（3割負担）")]
     benefit_rate = models.FloatField(choices=BENEFIT_RATE_CHOICES, verbose_name = '給付率')
     notes = models.TextField(blank=True,default="",verbose_name='メモ')
     def __str__(self):
         return self.name
+
     @property
     def max_separate_payment(self):
         match self.care_level:
-            case '要支援1':
-                return 5003
-            case '要支援2':
-                return 10473
-            case '要介護1':
-                return 16692
-            case '要介護2':
-                return 19705
-            case '要介護3':
-                return 27048
-            case '要介護4':
-                return 30938
-            case '要介護5':
-                return 36217
-            case _:
-                return None
+            case '要支援1': return 5003
+            case '要支援2': return 10473
+            case '要介護1': return 16692
+            case '要介護2': return 19705
+            case '要介護3': return 27048
+            case '要介護4': return 30938
+            case '要介護5': return 36217
+            case _: return None
+    @property
+    def care_level(self): #certificateとlimit_endは存在する前提
+        today = timezone.now().date()
+        cert = (
+            self.certificate.filter(limit_end__gte=today).order_by("-limit_end").first()
+        )
+        return cert.care_level if cert else None
+    @property
+    def old_certificate(self):
+        today = timezone.now().date()
+        return (self.certificate
+            .filter(limit_end__lt=today)
+            .order_by("-limit_end")
+            .first()
+        )
+    @property
+    def latest_changed_date(self):
+        today = timezone.now().date()
+        cert = (
+            self.certificate
+            .filter(limit_end__gte=today)
+            .order_by("-limit_end")
+            .first()
+        )
+        return cert.care_level_changed_at
 
 class ServiceMaster(models.Model):
     '''提供されるサービスのマスターデータを管理するモデル'''
     care_level = models.CharField(max_length=10, choices=LEVEL_CHOICES)
-    STAY_TIME_CHOICES = [('<3','3時間以下'),('3-4','3以上-4未満'),('4-5','4以上-5未満'),('5-6','5以上-6未満'),('6-7','6以上-7未満'),('7-8','7以上-8未満'),('8-9','8以上-9未満')]
+    STAY_TIME_CHOICES = [('<3','3時間以下'),('3-4','3以上-4未満'),('4-5','4以上-5未満'),\
+                        ('5-6','5以上-6未満'),('6-7','6以上-7未満'),('7-8','7以上-8未満'),('8-9','8以上-9未満')]
     stay_time_category = models.CharField(max_length=20, choices=STAY_TIME_CHOICES)
     service_code = models.CharField(max_length=20)
     service_name = models.CharField(max_length=20)
@@ -68,7 +86,6 @@ class ServiceMaster(models.Model):
         except cls.DoesNotExist:
             return None
         return plan if plan else None
-
 
 class ServiceRecord(models.Model): 
     '''実際に提供されたサービスの記録を管理するモデル'''
@@ -96,20 +113,13 @@ class ServicePlan(models.Model):
     def stay_time_category(self):
         delta = datetime.combine(date.min, self.end_time) - datetime.combine(date.min, self.start_time)
         hours = delta.total_seconds() / 3600
-        if hours <= 3:
-            return '<3'
-        elif 3 < hours <= 4:
-            return '3-4'
-        elif 4 < hours <= 5:
-            return '4-5'
-        elif 5 < hours <= 6:
-            return '5-6'
-        elif 6 < hours <= 7:
-            return '6-7'
-        elif 7 < hours <= 8:
-            return '7-8'
-        elif 8 < hours <= 9:
-            return '8-9'
+        if hours <= 3: return '<3'
+        elif 3 < hours <= 4: return '3-4'
+        elif 4 < hours <= 5: return '4-5'
+        elif 5 < hours <= 6: return '5-6'
+        elif 6 < hours <= 7: return '6-7'
+        elif 7 < hours <= 8: return '7-8'
+        elif 8 < hours <= 9: return '8-9'
         return None
     @property
     def schedule_dict(self):
@@ -225,13 +235,36 @@ class Office(models.Model):
     office_number = models.IntegerField()
     municipality = models.ForeignKey(Municipality, on_delete=models.PROTECT)
     default_service = models.ForeignKey(AddOnService, on_delete=models.SET_NULL, null=True, blank=True)
-    area_code = models.IntegerField(choices= [(i, f"{i}地域") for i in range(1, 8)],verbose_name = '地域区分')
     SERVICE_TYPE_CHOICES = [(78, "地域密着型通所介護"),(79, "通所介護（通常規模）"),(80, "通所介護（大規模Ⅰ）"),(81, "通所介護（大規模Ⅱ）"),]
     service_type_code = models.IntegerField(choices=SERVICE_TYPE_CHOICES,default=78, verbose_name = '種類コード') #種類コード: 78 （地域密着型通所介護）
-    
+
     @property # 地域区分ごとの単位単価テーブル
     def unit_price(self):
-        return self.UNIT_PRICE_TABLE.get(self.area_code, 0)  
+        return self.UNIT_PRICE_TABLE.get(self.municipality.area_grade, 0)  
     def __str__(self):
         return self.name
 
+class Certificate(models.Model):
+    """被保険者証の情報を管理するモデル"""
+    BENEFIT_RATE_CHOICES = [(0.9, "給付率90%（1割負担）"),(0.8, "給付率80%（2割負担）"),(0.7, "給付率70%（3割負担）"),]
+    user = models.ForeignKey(User,on_delete=models.CASCADE,related_name="certificate",verbose_name="利用者")
+    insured_number = models.CharField(max_length=10,verbose_name="被保険者番号（10桁）")
+    care_level = models.CharField(max_length=10,choices=LEVEL_CHOICES,verbose_name="要介護状態区分")
+    care_level_changed_at = models.DateField(verbose_name="要介護状態区分変更日",null=True,blank=True)
+    # todo↑操作Userは選択できない様にする
+    benefit_rate = models.FloatField(choices=BENEFIT_RATE_CHOICES,verbose_name="給付率")
+    benefit_limit_flag = models.BooleanField(default=False,verbose_name="給付制限")
+    limit_amount_type = models.CharField(max_length=10,choices=[("規定", "規定通り"), ("任意", "任意設定")],verbose_name="区分支給限度基準額区分")
+    limit_amount_value = models.IntegerField(null=True,blank=True,verbose_name="任意設定の限度額") #todo任意対応
+    limit_start = models.DateField(verbose_name="限度額適用開始日")
+    limit_end = models.DateField(verbose_name="限度額適用終了日",null=True,blank=True)
+    @property
+    def status(self):
+        today = timezone.now().date()
+        if today < self.limit_start:
+            return "申請中"
+        if self.limit_end and today <= self.limit_end:
+            return "認定済み"
+        return "消去"
+    def __str__(self):
+        return self.user.name + f'({self.limit_end})'

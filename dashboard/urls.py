@@ -1,6 +1,6 @@
 from django.urls import path
 from .views.user_list import user_list
-from .views.user_create import user_create
+from .views.user_create import user_create, certificate_create
 from .views.export_service_sheet import export_service_sheet
 from .views.user_detail import user_detail
 from .views.user_update import user_update
@@ -15,6 +15,7 @@ app_name = 'dashboard'
 urlpatterns = [
     path('users/', user_list, name='user_list'),
     path('users/user_create', user_create, name='create'),
+    path('user/<int:user_id>/user_create/', certificate_create, name='certificate_create'),
     path('user/<int:user_id>/export/', export_excel, \
         name='export_service_sheet'),
     path('user/<int:user_id>/detail/', user_detail, name='detail'),

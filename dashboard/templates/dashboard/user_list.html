@@ -21,7 +21,7 @@
     {% comment %} <th>ID</th> {% endcomment %}
     <th>要介護度</th>
     <th>名前(詳細)</th>
-    <th>Excel</th>
+    <th>被保険者証の情報</th>
     <th>編集</th>
     <th>サービス提供票</th>
   </tr>
@@ -30,7 +30,8 @@
     <tr>
       <td class="badge">{{ user.care_level }}</td>
       <td><a href="{% url 'dashboard:detail' user.id %}" class="link-name">{{ user.name }}</a></td>
-      <td><a href="{% url 'dashboard:export_service_sheet' user.id %}" class="btn btn-excel">Excel出力</a></td>
+      <td><a href="{% url 'dashboard:detail' user.id %}" class="btn btn-excel">認定情報作成</a></td> 
+      {#  todo  認定情報作成画面へ遷移 #}
       <td><a href="{% url 'dashboard:update' user.id %}" class="btn btn-edit">編集</a></td>
       {% if  user.has_plan %} {# user_service_viewで定義 #}
       <td><a href="{% url 'dashboard:service' user.id %}" class="btn">サービス提供票</a></td>

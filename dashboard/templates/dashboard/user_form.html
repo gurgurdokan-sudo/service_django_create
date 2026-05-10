@@ -1,5 +1,6 @@
 {% extends "dashboard/base/base.html" %}
 {% block body %}
+<h2>{{ usre.name|default'' }}</h2>
 <div class=detail-card>
     <form method="post">
         {% csrf_token %}
