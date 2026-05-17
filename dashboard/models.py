@@ -257,7 +257,7 @@ class Certificate(models.Model):
     limit_amount_type = models.CharField(max_length=10,choices=[("規定", "規定通り"), ("任意", "任意設定")],verbose_name="区分支給限度基準額区分")
     limit_amount_value = models.IntegerField(null=True,blank=True,verbose_name="任意設定の限度額") #todo任意対応
     limit_start = models.DateField(verbose_name="限度額適用開始日")
-    limit_end = models.DateField(verbose_name="限度額適用終了日",null=True,blank=True)
+    limit_end = models.DateField(verbose_name="限度額適用終了日")
     @property
     def status(self):
         today = timezone.now().date()

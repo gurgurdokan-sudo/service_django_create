@@ -1,11 +1,48 @@
 {% extends "dashboard/base/base.html" %}
 {% block body %}
-<h2>{{ usre.name|default'' }}</h2>
+{% if title  %}
+<h2>{{ title }}</h2>
+{% else %}
+<h2>新規作成</h2> 
+{% endif %}
+
+{#  同じフォームで認定情報  #}
 <div class=detail-card>
-    <form method="post">
+    <form method="post" id="cmForm">
         {% csrf_token %}
+        {% if caremanagers %}
+        <h3>ケアマネジャーを選択</h3>
+        <div> 既存マネジャーを選ぶ場合はそのまま保存</div>
+        <select name="existing_manager" id="existingCM">
+        <option valus="" >------ 選択してください ------</option>
+        {% for cm in caremanagers %}
+            <option valus="{{ cm.id }}" >{{cm.select}}</option>
+        {% endfor %}
+        </select>
+        <button type="button" onClick="skipCM()">skip</button>
+        {% endif %}
+
         {{ form.as_p }}
         <button type="submit">保存</button>
     </form>
 </div>
+<script>
+function skipCM() {
+    const cm = document.getElementById("existingCM").value;
+    if (cm === "") {
+        alert("既存を使う場合は選択してください");
+        return;
+    }
+
+    const form = document.getElementById("cmForm");
+    const hidden = document.createElement("input");
+    hidden.type = "hidden";
+    hidden.name = "skip";
+    hidden.value = "1";
+    form.appendChild(hidden);
+
+    form.submit();
+}
+</script>
 {% endblock %}
+

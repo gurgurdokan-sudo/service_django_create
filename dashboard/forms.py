@@ -1,5 +1,5 @@
 from django import forms
-from .models import User, ServicePlan, Certificate
+from .models import User, ServicePlan, Certificate, CareManager
 
 class UserForm(forms.ModelForm):
     class Meta:
@@ -47,4 +47,9 @@ class PlanForm(forms.ModelForm):
 class CertificateForm(forms.ModelForm):
     class Meta:
         model = Certificate
-        fields ='__all__'
+        fields = ['care_level','benefit_rate','benefit_limit_flag', 
+        'limit_amount_type','limit_start','limit_end']
+class CareManagerForm(forms.ModelForm):
+    class Meta:
+        model = CareManager
+        fields = '__all__'
