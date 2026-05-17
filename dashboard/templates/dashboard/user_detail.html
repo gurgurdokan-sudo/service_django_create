@@ -8,7 +8,7 @@
       {{ user.name_kana }}
     </p>
     <p>
-      <label>{{ labels.care_level }}</label>
+      <label>要介護状態区分</label>
       {{ user.care_level }}
     </p>
     <p>
@@ -28,6 +28,11 @@
       {{ user.notes }}
     </p>
   </div>
-  <a href="{% url 'dashboard:delete' user.id %}" class="btn btn-delete">消去</a>
+  <a href="{% url 'dashboard:delete' user.id %}" class="btn btn-delete">利用者を消去</a>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">保存</button>
+  </form>
 </div>
 {% endblock %}

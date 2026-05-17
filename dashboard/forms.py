@@ -68,6 +68,15 @@ class CertificateForm(forms.ModelForm):
             self.add_error('limit_end', '終了日は開始日より後の日付を指定してください')
 
         return cleaned
+class CertificateUpdateForm(forms.ModelForm):
+    class Meta:
+        model = Certificate
+        fields = ['care_level','benefit_rate','benefit_limit_flag','limit_amount_type','limit_amount_value','limit_start','limit_end']
+        widgets = {
+            'limit_start': forms.DateInput(attrs={'type': 'date'}),
+            'limit_end': forms.DateInput(attrs={'type': 'date'}),
+        }
+
 class CareManagerForm(forms.ModelForm):
     class Meta:
         model = CareManager
