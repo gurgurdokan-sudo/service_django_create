@@ -33,12 +33,13 @@ def caremana_create(request):
 
 #新規作成
 def user_create(request):
+    cm_id = request.session.get('select_manager')
     if request.method == 'POST':
         form = UserForm(request.POST)
         if form.is_valid():
-            user = form.save()
-            cm_id = request.session['select_manager']
-            user.care_manager=CareManager.objects.get(id=cm_id)
+            user = form.save(commit=False)
+            user.care_manager_id = cm_id
+            user.save()
             return redirect('dashboard:certificate_create',user_id=user.id) # 認定情報作成画面へ遷移
     else: form = UserForm()
     return render(request,'dashboard/user_form.html', {
@@ -54,8 +55,15 @@ def certificate_create(request,user_id):
         if form.is_valid():
             cert = form.save(commit=False)
             cert.user = user
+            cert.benefit_rate = user.benefit_rate
+            cert.insured_number =user.insured_number
             cert.save()
             messages.success(request,'新規登録完了しました')
             return redirect('dashboard:user_list')
     else: form = CertificateForm()
-    return render(request, 'dashboard/user_form.html',{'form': form,'user': user, 'title': '利用者の介護保険被保険者証'})
+    return render(request, 'dashboard/user_form.html',{
+        'form': form,
+        'user': user,
+        'title': '利用者の介護保険被保険者証',
+        'cetrificate': '1'
+        })

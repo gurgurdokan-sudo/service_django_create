@@ -4,7 +4,7 @@ from .models import User, ServicePlan, Certificate, CareManager
 class UserForm(forms.ModelForm):
     class Meta:
         model = User
-        fields = '__all__'
+        fields = ['name','name_kana','insured_number','date_of_birth','gender','benefit_rate','notes']
         labels = {
             'name': '氏名',
             'name_kana': 'フリガナ',
@@ -47,8 +47,27 @@ class PlanForm(forms.ModelForm):
 class CertificateForm(forms.ModelForm):
     class Meta:
         model = Certificate
-        fields = ['care_level','benefit_rate','benefit_limit_flag', 
-        'limit_amount_type','limit_start','limit_end']
+        fields = ['care_level','benefit_limit_flag', 
+        'limit_amount_type', 'limit_start', 'limit_end']
+        widgets = {
+            'limit_start': forms.DateInput(attrs={'type': 'date'}),
+            'limit_end': forms.DateInput(attrs={'type': 'date'}),
+        }
+    def clean(self):
+        cleaned = super().clean()
+        start = cleaned.get('limit_start')
+        end = cleaned.get('limit_end')
+
+        if not start:
+            self.add_error('limit_start', '開始日は必須です')
+
+        if not end:
+            self.add_error('limit_end', '終了日は必須です')
+
+        if start and end and start > end:
+            self.add_error('limit_end', '終了日は開始日より後の日付を指定してください')
+
+        return cleaned
 class CareManagerForm(forms.ModelForm):
     class Meta:
         model = CareManager

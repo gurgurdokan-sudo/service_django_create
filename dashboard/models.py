@@ -47,7 +47,7 @@ class User(models.Model):
         cert = (
             self.certificate.filter(limit_end__gte=today).order_by("-limit_end").first()
         )
-        return cert.care_level if cert else None
+        return cert.care_level if cert else '認定情報更新が必要'
     @property
     def old_certificate(self):
         today = timezone.now().date()
