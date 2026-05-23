@@ -35,5 +35,9 @@ def create_plan(request,user_id):
             messages.success(request,'プランを作成しました')
             return redirect('dashboard:service',user_id=user_id)
     else:
+        user = get_object_or_404(User, id= user_id)
         form = PlanForm(user_id=user_id)
-    return render(request,'dashboard/create_plan.html', {'form': form})
+    return render(request,'dashboard/create_plan.html', {
+        'form': form,
+        'user':user
+        })
