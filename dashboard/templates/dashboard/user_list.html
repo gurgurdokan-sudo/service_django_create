@@ -1,7 +1,7 @@
 {% extends "dashboard/base/base.html" %}
 {% block css %}
 {% load static %}
-<link rel="stylesheet" href="{% static 'main.css' %}">
+<link rel="stylesheet" href="{% static 'temp.css' %}">
 {% endblock %}
 {% block body %}
 <div class="container">
@@ -30,7 +30,7 @@
     <tr>
       <td class="badge">{{ user.care_level }}</td>
       <td><a href="{% url 'dashboard:detail' user.id %}" class="link-name">{{ user.name }}</a></td>
-      <td><a href="{% url 'dashboard:detail' user.id %}" class="btn btn-excel">認定情報作成</a></td> 
+      <td><a href="{% url 'dashboard:detail' user.id %}" class="btn btn-cert">認定情報作成</a></td> 
       {#  todo  認定情報作成画面へ遷移 #}
       <td><a href="{% url 'dashboard:update' user.id %}" class="btn btn-edit">編集</a></td>
       {% if  user.has_plan %} {# user_service_viewで定義 #}

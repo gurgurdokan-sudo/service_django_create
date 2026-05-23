@@ -14,19 +14,19 @@
 
     <!-- 基本サービス用検索 -->
     <div id="search-bar-basic" class="modal-search-bar" style="display: none;">
-    <div class="search-inputs">
-        <label>開始: <input type="time" id="modal_start_time" class="form-input-sm" value="09:00"></label>
-        <label>終了: <input type="time" id="modal_end_time" class="form-input-sm" value="00:00"></label>
-        <button type="button" id="btn_filter_service" class="btn-filled blue">時間絞り込み</button>
-        <button type="button" id="btn_reset_basic" class="btn">リセット</button>
-    </div>
+        <div class="search-inputs">
+            <label>開始: <input type="time" id="modal_start_time" class="form-input-sm" value="09:00"></label>
+            <label>終了: <input type="time" id="modal_end_time" class="form-input-sm" value="00:00"></label>
+            <button type="button" id="btn_filter_service" class="btn btn-primary">時間絞り込み</button>
+            <button type="button" id="btn_reset_basic" class="btn btn-secondary">リセット</button>
+        </div>
     </div>
 
     <!-- 加算用検索 -->
     <div id="search-bar-addon" class="modal-search-bar">
     <div class="search-inputs">
         <input type="text" id="addon_keyword" class="form-input-sm" placeholder="サービス名で検索...">
-        <button type="button" id="btn_filter_addon" class="btn-filled blue">検索</button>
+        <button type="button" id="btn_filter_addon" class="btn btn-secondary">検索</button>
 
         <div class="plan-selector">
         <label>紐付け先:</label>
@@ -88,8 +88,8 @@
     </div>
     </div>
     <div class="modal-footer">
-    <button type="button" class="btn btn-secondary" id="cancelBtn">キャンセル</button>
-    <button type="submit" class="btn btn-create" id="service-btn">選択を確定する</button>
+        <button type="button" class="btn btn-secondary" id="cancelBtn">キャンセル</button>
+        <button type="submit" class="btn btn-warning" id="service-btn">選択を確定する</button>
     </div>
 </div>
 </div>

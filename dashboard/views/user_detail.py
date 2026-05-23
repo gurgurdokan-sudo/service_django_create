@@ -19,7 +19,7 @@ def user_detail(request,user_id):
             cert.save()
             messages.success(request,'介護認定の登録が完了しました')
             return redirect('dashboard:user_list')
-        else: form = CertificateUpdateForm()
+    else: form = CertificateUpdateForm()
     labels = {f.name: f.verbose_name for f in user._meta.fields}
     return render(request,'dashboard/user_detail.html',{
         'user': user,

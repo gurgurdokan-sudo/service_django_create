@@ -1,4 +1,8 @@
 {% extends "dashboard/base/base.html" %}
+{% load static %} 
+{% block css %}
+<link rel="stylesheet" href="{% static 'temp.css' %}">
+{% endblock %}
 {% block body %}
 
 <div class="container">
@@ -27,12 +31,16 @@
       <label>{{ labels.notes }}</label>
       {{ user.notes }}
     </p>
+    <a href="{% url 'dashboard:delete' user.id %}" class="btn btn-delete">利用者を消去</a>
   </div>
-  <a href="{% url 'dashboard:delete' user.id %}" class="btn btn-delete">利用者を消去</a>
-  <form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">保存</button>
-  </form>
+  <div class="detail-card">
+    <form method="post">
+      {% csrf_token %}
+      {% for f in form %}
+      <p><label>{{f.label}}</label>{{f}}</p>
+      {% endfor %}
+      <button type="submit">保存</button>
+    </form>
+  </div>
 </div>
 {% endblock %}

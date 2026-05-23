@@ -45,7 +45,7 @@ def build_user_service_context(user_id, year, month):
         'current_month': now.month,
         'year_range': range(now.year - 1, now.year + 1),
         'month_range': range(1, 13),
-        'add_codes': add_codes, #excleテスト用
+        'add_codes': add_codes, #excelテスト表示
         'addon_service': AddOnService.objects.exclude(code__in=['6102','6100','6099']),
         'monthly_addon_totals': monthly_addon_totals, #tableのtotal
     }

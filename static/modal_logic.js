@@ -1,4 +1,3 @@
-// search.js
 document.addEventListener('DOMContentLoaded', () => {
     const modalOverlay = document.getElementById('serviceModalOverlay');
     const openBtn = document.getElementById('openServiceModal');
