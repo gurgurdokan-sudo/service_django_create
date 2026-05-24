@@ -1,6 +1,7 @@
 {% extends "dashboard/base/base.html" %}
 {% block css %}
 {% load static %}
+{% load get_item %}
 <link rel="stylesheet" href="{% static 'temp.css' %}">
 {% endblock %}
 {% block body %}
@@ -11,16 +12,16 @@
 {% endif %}
 <div class="detail-card">
 
-    {#  同じフォームで認定情報/更新画面  #}
-    <form method="post" id="cmForm">
+    {#  同じフォームで認定情報  #}
+    <form method="post" id="cmForm" novalidate>
         {% csrf_token %}
         {% if cetrificate %}
         <div>
-            <p><label>要介護状態区分</label>{{ form.care_level }}</p> 
-            <p><label>給付制限</label>{{ form.benefit_limit_flag }}</p>
-            <p><label>区分支給限度基準額区分</label>{{ form.limit_amount_type }}</p>
+            <p>{{ form.care_level.label_tag }}{{ form.care_level }}</p> 
+            <p>{{ form.benefit_limit_flag.label_tag }}{{ form.benefit_limit_flag }}</p>
+            <p>{{ form.limit_amount_type.label_tag }}{{ form.limit_amount_type }}</p>
             <p>
-            <label>認定有効期間</label>
+            <label class="required">認定有効期間</label>
             <input type="date" id="limit_start" name="limit_start" value="{{ form.limit_start.value|default:'' }}">
             〜
             <input type="date" id="limit_end" name="limit_end" value="{{ form.limit_end.value|default:'' }}">
@@ -31,7 +32,9 @@
             </p>
         </div>
         {% else %}
+        <div class="as_p">
             {{ form.as_p }}
+        </div>
         {% endif %}
         <button class="btn btn-primary" type="submit">保存</button>
         {% if caremanagers %}

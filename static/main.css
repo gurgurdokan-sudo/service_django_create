@@ -2,7 +2,64 @@
 .container { font-family: "Yu Gothic", "Meiryo", sans-serif; padding: 20px; max-width: 1600px; margin: 0 auto; }
 .header-container { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #2c3e50; padding-bottom: 10px; margin-bottom: 20px; }
 .page-title { margin: 0; font-size: 1.4rem; color: #2c3e50; border-left: 6px solid #2c3e50; padding-left: 15px; }
+/* --- フラッシュメッセージ（通知） --- */
+.messages {
+    position: fixed;            /* 画面に対して固定位置 */
+    top: 20px;                  /* 画面上部からの距離 */
+    left: 50%;                  /* 左右中央へ */
+    transform: translateX(-50%); /* 自身の幅の半分戻してピッタリ中央 */
+    z-index: 9999;              /* モーダルよりもさらに上に表示 */
+    list-style: none;
+    padding: 0;
+    width: auto;
+    min-width: 350px;           /* 少し横幅を持たせる */
+    pointer-events: none;       /* メッセージの隙間をクリックしても下の要素に触れるようにする */
+}
 
+.messages li {
+    pointer-events: auto;       /* メッセージ自体はクリック可能に */
+    margin-bottom: 10px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2); /* 浮いている感じを出す影 */
+    border-radius: 6px;
+    padding: 15px 25px;
+    font-weight: bold;
+    text-align: center;
+    opacity: 0;                 /* 初期は透明 */
+    animation: slideInFadeOut 5s forwards; /* 出現して消えるアニメーション */
+}
+
+/* メッセージのアニメーション */
+@keyframes slideInFadeOut {
+    0% { opacity: 0; transform: translateY(-20px); } /* 上から降りてくる */
+    10% { opacity: 1; transform: translateY(0); }    /* 表示完了 */
+    85% { opacity: 1; transform: translateY(0); }    /* 4秒ほど静止 */
+    100% { opacity: 0; transform: translateY(-10px); visibility: hidden; } /* スッと消える */
+}
+.success {
+    background-color: #e3f2fd;
+    color: #0d47a1;
+    border: 1px solid #90caf9;
+    padding: 12px 20px;
+    margin-bottom: 10px;
+    border-radius: 4px;
+    position: relative;
+    animation: fadeOutContainer 5s forwards;
+}
+.error {
+    background-color: #fcc7c7;
+    color: #9f0404;
+    border: 1px solid #f96262;
+    padding: 12px 20px;
+    margin-bottom: 10px;
+    border-radius: 4px;
+    position: relative;
+    animation: fadeOutContainer 5s forwards;
+}
+@keyframes fadeOutContainer {
+    0% { opacity: 1; transform: translateY(0); }
+    80% { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(-10px); display: none; margin: 0; padding: 0; height: 0; border: none; overflow: hidden; }
+}
 /* --- アクションバー --- */
 .action-bar { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; margin-bottom: 15px; }
 .left-group, .right-group { display: flex; gap: 8px; align-items: center; }

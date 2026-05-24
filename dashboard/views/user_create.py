@@ -2,7 +2,7 @@ from django.shortcuts import render,redirect,get_object_or_404
 from django.contrib import messages
 from dashboard.forms import UserForm, CertificateForm, CareManagerForm
 from dashboard.models import User, CareManager
-#ケアマネジャー情報
+#ケアマネジャー情報1
 def caremana_create(request):
     caremanagers = CareManager.objects.all()
     for cm in caremanagers:
@@ -31,7 +31,7 @@ def caremana_create(request):
         'caremanagers': caremanagers, 
         })
 
-#新規作成
+#新規作成2
 def user_create(request):
     cm_id = request.session.get('select_manager')
     if request.method == 'POST':
@@ -41,13 +41,12 @@ def user_create(request):
             user.care_manager_id = cm_id
             user.save()
             return redirect('dashboard:certificate_create',user_id=user.id) # 認定情報作成画面へ遷移
-    else: form = UserForm()
+    else: form = UserForm(initial={'benefit_rate':0.9})
     return render(request,'dashboard/user_form.html', {
         'form': form,
-        'title': '利用者の登録'
         })
 
-#認定情報
+#認定情報3
 def certificate_create(request,user_id):
     user = get_object_or_404(User,id = user_id)
     if request.method == 'POST':

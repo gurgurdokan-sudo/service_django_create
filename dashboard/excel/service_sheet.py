@@ -109,7 +109,7 @@ def create_service_sheet(context):
     total_act_price_unit = 0 #合計金額=合計単位
     UNIT_VALUE = float(office.unit_price) #単位数単価(地域区分
     BENEFIT_RATE = user.benefit_rate #給付率
-    MAX_PAYMENT= user.max_separate_payment #計算用限度額
+    MAX_PAYMENT= add_comma(user.max_separate_payment) #計算用限度額
 
     row = 6 #strat row
     for plan in context['plans']:
@@ -177,14 +177,14 @@ def create_service_sheet(context):
     ws[f'Z{row}'] = add_comma(default_price_unit).join(kako)
     ws[f'AO{row}'] = add_comma(default_price_unit).join(kako)
     ws[f'AR{row}'] = UNIT_VALUE #単価
-    seikyu_taisyu = int(default_price_unit * UNIT_VALUE) #切り捨て
-    ws[f'AT{row}'] = add_comma(seikyu_taisyu) #費用総額(保険/事業対象
+    def_seikyu_taisyu = int(default_price_unit * UNIT_VALUE) #切り捨て
+    ws[f'AT{row}'] = add_comma(def_seikyu_taisyu) #費用総額(保険/事業対象
     ws[f'AW{row}'] = int(BENEFIT_RATE*100) #給付率90
-    seikyu_bun = int(seikyu_taisyu * BENEFIT_RATE) #切り捨て
-    ws[f'AX{row}'] = add_comma(seikyu_bun) #保険/事業費
+    AX_seikyu_bun = int(def_seikyu_taisyu * BENEFIT_RATE) #切り捨て
+    ws[f'AX{row}'] = add_comma(AX_seikyu_bun) #保険/事業費
     ws[f'BA{row}'] = '' #todo定額利用者負担?
-    hutan = int(seikyu_taisyu - seikyu_bun)
-    ws[f'BD{row}'] = add_comma(hutan) #利用者負担額
+    BD_hutan = int(def_seikyu_taisyu - AX_seikyu_bun)
+    ws[f'BD{row}'] = add_comma(BD_hutan) #利用者負担額
 
 # 最終合計
     row = 20
@@ -206,11 +206,12 @@ def create_service_sheet(context):
     user_full_share_over = int(over_units * UNIT_VALUE) # 限度外の単位数 × 地域単価
     ws[f'AL{row}'] = add_comma(over_units) if over_units>0 else ''
     ws[f'AO{row}'] = add_comma(within_units) #単位数
-    ws[f'AT{row}'] = add_comma(cost_within_limit) #費用総額(保険/事業対象
-    ws[f'AX{row}'] = add_comma(insurace_benefit) #保険/事業費
-    ws[f'BD{row}'] = add_comma(user_share_within)  #利用者負担額
+    taisyou = def_seikyu_taisyu + seikyu_taisyu
+    ws[f'AT{row}'] = add_comma(taisyou) #費用総額(保険/事業対象
+    ws[f'AX{row}'] = add_comma(AX_seikyu_bun + seikyu_bun) #保険/事業費
+    ws[f'BD{row}'] = add_comma(BD_hutan + hutan)  #利用者負担額
     ws[f'BG{row}'] = add_comma(user_full_share_over) if over_units>0 else '' #利用者全額負担額(BG)
-    ws[f'T{row}'] = add_comma(cost_within_limit-insurace_benefit) #区分支給限度基準額（単位）
+    ws[f'T{row}'] = add_comma(user.max_separate_payment) #区分支給限度基準額（単位）
 
     ws.title = '別表（実績）'
     user_dir = os.path.join(settings.MEDIA_ROOT, "service_sheets_export", f'{str(user.id)}_{user.name}')

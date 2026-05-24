@@ -20,10 +20,10 @@ class User(models.Model):
     care_manager = models.ForeignKey(CareManager,on_delete=models.SET_NULL,null=True)
     name = models.CharField(max_length=100,verbose_name='被保険者氏名')
     name_kana = models.CharField(max_length=100,verbose_name='フリガナ')
-    insured_number = models.CharField(max_length=10, blank=True, default="",verbose_name='被保険者番号')
-    date_of_birth = models.DateField(blank=True, null=True,verbose_name='生年月日')
+    insured_number = models.CharField(max_length=10, verbose_name='被保険者番号')
+    date_of_birth = models.DateField(verbose_name='生年月日')
     GENDER_CHOICES = [('male', '男性'),('female', '女性'),]
-    gender = models.CharField(max_length=10, choices=GENDER_CHOICES, blank=True, default="female",verbose_name='性別')
+    gender = models.CharField(max_length=10, choices=GENDER_CHOICES, blank=True,verbose_name='性別')
 
     BENEFIT_RATE_CHOICES = [(0.9, "給付率90%（1割負担）"),(0.8, "給付率80%（2割負担）"),(0.7, "給付率70%（3割負担）")]
     benefit_rate = models.FloatField(choices=BENEFIT_RATE_CHOICES, verbose_name = '給付率')
@@ -50,7 +50,7 @@ class User(models.Model):
         )
         return cert.care_level if cert else '認定情報更新が必要'
     @property
-    def old_certificate(self):
+    def old_certificate(self): #最後の適用介護認定
         today = timezone.now().date()
         return (self.certificate
             .filter(limit_end__lt=today)
@@ -58,7 +58,7 @@ class User(models.Model):
             .first()
         )
     @property
-    def latest_changed_date(self):
+    def latest_changed_date(self): #紐づく介護の変更日
         today = timezone.now().date()
         cert = (
             self.certificate
@@ -247,7 +247,7 @@ class Municipality(models.Model):
     def __str__(self):
         return f"{self.name}（{self.municipality_code}）"
 class Office(models.Model):
-    UNIT_PRICE_TABLE = {1: 11.40,2: 10.90,3: 10.45,4: 10.25,5: 10.15,6: 10.10,7: 10.00}
+    UNIT_PRICE_TABLE = {7: 11.40,6: 10.90,5: 10.45,4: 10.25,3: 10.15,2: 10.10,1: 10.00}
 
     name = models.CharField(max_length=100)
     office_number = models.IntegerField()
@@ -271,8 +271,8 @@ class Certificate(models.Model):
     care_level_changed_at = models.DateField(verbose_name="要介護状態区分変更日",null=True,blank=True)
     # todo↑操作Userは選択できない様にする
     benefit_rate = models.FloatField(choices=BENEFIT_RATE_CHOICES,verbose_name="給付率")
-    benefit_limit_flag = models.BooleanField(default=False,verbose_name="給付制限")
     limit_amount_type = models.CharField(max_length=10,choices=[("規定", "規定通り"), ("任意", "任意設定")],verbose_name="区分支給限度基準額区分")
+    benefit_limit_flag = models.BooleanField(default=False,verbose_name="給付制限")
     limit_amount_value = models.IntegerField(null=True,blank=True,verbose_name="任意設定の限度額") #todo任意対応
     limit_start = models.DateField(verbose_name="限度額適用開始日")
     limit_end = models.DateField(verbose_name="限度額適用終了日")

@@ -1,7 +1,11 @@
 from django import forms
+from django.forms.widgets import SelectDateWidget
+
 from .models import User, ServicePlan, Certificate, CareManager
 
 class UserForm(forms.ModelForm):
+    required_css_class = 'required'
+    label_suffix = ''
     class Meta:
         model = User
         fields = ['name','name_kana','insured_number','date_of_birth','gender','benefit_rate','notes']
@@ -17,7 +21,16 @@ class UserForm(forms.ModelForm):
         widgets = {
         'date_of_birth': forms.DateInput(attrs={'type': 'date'}),
         }
+            
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field_name,field in self.fields.items():
+            self.fields[field_name].widget.attrs['class']= f'form-control {field_name}'
+            if field.required:
+                self.fields[field_name].widget.attrs['required'] = True
 class PlanForm(forms.ModelForm):
+    required_css_class = 'required'
+    label_suffix = ''
     WEEKDAY_CHOICES = [("0", "月"),("1", "火"),("2", "水"),("3", "木"),("4", "金"),("5", "土"),("6", "日"),]
 
     weekdays = forms.MultipleChoiceField(
@@ -31,9 +44,9 @@ class PlanForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         if user_id:
             self.user_id = user_id
-        for filde_name in self.fields:
-            if not filde_name.startswith('weekdays'):
-                self.fields[filde_name].widget.attrs['class']= f'form-control {filde_name}'
+        for field_name in self.fields:
+            if not field_name.startswith('weekdays'):
+                self.fields[field_name].widget.attrs['class']= f'form-control {field_name}'
     class Meta:
         model = ServicePlan
         fields = ['year', 'month', 'start_time', 'end_time']
@@ -49,10 +62,11 @@ class PlanForm(forms.ModelForm):
         'end_time': forms.TimeInput(attrs={'type': 'time'}),
         }
 class CertificateForm(forms.ModelForm):
+    required_css_class = 'required'
+    label_suffix = ''
     class Meta:
         model = Certificate
-        fields = ['care_level','benefit_limit_flag', 
-        'limit_amount_type', 'limit_start', 'limit_end']
+        fields = ['care_level', 'limit_amount_type','benefit_limit_flag', 'limit_start', 'limit_end']
         widgets = {
             'limit_start': forms.DateInput(attrs={'type': 'date'}),
             'limit_end': forms.DateInput(attrs={'type': 'date'}),
@@ -72,8 +86,17 @@ class CertificateForm(forms.ModelForm):
             self.add_error('limit_end', '終了日は開始日より後の日付を指定してください')
 
         return cleaned
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field_name,field in self.fields.items():
+            self.fields[field_name].widget.attrs['class']= f'form-control {field_name}'
+            if field.required:
+                self.fields[field_name].widget.attrs['required'] = True
 class CertificateUpdateForm(forms.ModelForm):
+    required_css_class = 'required'
+    label_suffix = ''
     class Meta:
+        verbose_name = '介護保険被保険者証'
         model = Certificate
         fields = ['care_level','benefit_rate','benefit_limit_flag','limit_amount_type','limit_amount_value','limit_start','limit_end']
         widgets = {
@@ -82,16 +105,22 @@ class CertificateUpdateForm(forms.ModelForm):
         }
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        for filde_name in self.fields:
-            if 'benefit_limit_flag' != filde_name:
-                self.fields[filde_name].widget.attrs['class']= f'form-control {filde_name}'
+        for field_name,field in self.fields.items():
+            if 'benefit_limit_flag' != field_name:
+                self.fields[field_name].widget.attrs['class']= f'form-control {field_name}'
+            if field.required:
+                self.fields[field_name].widget.attrs['required'] = True
 
 class CareManagerForm(forms.ModelForm):
+    required_css_class = 'required'
+    label_suffix = ''
     class Meta:
         model = CareManager
         fields = '__all__'
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        for filde_name in self.fields:
-            if 'benefit_limit_flag' != filde_name:
-                self.fields[filde_name].widget.attrs['class']= f'form-control {filde_name}'
+        for field_name, field in self.fields.items():
+            if field.required:
+                self.fields[field_name].widget.attrs['required'] = True
+            if 'benefit_limit_flag' != field_name:
+                self.fields[field_name].widget.attrs['class']= f'form-control {field_name}'
