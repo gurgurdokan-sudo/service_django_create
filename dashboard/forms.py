@@ -79,7 +79,8 @@ class CertificateUpdateForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         for filde_name in self.fields:
-            self.fields[filde_name].widget.attrs['class']= f'form-control {filde_name}'
+            if 'benefit_limit_flag' != filde_name:
+                self.fields[filde_name].widget.attrs['class']= f'form-control {filde_name}'
 
 class CareManagerForm(forms.ModelForm):
     class Meta:

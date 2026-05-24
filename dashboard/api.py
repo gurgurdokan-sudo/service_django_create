@@ -65,11 +65,11 @@ def update_schedule(request, planId):
             # 全autal
             data = plan.actual_json or {}
             day_actual = data.get(day, {"main": "", "addon": {}})
-            addon = day_actual.get("addon")
+            addon = day_actual.get("addon") or {}
             if addon_id in addon:
                 print(f"addon_id {addon_id} は既に存在するため削除します", flush=True)
                 addon.pop(addon_id)
-                total -= int(unit)
+                if total!=0: total -= int(unit)
 
                 if not addon:
                     if not day_actual["main"]:
@@ -85,7 +85,7 @@ def update_schedule(request, planId):
                 addon[addon_id] = addon_obj.service_name
                 day_actual["addon"] = addon
                 data[day] = day_actual
-                total += int(unit)
+                if total!=0: total += int(0)
             plan.actual_json = data
             plan.save()
             return Response({"status": "ok", "total": total})

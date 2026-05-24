@@ -25,12 +25,14 @@ def build_user_service_context(user_id, year, month):
     add_codes = {} #todo　Excelではcode=0
 
     for plan in plans:
-        addon_names = plan.get_addon_summary
+        addon_names = plan.get_addon_summary or {}
         addon_units = {a.service_name: a.unit for a in AddOnService.objects.filter(service_name__in=addon_names.keys())}
         for addon_name,days in addon_names.items():
             addon = AddOnService.objects.get(service_name = addon_name)
-            add_codes[addon_name] = {"unit": addon.unit, "code": addon.code, "count": len(days)}
-            monthly_addon_totals[addon_name] = monthly_addon_totals.get(addon_name,0) + addon.unit * len(days)
+            add_codes[addon_name] = {"unit": addon.unit, "code": addon.code, "count": len(days), "price":addon.price}
+            print(days,flush=True)
+            if addon.unit:
+                monthly_addon_totals[addon_name] = monthly_addon_totals.get(addon_name,0) + addon.unit * len(days)
     
     now = timezone.now()
     return {

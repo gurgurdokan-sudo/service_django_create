@@ -30,6 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (rowType === 'actual_addon') newValue = this.getAttribute('data-addon-name');
             try {
                 console.log("Sending update:", { planId, day, newValue, rowType });
+                const total = parseInt(this.parentElement.querySelector('.total-cell').innerText.trim().replace(/[^0-9]/g, '')) || 0;
                 const response = await fetch(`/api/plan/${planId}/update/`, {
                     method: "PATCH",
                     headers: { 
@@ -40,7 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         day:day,
                         value: newValue,
                         row_type: rowType,
-                        total: parseInt(this.parentElement.querySelector('.total-cell').innerText.trim().replace(/[^0-9]/g, '')) // 現在の合計値を送信
+                        total: total // 現在の合計値を送信
                     })
                 });
                 const data = await response.json();

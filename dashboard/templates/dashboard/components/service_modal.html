@@ -32,7 +32,9 @@
         <label>紐付け先:</label>
         <select id="main_plan_select" class="form-input-sm">
             <option value="">-- プランを選択 --</option>
-            {% for p in plans %}<option value="{{ p.id }}">{{ p.service_name }}</option>{% endfor %}
+            {% for p in plans %}<option value="{{ p.id }}" {% if p.code == plan.code %}
+                selected
+            {% endif %} >{{ p.service_name }}</option>{% endfor %}
         </select>
         </div>
     </div>
@@ -70,7 +72,7 @@
             <tr>
             <th>選択</th>
             <th>名称</th>
-            <th>単価</th>
+            <th>単価 / 金額</th>
             <th>区分</th>
             </tr>
         </thead>
@@ -79,7 +81,14 @@
             <tr class="service-row addon-row" data-name="{{ a.service_name }}">
             <td class="text-center"><input type="radio" name="selected_addon" value="addon_{{ a.id }}"></td>
             <td><span class="badge {{ a.insurance_type }}">{{ a.get_insurance_type_display }}</span> {{ a.service_name }}</td>
-            <td>{{ a.price|default:a.unit }}円</td>
+            <td>
+            {% if a.price == 0 or a.unit == 0 %}
+                <span>---</span>
+            {% else %}
+                {{ a.price|default:a.unit }}
+                {% if a.price %}円{% else %}単位{% endif %}
+            {% endif %}
+            </td>
             <td>{{ a.category }}</td>
             </tr>
             {% endfor %}
