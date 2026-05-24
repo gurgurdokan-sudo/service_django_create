@@ -26,10 +26,14 @@ class PlanForm(forms.ModelForm):
         choices=WEEKDAY_CHOICES,
         label="通う曜日"
     )
-    def __init__(self, *args, user_id=None, **kwargs):
+    def __init__(self, *args, **kwargs):
+        user_id = kwargs.pop('user_id', None)
         super().__init__(*args, **kwargs)
         if user_id:
             self.user_id = user_id
+        for filde_name in self.fields:
+            if not filde_name.startswith('weekdays'):
+                self.fields[filde_name].widget.attrs['class']= f'form-control {filde_name}'
     class Meta:
         model = ServicePlan
         fields = ['year', 'month', 'start_time', 'end_time']
@@ -86,3 +90,8 @@ class CareManagerForm(forms.ModelForm):
     class Meta:
         model = CareManager
         fields = '__all__'
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for filde_name in self.fields:
+            if 'benefit_limit_flag' != filde_name:
+                self.fields[filde_name].widget.attrs['class']= f'form-control {filde_name}'

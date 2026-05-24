@@ -15,4 +15,5 @@ def user_update(request, user_id):
             return redirect('dashboard:user_list')
     else:
         form = UserForm(instance=user)
-    return render(request, 'dashboard/user_form.html', {'form': form})
+        title = f'{user.name} 基本情報 更新'
+    return render(request, 'dashboard/user_form.html', {'form': form, 'title':title})

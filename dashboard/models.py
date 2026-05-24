@@ -2,6 +2,7 @@ from django.db import models
 from django.db.models import Sum
 from django.utils import timezone
 from datetime import datetime, date
+from dashboard.calendar_table import get_month_days
 LEVEL_CHOICES = [('要支援1', '要支援1'),('要支援2', '要支援2'),('要介護1', '要介護1'),('要介護2', '要介護2'),('要介護3', '要介護3'),('要介護4', '要介護4'),('要介護5', '要介護5'),]
 class CareManager(models.Model):
     name = models.CharField(max_length=100, verbose_name='担当者名')
@@ -197,6 +198,23 @@ class ServicePlan(models.Model):
             if key.get("addon", []):
                 return True
         return False
+    def build_schedule(self, weekdays):
+        col = get_month_days(self.year, self.month)
+        json = {}
+        for day in col:
+            if str(day['weekday']) in weekdays:
+                json[str(day['day'])] = '1'
+        self.schedule_json = json
+
+    def apply_service_master(self):
+        service = ServiceMaster.objects.filter(
+            care_level=self.user.care_level,
+            stay_time_category=self.stay_time_category
+        ).first()
+        if service: #値をコピー
+            self.service_name = service.service_name
+            self.service_code = service.service_code
+            self.unit = service.unit
     def __str__(self):
         return f"{self.user.name} - {self.year}年{self.month}月"
 class AddOnService(models.Model):
