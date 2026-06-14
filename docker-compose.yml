@@ -16,9 +16,9 @@ services:
     image: postgres:15
     container_name: postgres_db
     environment:
-      POSTGRES_DB: 'dango'
+      POSTGRES_DB: mydb
       POSTGRES_USER: 'dango'
-      POSTGRES_PASSWORD: mypassword
+      POSTGRES_PASSWORD: 'dango'
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
