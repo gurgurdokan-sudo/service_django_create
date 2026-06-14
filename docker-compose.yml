@@ -16,9 +16,9 @@ services:
     image: postgres:15
     container_name: postgres_db
     environment:
-      POSTGRES_DB: mydb
-      POSTGRES_USER: 'dango'
-      POSTGRES_PASSWORD: 'dango'
+      POSTGRES_DB: service_db
+      POSTGRES_USER: 'django'
+      POSTGRES_PASSWORD: 'django'
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
