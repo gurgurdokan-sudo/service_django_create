@@ -7,7 +7,7 @@ from .views.user_update import user_update
 from .views.user_delete import user_delete
 from .views.user_service_view import user_service, export_excel
 from .views.create_plan import create_plan
-# from .views.init_plan import init_plan
+from .views.init_plan import init_plan
 
 from . import api
 
@@ -24,7 +24,7 @@ urlpatterns = [
     path('user/<int:user_id>/delete/', user_delete, name='delete'),
     path('user/<int:user_id>/service/', user_service, name='service'),
     path('user/<int:user_id>/create_plan/', create_plan, name='createPlan'),
-    # path('user/', init_plan, name='plan'),
+    path('user/init', init_plan, name='plan'),
     
 # API
     path("api/plan/<int:planId>/update/", api.update_schedule, name="update_schedule"),
