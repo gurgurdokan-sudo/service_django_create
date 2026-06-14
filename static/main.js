@@ -71,14 +71,14 @@ function nextMonth(userId,action) {
     year = parseInt(year);
     month = parseInt(month);
     console.log(`${action}${year}${month}`);
-    const nowYear = parseInt(document.getElementById('current_year').value);
-    const nowMonth = parseInt(document.getElementById('current_month').value);
-
+    const today = new Date();
+    const nowYear = today.getFullYear();
+    const nowMonth = today.getMonth();
         try{
         if (action === 'current'){
             if ( nowYear === year && nowMonth === month){
-            alert("既に今月を表示");
-            return;
+                alert("既に今月を表示");
+                return;
             }
             window.location.href = `/user/${userId}/service/?year=${nowYear}&month=${String(nowMonth).padStart(2, '0')}`;            
             return;
@@ -113,8 +113,8 @@ function nextMonth(userId,action) {
     }
 }
 function toExecl(userId){
-    const nowYear = parseInt(document.getElementById('current_year').value);
-    const nowMonth = parseInt(document.getElementById('current_month').value);
-    window.location.href = `/user/${userId}/export/?year=${nowYear}&month=${String(nowMonth).padStart(2,'0')}`;
+    const thisYear = parseInt(document.getElementById('current_year').value);
+    const thisMonth = parseInt(document.getElementById('current_month').value);
+    window.location.href = `/user/${userId}/export/?year=${thisYear}&month=${String(thisMonth).padStart(2,'0')}`;
     return;
 }

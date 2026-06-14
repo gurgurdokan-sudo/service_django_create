@@ -28,7 +28,7 @@ def build_user_service_context(user_id, year, month):
         addon_names = plan.get_addon_summary or {}
         addon_units = {a.service_name: a.unit for a in AddOnService.objects.filter(service_name__in=addon_names.keys())}
         for addon_name,days in addon_names.items():
-            addon = AddOnService.objects.get(service_name = addon_name)
+            addon = AddOnService.objects.filter(service_name = addon_name).first()
             add_codes[addon_name] = {"unit": addon.unit, "code": addon.code, "count": len(days), "price":addon.price}
             print(days,flush=True)
             if addon.unit:
