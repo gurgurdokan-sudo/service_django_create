@@ -1,7 +1,7 @@
 from django.urls import path
 from .views.user_list import user_list
 from .views.user_create import user_create, certificate_create, caremana_create
-from .views.export_service_sheet import export_service_sheet
+from .views.export_service_sheet import download_service_sheet
 from .views.user_detail import user_detail
 from .views.user_update import user_update
 from .views.user_delete import user_delete
@@ -18,7 +18,7 @@ urlpatterns = [
     path('users/user_create', user_create, name='create'),
     path('user/<int:user_id>/user_create/', certificate_create, name='certificate_create'),
     path('user/<int:user_id>/create_sheet/', export_excel, name='create_sheet'),
-    path('user/<int:user_id>/export/', export_service_sheet, name='export_service_sheet'),
+    path('user/<int:user_id>/export/', download_service_sheet, name='download_service_sheet'),
     path('user/<int:user_id>/detail/', user_detail, name='detail'),
     path('user/<int:user_id>/edit/', user_update, name='update'),
     path('user/<int:user_id>/delete/', user_delete, name='delete'),
