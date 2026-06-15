@@ -11,7 +11,7 @@ def build_user_service_context(user_id, year, month):
     office = Office.objects.get(id=1) #todoログインユーザー事務所
     plans = ServicePlan.objects.filter(
         user = target,
-        year = yeaPr,
+        year = year,
         month = month,
         )
         
