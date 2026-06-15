@@ -118,3 +118,8 @@ function toExecl(userId){
     window.location.href = `/user/${userId}/export/?year=${thisYear}&month=${String(thisMonth).padStart(2,'0')}`;
     return;
 }
+function exportExecl(userId){
+    const thisYear = parseInt(document.getElementById('current_year').value);
+    const thisMonth = parseInt(document.getElementById('current_month').value);
+    window.location.href = `/user/${userId}/export/?year=${thisYear}&month=${String(thisMonth).padStart(2,'0')}`
+}

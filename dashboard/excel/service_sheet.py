@@ -214,10 +214,8 @@ def create_service_sheet(context):
     ws[f'T{row}'] = add_comma(user.max_separate_payment) #区分支給限度基準額（単位）
 
     ws.title = '別表（実績）'
-    user_dir = os.path.join(settings.MEDIA_ROOT, "service_sheets_export", f'{str(user.id)}_{user.name}')
-    os.makedirs(user_dir, exist_ok=True)
-    filename = f"サービス提供表_{user.name}_{year}_{month}.xlsx"
-    filepath = os.path.join(user_dir, filename)
+    
+    filepath = get_service_sheet_path(user, year, month)
     wb.save(filepath)
     return FileResponse(open(filepath, "rb"), as_attachment=True, filename=filename)
 def to_nengo(year, month=4):
@@ -240,3 +238,14 @@ def auto_newline(text, ws, cell, line=10):
     ws[cell].alignment = Alignment(wrap_text=True, vertical="center",)
 def add_comma(value):
     return f"{int(value):,}"
+
+def get_service_sheet_path(user, year, month):#Pathを返す
+    user_dir = os.path.join(
+        settings.MEDIA_ROOT,
+        "service_sheets_export",
+        f"{user.id}_{user.name}"
+    )
+    os.makedirs(user_dir, exist_ok=True)
+
+    filename = f"サービス提供表_{user.name}_{year}_{month}.xlsx"
+    return os.path.join(user_dir, filename)

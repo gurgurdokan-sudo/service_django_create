@@ -189,7 +189,8 @@
   {% endif %}
   {% endfor %}
 </ul>
-<input type="button" id="btn-excel" class="btn btn-success" value="Excel出力" onclick="toExecl({{user.id}})">
+<input type="button" id="btn-excel" class="btn btn-success" value="Excelを作成" onclick="toExecl({{user.id}})">
+<input type="button" id="btn-excel" class="btn btn-primary" value="Excelを出力" onclick="toExecl({{user.id}})">
 <script src="{% static 'edit.js' %}?v=1"></script>
 <script src="{% static 'modal_logic.js' %}?v=1"></script>
 <script src="{% static 'main.js' %}?v=1"></script>

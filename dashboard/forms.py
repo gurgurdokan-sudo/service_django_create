@@ -89,7 +89,8 @@ class CertificateForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         for field_name,field in self.fields.items():
-            self.fields[field_name].widget.attrs['class']= f'form-control {field_name}'
+            if 'benefit_limit_flag' != field_name:
+                self.fields[field_name].widget.attrs['class']= f'form-control {field_name}'
             if field.required:
                 self.fields[field_name].widget.attrs['required'] = True
 class CertificateUpdateForm(forms.ModelForm):
