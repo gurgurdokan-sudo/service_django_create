@@ -54,8 +54,8 @@ def build_user_service_context(user_id, year, month):
     
 def user_service(request,user_id):
     now = timezone.now()
-    year = int(request.GET.get('year', now.year))
-    month = int(request.GET.get('month', now.month))
+    year = now.year
+    month = now.month
     print(year,month,"が表示される",flush=True)
     context = build_user_service_context(user_id=user_id,year=year,month=month)
     return render(request,'dashboard/user_service.html',context)

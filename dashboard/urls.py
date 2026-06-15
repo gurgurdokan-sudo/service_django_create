@@ -17,8 +17,8 @@ urlpatterns = [
     path('users/caremana_create', caremana_create, name='caremana_create'),
     path('users/user_create', user_create, name='create'),
     path('user/<int:user_id>/user_create/', certificate_create, name='certificate_create'),
-    path('user/<int:user_id>/export/', export_excel, \
-        name='export_service_sheet'),
+    path('user/<int:user_id>/create_sheet/', export_excel, name='create_sheet'),
+    path('user/<int:user_id>/export/', export_service_sheet, name='export_service_sheet'),
     path('user/<int:user_id>/detail/', user_detail, name='detail'),
     path('user/<int:user_id>/edit/', user_update, name='update'),
     path('user/<int:user_id>/delete/', user_delete, name='delete'),

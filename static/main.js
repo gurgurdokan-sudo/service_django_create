@@ -112,13 +112,13 @@ function nextMonth(userId,action) {
         alert(`${error}errorが発生`);
     }
 }
-function toExecl(userId){
+function toExcel(userId){
     const thisYear = parseInt(document.getElementById('current_year').value);
     const thisMonth = parseInt(document.getElementById('current_month').value);
-    window.location.href = `/user/${userId}/export/?year=${thisYear}&month=${String(thisMonth).padStart(2,'0')}`;
+    window.location.href = `/user/${userId}/create_sheet/?year=${thisYear}&month=${String(thisMonth).padStart(2,'0')}`;
     return;
 }
-function exportExecl(userId){
+function exportExcl(userId){
     const thisYear = parseInt(document.getElementById('current_year').value);
     const thisMonth = parseInt(document.getElementById('current_month').value);
     window.location.href = `/user/${userId}/export/?year=${thisYear}&month=${String(thisMonth).padStart(2,'0')}`
