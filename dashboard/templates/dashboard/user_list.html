@@ -7,6 +7,7 @@
 <div class="container">
   <div class="header-container">
     <h1 class="page-title">利用者一覧</h1>
+    <label><a href="{% url 'dashboard:plan' %}" class="btn btn-plan">Planマスター取り込み</a></label>
     <label><a href="{% url 'dashboard:caremana_create' %}" class="btn btn-create">新規作成</a></label>
   </div>
   {% if messages %}

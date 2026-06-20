@@ -8,7 +8,7 @@ from dashboard.excel.service_sheet import create_service_sheet
 
 def build_user_service_context(user_id, year, month):
     target = get_object_or_404(User,id=user_id)
-    office = Office.objects.get(id=1) #todoログインユーザー事務所
+    office = Office.objects.filter(id=1).first() #todoログインユーザー事務所
     plans = ServicePlan.objects.filter(
         user = target,
         year = year,
@@ -23,7 +23,6 @@ def build_user_service_context(user_id, year, month):
 
     monthly_addon_totals = {}
     add_codes = {} #todo　Excelではcode=0
-
     for plan in plans:
         addon_names = plan.get_addon_summary or {}
         addon_units = {a.service_name: a.unit for a in AddOnService.objects.filter(service_name__in=addon_names.keys())}
@@ -41,8 +40,8 @@ def build_user_service_context(user_id, year, month):
         'plans': plans, 
         'service': all_plans, #userの対象全プラン
         'calendar': get_month_days(year, month),
-        'year': year,
-        'month': month,
+        'dis_year': year,
+        'dis_month': month,
         'current_year': now.year,
         'current_month': now.month,
         'year_range': range(now.year - 1, now.year + 1),
@@ -51,13 +50,14 @@ def build_user_service_context(user_id, year, month):
         'addon_service': AddOnService.objects.exclude(code__in=['6102','6100','6099']),
         'monthly_addon_totals': monthly_addon_totals, #tableのtotal
     }
-    
+
+#main
 def user_service(request,user_id):
     now = timezone.now()
-    year = now.year
-    month = now.month
-    print(year,month,"が表示される",flush=True)
-    context = build_user_service_context(user_id=user_id,year=year,month=month)
+    dis_year = int(request.GET.get('year', now.year))
+    dis_month = int(request.GET.get('month', now.month))
+    print(dis_year,dis_month,"が表示される",flush=True)
+    context = build_user_service_context(user_id=user_id,year=dis_year,month=dis_month)
     return render(request,'dashboard/user_service.html',context)
 
 def export_excel(request,user_id):

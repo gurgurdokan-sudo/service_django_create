@@ -43,15 +43,15 @@
     <div class="right-group month-controller">
       <select id="month_selector" class="classic-select" disabled>
         {% for y in year_range %}{% for m in month_range %}
-        <option value="{{ y }}-{{ m|stringformat:'02d' }}" {% if y == year and m == month %}selected{% endif %}>
+        <option value="{{ y }}-{{ m|stringformat:'02d' }}" {% if y == dis_year and m == dis_month %}selected{% endif %}>
           {{ y }}年{{ m }}月
         </option>
         {% endfor %}{% endfor %}
       </select>
 
       <div class="month-navigation">
-        <input type="hidden" id=current_year value={{year}}>
-        <input type="hidden" id=current_month value={{month}}>
+        <input type="hidden" id=dis_year value={{dis_year}}>
+        <input type="hidden" id=dis_month value={{dis_month}}>
         <button class="nav-btn" id="btn_prev_month" onclick=nextMonth({{user.id}},'prev')>◀ 先月</button>
         <button class="nav-btn" id="btn_current_month" onclick=nextMonth({{user.id}},'current')>今月</button>
         <button class="nav-btn" id="btn_next_month" onclick=nextMonth({{user.id}},'next')>来月 ▶</button>
@@ -189,9 +189,9 @@
   {% endif %}
   {% endfor %}
 </ul>
-<input type="button" id="btn-excel" class="btn btn-success" value="Excelを作成" onclick="toExecl({{user.id}})">
+<input type="button" id="btn-excel" class="btn btn-success" value="Excelを作成" onclick="toExcel({{user.id}})">
 <input type="button" id="btn-excel" class="btn btn-primary" value="Excelを出力" onclick="exportExcel({{user.id}})">
 <script src="{% static 'edit.js' %}?v=1"></script>
 <script src="{% static 'modal_logic.js' %}?v=1"></script>
-<script src="{% static 'main.js' %}?v=1"></script>
+<script src="{% static 'main.js' %}?v=11"></script>
 {% endblock %}

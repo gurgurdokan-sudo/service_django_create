@@ -5,6 +5,10 @@
     margin-bottom: 20px;
     background-color: #fff;
 }
+/* 全ての要素で枠線を幅に含める計算にする */
+.table-wrapper *, .table-wrapper *::before, .table-wrapper *::after {
+    box-sizing: border-box !important;
+}
 
 .schedule-table {
     /* 各固定列の合計：消去(40)+時間(100)+内容(160)+事業所(150)+カレンダー(885) = 1335px */
@@ -152,8 +156,14 @@
 .col-service { font-size: 0.8rem; text-align: left; padding-left: 6px !important; }
 .col-office { text-align: left; padding-left: 6px !important; }
 
-.no-data td {
-    text-align: center;
-    padding: 40px !important;
+.schedule-table tr.no-data td {
+    display: table-cell !important; /* 他の flex 指定などを無効化 */
+    text-align: center !important;
+    vertical-align: middle !important;
+    padding: 60px 0 !important;     /* 上下の余白をしっかり取る */
     color: #999;
+    font-size: 1.1rem;
+    font-weight: bold;
+    /* テーブル全体の横幅（1350px）の中で中央にいることを保証する */
+    width: 1350px !important; 
 }

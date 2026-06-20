@@ -67,16 +67,15 @@ async function deleteAddon(planId, addonName) {
 }
 
 function nextMonth(userId,action) {
-    let [year,month] = document.getElementById('month_selector').value.split('-');
-    year = parseInt(year);
-    month = parseInt(month);
-    console.log(`${action}${year}${month}`);
+    let dis_year = parseInt(document.getElementById('dis_year').value);
+    let dis_month = parseInt(document.getElementById('dis_month').value);
+    console.log(`${action}${dis_year}${dis_month}`);
     const today = new Date();
     const nowYear = today.getFullYear();
-    const nowMonth = today.getMonth();
+    const nowMonth = today.getMonth()+1;
         try{
         if (action === 'current'){
-            if ( nowYear === year && nowMonth === month){
+            if ( nowYear === dis_year && nowMonth === dis_month){
                 alert("既に今月を表示");
                 return;
             }
@@ -84,25 +83,25 @@ function nextMonth(userId,action) {
             return;
         }
         if(action === 'prev'){
-            month -= 1;
-            if (month === 0){
-                month = 12;
-                year -=1;
-                window.location.href = `/user/${userId}/service/?year=${year}&month=${String(month).padStart(2,'0')}`;
+            dis_month -= 1;
+            if (dis_month === 0){
+                dis_month = 12;
+                dis_year -=1;
+                window.location.href = `/user/${userId}/service/?year=${dis_year}&month=${String(dis_month).padStart(2,'0')}`;
                 return;
             }
-            window.location.href = `/user/${userId}/service/?year=${year}&month=${String(month).padStart(2,'0')}`;
+            window.location.href = `/user/${userId}/service/?year=${dis_year}&month=${String(dis_month).padStart(2,'0')}`;
             return;
         }
         if (action === 'next'){
-            month += 1;
-            if (month === 13){
-                month = 1;
-                year += 1;
-                window.location.href = `/user/${userId}/service/?year=${year}&month=${String(month).padStart(2,'0')}`;
+            dis_month += 1;
+            if (dis_month === 13){
+                dis_month = 1;
+                dis_year += 1;
+                window.location.href = `/user/${userId}/service/?year=${dis_year}&month=${String(dis_month).padStart(2,'0')}`;
                 return;
             }
-            window.location.href = `/user/${userId}/service/?year=${year}&month=${String(month).padStart(2,'0')}`;
+            window.location.href = `/user/${userId}/service/?year=${dis_year}&month=${String(dis_month).padStart(2,'0')}`;
             return;
         }
         else{
@@ -113,13 +112,13 @@ function nextMonth(userId,action) {
     }
 }
 function toExcel(userId){
-    const thisYear = parseInt(document.getElementById('current_year').value);
-    const thisMonth = parseInt(document.getElementById('current_month').value);
+    const thisYear = parseInt(document.getElementById('dis_year').value);
+    const thisMonth = parseInt(document.getElementById('dis_month').value);
     window.location.href = `/user/${userId}/create_sheet/?year=${thisYear}&month=${String(thisMonth).padStart(2,'0')}`;
     return;
 }
 function exportExcl(userId){
-    const thisYear = parseInt(document.getElementById('current_year').value);
-    const thisMonth = parseInt(document.getElementById('current_month').value);
+    const thisYear = parseInt(document.getElementById('dis_year').value);
+    const thisMonth = parseInt(document.getElementById('dis _month').value);
     window.location.href = `/user/${userId}/export/?year=${thisYear}&month=${String(thisMonth).padStart(2,'0')}`
 }
