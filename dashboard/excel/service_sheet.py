@@ -109,7 +109,7 @@ def create_service_sheet(context):
     total_act_price_unit = 0 #合計金額=合計単位
     UNIT_VALUE = float(office.unit_price) #単位数単価(地域区分
     BENEFIT_RATE = user.benefit_rate #給付率
-    MAX_PAYMENT= add_comma(user.max_separate_payment) #計算用限度額
+    MAX_PAYMENT= user.max_separate_payment #計算用限度額
 
     row = 6 #strat row
     for plan in context['plans']:
@@ -216,7 +216,7 @@ def create_service_sheet(context):
 
     ws.title = '別表（実績）'
     
-    filepath = get_service_sheet_path(user, year, month)
+    filepath,filename = get_service_sheet_path(user, year, month)
     wb.save(filepath)
     return FileResponse(open(filepath, "rb"), as_attachment=True, filename=filename)
 def to_nengo(year, month=4):
@@ -247,6 +247,8 @@ def get_service_sheet_path(user, year, month):#Pathを返す
         f"{user.id}_{user.name}"
     )
     os.makedirs(user_dir, exist_ok=True)
-
+    year_month_dir = f"{year}_{month:02d}"
+    date_dir = os.path.join(user_dir, year_month_dir)
+    os.makedirs(date_dir, exist_ok=True)
     filename = f"サービス提供表_{user.name}_{year}_{month}.xlsx"
-    return os.path.join(user_dir, filename)
+    return os.path.join(date_dir, filename), filename

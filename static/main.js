@@ -117,8 +117,9 @@ function toExcel(userId){
     window.location.href = `/user/${userId}/create_sheet/?year=${thisYear}&month=${String(thisMonth).padStart(2,'0')}`;
     return;
 }
-function exportExcl(userId){
+function exportExcel(userId){
     const thisYear = parseInt(document.getElementById('dis_year').value);
-    const thisMonth = parseInt(document.getElementById('dis _month').value);
+    const thisMonth = parseInt(document.getElementById('dis_month').value);
+    console.log(`exportExcel${thisYear}${thisMonth}`);
     window.location.href = `/user/${userId}/export/?year=${thisYear}&month=${String(thisMonth).padStart(2,'0')}`
 }
