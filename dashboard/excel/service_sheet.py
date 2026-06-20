@@ -167,24 +167,25 @@ def create_service_sheet(context):
     ws[f'BD{row}'] = add_comma(hutan) #利用者負担額
 
 #default行
-    row += 1
-    ws[f'A{row}'] = office_name[0] + '\n' + office_name[1]
-    ws[f'A{row}'].alignment = Alignment(wrap_text=True, vertical="center",)
-    ws[f'G{row}'] = office.office_number
-    auto_newline(default_service.service_name, ws, f'L{row}',6) #default
-    RATE = float(default_service.rate)
-    default_price_unit = int(total_act_price_unit * RATE)
-    ws[f'Z{row}'] = add_comma(default_price_unit).join(kako)
-    ws[f'AO{row}'] = add_comma(default_price_unit).join(kako)
-    ws[f'AR{row}'] = UNIT_VALUE #単価
-    def_seikyu_taisyu = int(default_price_unit * UNIT_VALUE) #切り捨て
-    ws[f'AT{row}'] = add_comma(def_seikyu_taisyu) #費用総額(保険/事業対象
-    ws[f'AW{row}'] = int(BENEFIT_RATE*100) #給付率90
-    AX_seikyu_bun = int(def_seikyu_taisyu * BENEFIT_RATE) #切り捨て
-    ws[f'AX{row}'] = add_comma(AX_seikyu_bun) #保険/事業費
-    ws[f'BA{row}'] = '' #todo定額利用者負担?
-    BD_hutan = int(def_seikyu_taisyu - AX_seikyu_bun)
-    ws[f'BD{row}'] = add_comma(BD_hutan) #利用者負担額
+    if default_service:
+        row += 1
+        ws[f'A{row}'] = office_name[0] + '\n' + office_name[1]
+        ws[f'A{row}'].alignment = Alignment(wrap_text=True, vertical="center",)
+        ws[f'G{row}'] = office.office_number
+        auto_newline(default_service.service_name, ws, f'L{row}',6) #default
+        RATE = float(default_service.rate)
+        default_price_unit = int(total_act_price_unit * RATE)
+        ws[f'Z{row}'] = add_comma(default_price_unit).join(kako)
+        ws[f'AO{row}'] = add_comma(default_price_unit).join(kako)
+        ws[f'AR{row}'] = UNIT_VALUE #単価
+        def_seikyu_taisyu = int(default_price_unit * UNIT_VALUE) #切り捨て
+        ws[f'AT{row}'] = add_comma(def_seikyu_taisyu) #費用総額(保険/事業対象
+        ws[f'AW{row}'] = int(BENEFIT_RATE*100) #給付率90
+        AX_seikyu_bun = int(def_seikyu_taisyu * BENEFIT_RATE) #切り捨て
+        ws[f'AX{row}'] = add_comma(AX_seikyu_bun) #保険/事業費
+        ws[f'BA{row}'] = '' #todo定額利用者負担?
+        BD_hutan = int(def_seikyu_taisyu - AX_seikyu_bun)
+        ws[f'BD{row}'] = add_comma(BD_hutan) #利用者負担額
 
 # 最終合計
     row = 20
