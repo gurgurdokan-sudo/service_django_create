@@ -28,6 +28,7 @@ class UserForm(forms.ModelForm):
             self.fields[field_name].widget.attrs['class']= f'form-control {field_name}'
             if field.required:
                 self.fields[field_name].widget.attrs['required'] = True
+                self.fields[field_name].widget.attrs['class']= f'form-control {field_name} required'
 class PlanForm(forms.ModelForm):
     required_css_class = 'required'
     label_suffix = ''
@@ -123,5 +124,5 @@ class CareManagerForm(forms.ModelForm):
         for field_name, field in self.fields.items():
             if field.required:
                 self.fields[field_name].widget.attrs['required'] = True
-            if 'benefit_limit_flag' != field_name:
-                self.fields[field_name].widget.attrs['class']= f'form-control {field_name}'
+                self.fields[field_name].widget.attrs['class']= f'form-control {field_name} required'
+            else: self.fields[field_name].widget.attrs['class']= f'form-control {field_name}'

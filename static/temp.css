@@ -232,7 +232,7 @@ body {
 }
 
 /* 必須項目のラベルに「必須」バッジを擬似的に追加 */
-label.required::after {
+label:has(+ input[required])::after {
     content: "必須";
     font-size: 0.7rem;
     background-color: #d32f2f;

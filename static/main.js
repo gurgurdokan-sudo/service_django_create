@@ -114,6 +114,7 @@ function nextMonth(userId,action) {
 function toExcel(userId){
     const modal = new bootstrap.Modal(document.getElementById('loadingModal'));
     modal.show();
+    animateProgressBar();
     const thisYear = parseInt(document.getElementById('dis_year').value);
     const thisMonth = parseInt(document.getElementById('dis_month').value);
     window.location.href = `/user/${userId}/create_sheet/?dis_year=${thisYear}&dis_month=${String(thisMonth).padStart(2,'0')}`;
@@ -124,4 +125,17 @@ function exportExcel(userId){
     const thisMonth = parseInt(document.getElementById('dis_month').value);
     console.log(`exportExcel${thisYear}${thisMonth}`);
     window.location.href = `/user/${userId}/export/?dis_year=${thisYear}&dis_month=${String(thisMonth).padStart(2,'0')}`
+}
+function animateProgressBar(){
+    const bar = document.getElementById('loadingBar');
+    let progress = 0;
+
+    const timer = setInterval(() => {
+        progress += 0.5;  
+        if(progress >= 100){
+            progress = 100;
+            clearInterval(timer);
+        }
+        bar.style.width = progress + "%";
+    }, 60); // 60msごとに更新
 }

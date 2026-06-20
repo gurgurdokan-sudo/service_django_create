@@ -9,7 +9,7 @@ class CareManager(models.Model):
     office_name = models.CharField(max_length=200, verbose_name='居宅介護支援事業所名')  # 居宅介護支援事業所名
     tel = models.CharField(max_length=20, blank=True, null=True)
     fax = models.CharField(max_length=20, blank=True, null=True)
-    care_management_office_number = models.CharField(max_length=20,verbose_name="居宅介護支援事業所番号", blank=True, null=True)
+    care_management_office_number = models.CharField(max_length=20,verbose_name="居宅介護支援事業所番号")
     care_manager_number = models.CharField(max_length=20,verbose_name="居宅介護支援専門員番号", blank=True, null=True) #todo
 
     def __str__(self):
@@ -23,7 +23,7 @@ class User(models.Model):
     insured_number = models.CharField(max_length=10, verbose_name='被保険者番号')
     date_of_birth = models.DateField(verbose_name='生年月日')
     GENDER_CHOICES = [('male', '男性'),('female', '女性'),]
-    gender = models.CharField(max_length=10, choices=GENDER_CHOICES, blank=True,verbose_name='性別')
+    gender = models.CharField(max_length=10, choices=GENDER_CHOICES,verbose_name='性別')
 
     BENEFIT_RATE_CHOICES = [(0.9, "給付率90%（1割負担）"),(0.8, "給付率80%（2割負担）"),(0.7, "給付率70%（3割負担）")]
     benefit_rate = models.FloatField(choices=BENEFIT_RATE_CHOICES, verbose_name = '給付率')
