@@ -112,14 +112,16 @@ function nextMonth(userId,action) {
     }
 }
 function toExcel(userId){
+    const modal = new bootstrap.Modal(document.getElementById('loadingModal'));
+    modal.show();
     const thisYear = parseInt(document.getElementById('dis_year').value);
     const thisMonth = parseInt(document.getElementById('dis_month').value);
-    window.location.href = `/user/${userId}/create_sheet/?year=${thisYear}&month=${String(thisMonth).padStart(2,'0')}`;
+    window.location.href = `/user/${userId}/create_sheet/?dis_year=${thisYear}&dis_month=${String(thisMonth).padStart(2,'0')}`;
     return;
 }
 function exportExcel(userId){
     const thisYear = parseInt(document.getElementById('dis_year').value);
     const thisMonth = parseInt(document.getElementById('dis_month').value);
     console.log(`exportExcel${thisYear}${thisMonth}`);
-    window.location.href = `/user/${userId}/export/?year=${thisYear}&month=${String(thisMonth).padStart(2,'0')}`
+    window.location.href = `/user/${userId}/export/?dis_year=${thisYear}&dis_month=${String(thisMonth).padStart(2,'0')}`
 }

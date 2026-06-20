@@ -291,3 +291,62 @@
     padding: 3px;
     margin: 1px;
 }
+.tech-spinner {
+  width: 56px;
+  height: 56px;
+  display: grid;
+  border: 4px solid #0000;
+  border-radius: 50%;
+  border-right-color: #217346;
+  animation: spinner-a478ace 1s infinite linear;
+}
+
+#loadingModal { backdrop-filter: blur(10px); }
+.loader-card { border: none; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.2); }
+
+/* アイコンのアニメーション */
+.sheet-icon { color: #217346; animation: iconPulse 2s infinite ease-in-out; }
+@keyframes iconPulse {
+    0% { transform: scale(1); filter: drop-shadow(0 0 0px rgba(33,115,70,0)); }
+    50% { transform: scale(1.1); filter: drop-shadow(0 0 10px rgba(33,115,70,0.4)); }
+    100% { transform: scale(1); filter: drop-shadow(0 0 0px rgba(33,115,70,0)); }
+}
+
+/* ステータステキストの切り替えアニメーション */
+.loader-status-text {
+    height: 1.5rem;
+    font-weight: bold;
+    color: #2c3e50;
+    transition: all 0.3s;
+}
+
+/* プログレスバー */
+.progress-wrapper {
+    height: 6px;
+    background: #e9ecef;
+    border-radius: 10px;
+    overflow: hidden;
+    width: 80%;
+    margin: 0 auto;
+}
+.progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #217346, #43a047);
+    width: 0%;
+    transition: width 0.4s ease;
+    position: relative;
+}
+/* バーに走る光のライン */
+.progress-bar-fill::after {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; bottom: 0; right: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+    animation: shine 1.5s infinite;
+}
+@keyframes shine {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+.loader-subtext { font-size: 0.8rem; color: #95a5a6; }

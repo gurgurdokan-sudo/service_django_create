@@ -1,0 +1,16 @@
+{% extends 'dashboard/base/base.html' %}
+{% load static %}
+{% block css %}
+<link rel="stylesheet" href="{% static 'main.css' %}">
+{% endblock %}
+{% block body %}
+<table class="table table-bordered">
+    {% for row in table %}
+        <tr>
+            {% for cell in row %}
+                <td>{{ cell }}</td>
+            {% endfor %}
+        </tr>
+    {% endfor %}
+</table>
+{% endblock %}
