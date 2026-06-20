@@ -82,7 +82,7 @@ DATABASES = {
 }
 # # DATABASES = {
 # #     'default': {
-# #         'ENGINE': 'django.db.backends.postgresql',
+# #         'ENGINE': '13.231.19.50:8001',
 # #         'NAME': 'service_db',
 # #         'USER': 'django',
 # #         'PASSWORD': 'django',
