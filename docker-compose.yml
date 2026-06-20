@@ -11,7 +11,7 @@ services:
     depends_on:
       - db
     command: python manage.py runserver 0.0.0.0:8001
-
+  
   db:
     image: postgres:15
     container_name: postgres_db
@@ -21,6 +21,8 @@ services:
       POSTGRES_PASSWORD: 'django'
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
 
 volumes:
   postgres_data:
