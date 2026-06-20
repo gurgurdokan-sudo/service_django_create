@@ -14,8 +14,8 @@ def create_service_sheet(context):
 
     office = context['office']
     user = context['user']
-    year = context['year']
-    month = context['month']
+    year = context['dis_year']
+    month = context['dis_month']
 
     ws = wb['1']
     ws.title = 'スケジュール'
