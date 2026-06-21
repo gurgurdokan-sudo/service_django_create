@@ -16,9 +16,9 @@ services:
     image: postgres:15
     container_name: postgres_db
     environment:
-      POSTGRES_DB: mydb
-      POSTGRES_USER: myuser
-      POSTGRES_PASSWORD: mypassword
+      POSTGRES_DB: service_db
+      POSTGRES_USER: django
+      POSTGRES_PASSWORD: django
     ports:
       - "5432:5432"
     volumes:
