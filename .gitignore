@@ -34,4 +34,3 @@ env/
 # --- Excel ---
 .xlsx#
 .xlsx
-app/settings.py
