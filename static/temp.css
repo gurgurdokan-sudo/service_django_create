@@ -233,7 +233,10 @@ body {
 }
 
 /* 必須項目のラベルに「必須」バッジを擬似的に追加 */
-label:has(+ input[required])::after {
+
+label:has(+ input[required])::after,
+label:has(+ select[required])::after,
+#my_required::after {
     content: "必須";
     font-size: 0.7rem;
     background-color: #d32f2f;
@@ -258,6 +261,14 @@ label:has(+ input[required])::after {
 /* --- Djangoのエラーリスト --- */
 .errorlist {
     margin: 5px 0 15px 215px; /* ラベルの幅(200px) + 余白(15px)分ずらして整列 */
+    padding: 0;
+    list-style: none;         /* ポッチ(点)を消す */
+    color: #d32f2f;           /* エラーは赤色 */
+    font-size: 0.85rem;
+    font-weight: bold;
+}
+.error-msg{
+    text-align: center;
     padding: 0;
     list-style: none;         /* ポッチ(点)を消す */
     color: #d32f2f;           /* エラーは赤色 */

@@ -18,10 +18,29 @@
         {% if cetrificate %}
         <div>
             <p>{{ form.care_level.label_tag }}{{ form.care_level }}</p> 
-            <p>{{ form.benefit_limit_flag.label_tag }}{{ form.benefit_limit_flag }}</p>
-            <p>{{ form.limit_amount_type.label_tag }}{{ form.limit_amount_type }}</p>
+            <ul class="error-msg">
+                {% for error in form.care_level.errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
             <p>
-            <label class="required">認定有効期間</label>
+                {{ form.benefit_limit_flag.label_tag }}{{ form.benefit_limit_flag }}
+                <ul class="error-msg">
+                    {% for error in form.benefit_limit_flag.errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            </p>
+            <p>
+                {{ form.limit_amount_type.label_tag }}{{ form.limit_amount_type }}
+                <ul class="error-msg">
+                    {% for error in form.limit_amount_type.errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            </p>
+            <p>
+            <label id="my_required">認定有効期間</label>
             <input type="date" id="limit_start" name="limit_start" value="{{ form.limit_start.value|default:'' }}">
             〜
             <input type="date" id="limit_end" name="limit_end" value="{{ form.limit_end.value|default:'' }}">
@@ -29,6 +48,11 @@
             <button type="button" onclick="addYears(1)">1年後</button>
             <button type="button" onclick="addYears(3)">3年後</button>
             <button type="button" onclick="addYears(4)">4年後</button>
+            <ul class="error-msg">
+                {% for error in form.limit_start.errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
             </p>
         </div>
         {% else %}
