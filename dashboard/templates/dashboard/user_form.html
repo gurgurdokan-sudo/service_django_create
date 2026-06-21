@@ -23,6 +23,15 @@
                     <li>{{ error }}</li>
                 {% endfor %}
             </ul>
+
+            {% if messages %}
+                <ul class="messages">
+                {% for message in messages %}
+                    <li class="message-item {{message.tags}}">{{message}}</li>        
+                {% endfor %}
+                </ul>
+            {% endif %}
+
             <p>
                 {{ form.benefit_limit_flag.label_tag }}{{ form.benefit_limit_flag }}
                 <ul class="error-msg">
@@ -107,6 +116,7 @@ function addYears(years) {
     const endDate = new Date(startDate);
     endDate.setFullYear(endDate.getFullYear() + years);
 
+    endDate.setDate(endDate.getDate() - 1); // 1日前に設定
     const yyyy = endDate.getFullYear();
     const mm = String(endDate.getMonth() + 1).padStart(2, '0');
     const dd = String(endDate.getDate()).padStart(2, '0');

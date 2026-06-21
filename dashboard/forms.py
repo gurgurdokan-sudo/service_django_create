@@ -25,23 +25,28 @@ class UserForm(forms.ModelForm):
         dob = cleaned.get('date_of_birth')
         if not dob:
             self._errors['date_of_birth'] = ErrorList(['生年月日は必須です'])
+            
         name = cleaned.get('name')
         name = name.replace('　',' ') if name else ''
         if not name:
             parts = [p for p in name.split() if p]
             if len(parts) != 2:
                 self._errors['name'] = ErrorList(['氏名は「姓 半角スペース 名」で入力してください'])
-        insured_number = cleaned.get('insured_number')
-        if not insured_number or len(insured_number) != 10 or not insured_number.isdigit():
-            self._errors['insured_number'] = ErrorList(['被保険者番号は10桁の数字で入力してください'])
-        elif User.objects.filter(insured_number=insured_number).exists():
-            self._errors['insured_number'] = ErrorList(['この被保険者番号は既に登録されています'])
+
         kana = cleaned.get('name_kana')
         kana = kana.replace('　',' ') if kana else ''
         if not kana:
             parts = [p for p in kana.split() if p]
             if len(parts) != 2:
                 self._errors['name_kana'] = ErrorList(['フリガナは「セイ 半角スペース メイ」で入力してください'])
+
+        insured_number = cleaned.get('insured_number')
+        if not insured_number or len(insured_number) != 10 or not insured_number.isdigit():
+            self._errors['insured_number'] = ErrorList(['被保険者番号は10桁の数字で入力してください'])
+        elif User.objects.filter(insured_number=insured_number).exists():
+            self._errors['insured_number'] = ErrorList(['この被保険者番号は既に登録されています'])
+
+        
         return cleaned
             
     def __init__(self, *args, **kwargs):

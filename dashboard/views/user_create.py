@@ -20,6 +20,8 @@ def caremana_create(request):
             else: messages.error(request,'既存マネジャーを選択してください')
         form = CareManagerForm(request.POST)
         if form.is_valid():
+            caremana = form.save(commit=False)
+            caremana.name = caremana.name.replace('　',' ')
             caremana = form.save()
             request.session['select_manager'] = caremana.id
             return redirect('dashboard:create') # user作成画面へ遷移

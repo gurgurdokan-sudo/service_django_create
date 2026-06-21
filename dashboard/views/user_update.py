@@ -7,6 +7,7 @@ from dashboard.forms import UserForm
 #更新
 def user_update(request, user_id):
     user = get_object_or_404(User,id=user_id)
+    title ='error' #titleの初期値を設定
     if request.method == 'POST':
         form = UserForm(request.POST, instance=user)
         if form.is_valid():

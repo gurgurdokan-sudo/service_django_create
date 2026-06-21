@@ -6,11 +6,11 @@ from dashboard.calendar_table import get_month_days
 LEVEL_CHOICES = [('要支援1', '要支援1'),('要支援2', '要支援2'),('要介護1', '要介護1'),('要介護2', '要介護2'),('要介護3', '要介護3'),('要介護4', '要介護4'),('要介護5', '要介護5'),]
 class CareManager(models.Model):
     name = models.CharField(max_length=100, verbose_name='担当者名')
+    care_manager_number = models.CharField(max_length=20,verbose_name="居宅介護支援専門員番号", blank=True, null=True) #todo
     office_name = models.CharField(max_length=200, verbose_name='居宅介護支援事業所名')  # 居宅介護支援事業所名
+    care_management_office_number = models.CharField(max_length=20,verbose_name="居宅介護支援事業所番号")
     tel = models.CharField(max_length=20, blank=True, null=True)
     fax = models.CharField(max_length=20, blank=True, null=True)
-    care_management_office_number = models.CharField(max_length=20,verbose_name="居宅介護支援事業所番号")
-    care_manager_number = models.CharField(max_length=20,verbose_name="居宅介護支援専門員番号", blank=True, null=True) #todo
 
     def __str__(self):
         return f"{self.name}（{self.office_name}）"
