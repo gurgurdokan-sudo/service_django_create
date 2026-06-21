@@ -38,6 +38,8 @@ def user_create(request):
         form = UserForm(request.POST)
         if form.is_valid():
             user = form.save(commit=False)
+            user.name = user.name.replace('　',' ')
+            user.name_kana = user.name_kana.replace('　',' ')
             user.care_manager_id = cm_id
             user.save()
             return redirect('dashboard:certificate_create',user_id=user.id) # 認定情報作成画面へ遷移

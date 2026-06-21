@@ -34,7 +34,8 @@ class UserForm(forms.ModelForm):
         insured_number = cleaned.get('insured_number')
         if not insured_number or len(insured_number) != 10 or not insured_number.isdigit():
             self._errors['insured_number'] = ErrorList(['被保険者番号は10桁の数字で入力してください'])
-
+        elif User.objects.filter(insured_number=insured_number).exists():
+            self._errors['insured_number'] = ErrorList(['この被保険者番号は既に登録されています'])
         kana = cleaned.get('name_kana')
         kana = kana.replace('　',' ') if kana else ''
         if not kana:

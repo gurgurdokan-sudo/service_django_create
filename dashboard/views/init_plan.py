@@ -78,7 +78,7 @@ def init_plan(request):
     # AddOnService.objects.bulk_create(services)
 
     # ServiceMaster.objects.all().delete()
-    # ServiceMaster.objects.bulk_create([
+    # a = [
     #     # 地域密着型通所介護（種類コード：78）
 
     #     # 3時間以上4時間未満 (3-4)
@@ -122,6 +122,7 @@ def init_plan(request):
     #     ServiceMaster(service_code='1448', service_name='地域通所介護６３', unit=1093, stay_time_category='8-9', care_level='要介護3'),
     #     ServiceMaster(service_code='1449', service_name='地域通所介護６４', unit=1245, stay_time_category='8-9', care_level='要介護4'),
     #     ServiceMaster(service_code='1450', service_name='地域通所介護６５', unit=1396, stay_time_category='8-9', care_level='要介護5'),
-    # ])
+    # ]
+    # ServiceMaster.objects.bulk_create(a)
     messages.success(request, 'マスタデータの登録が完了しました')
     return redirect('dashboard:user_list')

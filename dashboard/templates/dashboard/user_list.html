@@ -31,13 +31,12 @@
     <tr>
       <td class="badge">{{ user.care_level }}</td>
       <td><a href="{% url 'dashboard:detail' user.id %}" class="link-name">{{ user.name }}</a></td>
-      <td><a href="{% url 'dashboard:detail' user.id %}" class="btn btn-cert">認定情報作成</a></td> 
-      {#  todo  認定情報作成画面へ遷移 #}
+      <td><a href="{% url 'dashboard:certificate_create' user.id %}" class="btn btn-cert">認定情報作成</a></td> 
       <td><a href="{% url 'dashboard:update' user.id %}" class="btn btn-edit">編集</a></td>
       {% if  user.has_plan %} {# user_service_viewで定義 #}
-      <td><a href="{% url 'dashboard:service' user.id %}" class="btn">サービス提供票</a></td>
+        <td><a href="{% url 'dashboard:service' user.id %}" class="btn">サービス提供票</a></td>
       {% else %}
-      <td><a href="{% url 'dashboard:createPlan' user.id %}" class="btn">サービス提供票</a></td>
+        <td><a href="{% url 'dashboard:createPlan' user.id %}" class="btn">サービス提供票</a></td>
       {% endif %}
       </td>
     </tr>

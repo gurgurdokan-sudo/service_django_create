@@ -16,7 +16,7 @@ def user_detail(request, user_id):
             'limit_start': prev_cert.limit_start,
             'limit_end': prev_cert.limit_end,
         }
-
+#介護認定変更
     if request.method == 'POST':
         form = CertificateUpdateForm(request.POST)
 
@@ -28,7 +28,7 @@ def user_detail(request, user_id):
             if prev_cert: cert.care_level_changed_at = cert.limit_start
             cert.save()
 
-            messages.success(request, '介護認定の登録が完了しました')
+            messages.success(request, '介護認定の更新が完了しました')
             return redirect('dashboard:user_list')
 
     else:
