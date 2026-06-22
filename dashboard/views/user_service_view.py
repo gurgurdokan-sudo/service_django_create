@@ -5,6 +5,7 @@ from django.contrib import messages
 from dashboard.models import User, ServicePlan, ServiceMaster, AddOnService, Office, Certificate
 from dashboard.calendar_table import get_month_days
 from dashboard.excel.service_sheet import create_service_sheet
+self.now = timezone.now()
 
 def build_user_service_context(user_id, year, month):
     target = get_object_or_404(User,id=user_id)
@@ -14,7 +15,7 @@ def build_user_service_context(user_id, year, month):
         year = year,
         month = month,
         )
-        
+    print(f'{year}-{month}のサービス提供票のplansを取得',flush=True)
     user_code = plans.values_list("service_code",flat=True) #userチェック済みのサービスコード
     all_plans = (ServiceMaster.objects
         .exclude(service_code__in = user_code)
@@ -42,7 +43,7 @@ def build_user_service_context(user_id, year, month):
         'calendar': get_month_days(year, month),
         'dis_year': year,
         'dis_month': month,
-        'current_year': now.year,
+        'current_year': now.year, #Excel出力の時間表示用
         'current_month': now.month,
         'year_range': range(now.year - 1, now.year + 1),
         'month_range': range(1, 13),
@@ -53,19 +54,28 @@ def build_user_service_context(user_id, year, month):
 
 #main
 def user_service(request,user_id):
-    now = timezone.now()
-    dis_year = int(request.GET.get('year', now.year))
-    dis_month = int(request.GET.get('month', now.month))
-    print(dis_year,dis_month,"が表示される",flush=True)
+    dis_year = int(request.GET.get('year', self.now.year))
+    dis_month = int(request.GET.get('month', self.now.month))
+    if not _exists_prev_month_plan(self, user_id, dis_year, dis_month) and :
+        print(f'{dis_year}-{dis_month}のサービス提供票が存在しないため、作成画面に遷移',flush=True)
+        return redirect('dashboard:createPlan', user_id=user_id)
+    print(f'{dis_year}-{dis_month}のサービス提供票に遷移',flush=True)
     context = build_user_service_context(user_id=user_id,year=dis_year,month=dis_month)
     return render(request,'dashboard/user_service.html',context)
 
-def export_excel(request,user_id):
-    now = timezone.now()
-    year = int(request.GET.get('year', now.year))
-    month = int(request.GET.get('month', now.month))
-    print(f'{year}-{month}をExcel出力',flush=True)
-    context = build_user_service_context(user_id=user_id,year=year,month=month)
-    exec_excel = create_service_sheet(context)
-    messages.success(request,'Excelを作成しました')
-    return redirect('dashboard:user_list')
+#prevMonth
+def prevMonthPlan(request,user_id):
+    prev_month = self.now.month - 1 if self.now.month > 1 else 12
+    year = self.now.year if prev_month != 12 else self.now.year - 1
+    if not _exists_prev_month_plan(self, user_id, year, prev_month):
+        print(f'prev{year}-{prev_month}のサービス提供票が存在しないため、作成画面に遷移',flush=True)
+        return redirect('dashboard:createPlan', user_id=user_id)
+    print(f'prev{year}-{prev_month}のサービス提供票に遷移',flush=True)
+    context = build_user_service_context(user_id=user_id,year=year,month=prev_month)
+    return render(request,'dashboard/user_service.html',context)
+
+def _exists_prev_month_plan(self, user_id, year, month):
+    #monthが未来年月でUserその月のサービス提供票が存在するか確認
+    if month > self.now.month and year >= self.now.year:
+        return False
+    return ServicePlan.objects.filter(user_id=user_id, year=year, month=month).exists()

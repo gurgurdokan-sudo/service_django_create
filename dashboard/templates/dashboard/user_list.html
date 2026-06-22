@@ -10,7 +10,7 @@
     <label><a href="{% url 'dashboard:plan' %}" class="btn btn-plan">Planマスター取り込み</a></label>
     <div class="form-check form-switch">
       <input class="form-check-input" type="checkbox" role="switch" id="bootstrapSwitch">
-      <label class="form-check-label" for="bootstrapSwitch">一括前月モード</label>
+      <label id="switchMonth" class="form-check-label" for="bootstrapSwitch">一括前月モード</label>
     </div>
       <label><a href="{% url 'dashboard:caremana_create' %}" class="btn btn-create">新規作成</a></label>
   </div>
@@ -37,17 +37,21 @@
       <td><a href="{% url 'dashboard:detail' user.id %}" class="link-name">{{ user.name }}</a></td>
       <td><a href="{% url 'dashboard:certificate_create' user.id %}" class="btn btn-cert">認定情報作成</a></td> 
       <td><a href="{% url 'dashboard:update' user.id %}" class="btn btn-edit">編集</a></td>
-      {% if  user.has_plan %} {# user_service_viewで定義 #}
-        <td><a href="{% url 'dashboard:service' user.id %}" class="btn">サービス提供票</a></td>
-      {% else %}
-        <td><a href="{% url 'dashboard:createPlan' user.id %}" class="btn">サービス提供票</a></td>
-      {% endif %}
+      <td><a href="#"
+            data-current="{% url 'dashboard:service' user.id %}"
+            data-prev="{% url 'dashboard:prevMonthPlan' user.id %}"
+            class="btn linkSwitch">
+          サービス提供票
+      </a></td>
       </td>
     </tr>
     {% endfor %}
   {% else %}
-    <li>利用者が登録されていません</li>
+    <li class="no-users">
+      <br />利用者が登録されていません<br />
+    </li>
   {% endif %}
   </table>
 </div>
+<script src="{% static 'js/user_list.js' %}"></script>
 {% endblock %}
