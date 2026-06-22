@@ -5,7 +5,7 @@ from django.contrib import messages
 from dashboard.models import User, ServicePlan, ServiceMaster, AddOnService, Office, Certificate
 from dashboard.calendar_table import get_month_days
 from dashboard.excel.service_sheet import create_service_sheet
-self.now = timezone.now()
+now = timezone.now()
 
 def build_user_service_context(user_id, year, month):
     target = get_object_or_404(User,id=user_id)
@@ -54,9 +54,9 @@ def build_user_service_context(user_id, year, month):
 
 #main
 def user_service(request,user_id):
-    dis_year = int(request.GET.get('year', self.now.year))
-    dis_month = int(request.GET.get('month', self.now.month))
-    if not _exists_prev_month_plan(self, user_id, dis_year, dis_month) and :
+    dis_year = int(request.GET.get('year', now.year))
+    dis_month = int(request.GET.get('month', now.month))
+    if not _exists_prev_month_plan(user_id, dis_year, dis_month):
         print(f'{dis_year}-{dis_month}のサービス提供票が存在しないため、作成画面に遷移',flush=True)
         return redirect('dashboard:createPlan', user_id=user_id)
     print(f'{dis_year}-{dis_month}のサービス提供票に遷移',flush=True)
@@ -65,17 +65,17 @@ def user_service(request,user_id):
 
 #prevMonth
 def prevMonthPlan(request,user_id):
-    prev_month = self.now.month - 1 if self.now.month > 1 else 12
-    year = self.now.year if prev_month != 12 else self.now.year - 1
-    if not _exists_prev_month_plan(self, user_id, year, prev_month):
+    prev_month = now.month - 1 if now.month > 1 else 12
+    year = now.year if prev_month != 12 else now.year - 1
+    if not _exists_prev_month_plan(user_id, year, prev_month):
         print(f'prev{year}-{prev_month}のサービス提供票が存在しないため、作成画面に遷移',flush=True)
         return redirect('dashboard:createPlan', user_id=user_id)
     print(f'prev{year}-{prev_month}のサービス提供票に遷移',flush=True)
     context = build_user_service_context(user_id=user_id,year=year,month=prev_month)
     return render(request,'dashboard/user_service.html',context)
 
-def _exists_prev_month_plan(self, user_id, year, month):
+def _exists_prev_month_plan(user_id, year, month):
     #monthが未来年月でUserその月のサービス提供票が存在するか確認
-    if month > self.now.month and year >= self.now.year:
+    if month > now.month and year >= now.year:
         return False
     return ServicePlan.objects.filter(user_id=user_id, year=year, month=month).exists()

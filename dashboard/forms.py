@@ -22,6 +22,10 @@ class UserForm(forms.ModelForm):
         }
     def clean(self):
         cleaned = super().clean()
+        care_level = cleaned.get('care_level')
+        mitaiyou = ('要支援1','要支援2')
+        if care_level in mitaiyou: #todo　要支援1,2は未対応の為、登録不可
+            self._errors['care_level'] = ErrorList(['未対応な為、要支援1,2は登録できません'])
         dob = cleaned.get('date_of_birth')
         if not dob:
             self._errors['date_of_birth'] = ErrorList(['生年月日は必須です'])

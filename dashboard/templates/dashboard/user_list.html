@@ -37,7 +37,7 @@
       <td><a href="{% url 'dashboard:detail' user.id %}" class="link-name">{{ user.name }}</a></td>
       <td><a href="{% url 'dashboard:certificate_create' user.id %}" class="btn btn-cert">認定情報作成</a></td> 
       <td><a href="{% url 'dashboard:update' user.id %}" class="btn btn-edit">編集</a></td>
-      <td><a href="#"
+      <td><a href="{% url 'dashboard:service' user.id %}"
             data-current="{% url 'dashboard:service' user.id %}"
             data-prev="{% url 'dashboard:prevMonthPlan' user.id %}"
             class="btn linkSwitch">
@@ -53,5 +53,5 @@
   {% endif %}
   </table>
 </div>
-<script src="{% static 'js/user_list.js' %}"></script>
+<script src="{% static 'dashbard/js/checked.js' %}"></script>
 {% endblock %}

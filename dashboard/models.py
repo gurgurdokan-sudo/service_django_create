@@ -271,7 +271,7 @@ class Certificate(models.Model):
     care_level_changed_at = models.DateField(verbose_name="要介護状態区分変更日",null=True,blank=True)
     # todo↑操作Userは選択できない様にする
     benefit_rate = models.FloatField(choices=BENEFIT_RATE_CHOICES,verbose_name="給付率")
-    limit_amount_type = models.CharField(max_length=10,choices=[("規定", "規定通り"), ("任意", "任意設定")],verbose_name="区分支給限度基準額区分")
+    limit_amount_type = models.CharField(default="規定",max_length=10,choices=[("規定", "規定通り"), ("任意", "任意設定")],verbose_name="区分支給限度基準額区分")
     benefit_limit_flag = models.BooleanField(default=False,verbose_name="給付制限")
     limit_amount_value = models.IntegerField(null=True,blank=True,verbose_name="任意設定の限度額") #todo任意対応
     limit_start = models.DateField(verbose_name="限度額適用開始日")
