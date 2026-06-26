@@ -5,7 +5,7 @@ from .views.export_service_sheet import download_service_sheet, export_excel
 from .views.user_detail import user_detail
 from .views.user_update import user_update
 from .views.user_delete import user_delete
-from .views.user_service_view import user_service, prevMonthPlan
+from .views.user_service_view import user_service, prev_month_plan
 from .views.create_plan import create_plan
 from .views.init_plan import init_plan
 
@@ -23,7 +23,7 @@ urlpatterns = [
     path('user/<int:user_id>/edit/', user_update, name='update'),
     path('user/<int:user_id>/delete/', user_delete, name='delete'),
     path('user/<int:user_id>/service/', user_service, name='service'),
-    path('user/<int:user_id>/service_prev/', prevMonthPlan, name='prevMonthPlan'),
+    path('user/<int:user_id>/service_prev/', prev_month_plan, name='prevMonthPlan'),
     path('user/<int:user_id>/create_plan/', create_plan, name='createPlan'),
     path('user/init', init_plan, name='plan'),
     

@@ -64,7 +64,8 @@ def user_service(request,user_id):
     return render(request,'dashboard/user_service.html',context)
 
 #prevMonth
-def prevMonthPlan(request,user_id):
+def prev_month_plan(request, user_id):
+    now = timezone.now()
     prev_month = now.month - 1 if now.month > 1 else 12
     year = now.year if prev_month != 12 else now.year - 1
     if not _exists_prev_month_plan(user_id, year, prev_month):
@@ -75,7 +76,8 @@ def prevMonthPlan(request,user_id):
     return render(request,'dashboard/user_service.html',context)
 
 def _exists_prev_month_plan(user_id, year, month):
-    #monthが未来年月でUserその月のサービス提供票が存在するか確認
-    if month > now.month and year >= now.year:
+    now = timezone.now()
+    #未来年月ならUserその月のサービス提供票が存在するか見に行かない
+    if (year > now.year) or (year == now.year and month > now.month):
         return False
     return ServicePlan.objects.filter(user_id=user_id, year=year, month=month).exists()
