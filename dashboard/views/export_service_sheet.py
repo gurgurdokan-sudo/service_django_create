@@ -8,6 +8,7 @@ from dashboard.excel.service_sheet import get_service_sheet_path
 from django.utils import timezone
 
 from dashboard.views.user_service_view import build_user_service_context
+from dashboard.excel.service_sheet import create_service_sheet
 
 # Excel ダウンロード（既に作成済みのファイルを返す）
 def download_service_sheet(request, user_id):
