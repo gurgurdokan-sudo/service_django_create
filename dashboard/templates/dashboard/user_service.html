@@ -144,10 +144,10 @@
               onclick="deleteAddon({{ plan.id }}, '{{ addon_name }}')">🗑</button>
           </td>
           <td class="col-time">--:--</td>
-          <td class="col-service service-addon-name">
-            {{ addon_name }}
+          <td class="col-service service-addon-name" colspan="2">
+            <span>{{ addon_name }}</span>
           </td>
-          <td class="col-office">-</td>
+          {#  <td class="col-office">-</td>  #}
           <td class="col-calendar">
             <div class="calendar-row" data-row-type="actual_addon">
               <div class="label-cell">実績</div>
@@ -178,10 +178,10 @@
               <button type="button" class="btn-delete-row" onclick="">🗑</button>
             </td>
             <td class="col-time">--:--</td>
-            <td class="col-service service-addon-name">
+            <td class="col-service service-addon-name" colspan="2">
               {{ default.service_name }}
             </td>
-            <td class="col-office">-</td>
+            {#  <td class="col-office">-</td>  #}
             <td class="col-calendar">
               <div class="calendar-row" data-row-type="actual_addon">
                 <div class="label-cell">実績</div>

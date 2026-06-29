@@ -104,8 +104,18 @@
 .calendar-row div { border-right: 1px solid #455a64; height: 35px; display: flex; align-items: center; justify-content: center; border-bottom: 1px solid #455a64; }
 /* 加算行のスタイル */
 .addon-row { background-color: #fff5f5;}
-.service-addon-name { color: #a51212; font-weight: bold; padding-left: 20px !important; }
-
+.service-addon-name {
+    color: #a51212; 
+    font-weight: bold;
+    padding-left: 20px !important;
+ }
+.service-addon-name>span {
+    display: inline-block;
+    max-width: 300px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
 /* 日付色 */
 .sun, .holi { color: #ff8a8a; }
 .sat { color: #8ad4ff; }
