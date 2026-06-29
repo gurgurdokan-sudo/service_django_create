@@ -111,6 +111,12 @@ function nextMonth(userId,action) {
         alert(`${error}errorが発生`);
     }
 }
+function toAct(userId) {
+    const thisYear = parseInt(document.getElementById('dis_year').value);
+    const thisMonth = parseInt(document.getElementById('dis_month').value);
+    console.log(`${thisYear} ${thisMonth} 予定で実績を作成`)
+    window.location.href = `/user/${userId}/service_act?year=${thisYear}&month=${String(thisMonth).padStart(2,'0')}`
+}
 function toExcel(userId){
     const modal = new bootstrap.Modal(document.getElementById('loadingModal'));
     modal.show();

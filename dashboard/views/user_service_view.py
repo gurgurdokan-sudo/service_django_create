@@ -54,6 +54,12 @@ def build_user_service_context(user_id, year, month):
         'monthly_addon_totals': monthly_addon_totals, #tableのtotal
     }
 
+def _is_future_month_not_plan(user_id,year, month):
+    now = timezone.now()
+    if (year > now.year) or (year == now.year and month >= now.month):
+        return not ServicePlan.objects.filter(user_id=user_id, year=year, month=month).exists()
+    return False
+
 #main
 def user_service(request,user_id):
     dis_year = int(request.GET.get('year', now.year))
@@ -68,7 +74,7 @@ def user_service(request,user_id):
     context = build_user_service_context(user_id=user_id,year=dis_year,month=dis_month)
     return render(request,'dashboard/user_service.html',context)
 
-#prevMonth
+#一括前月モード
 def prev_month_plan(request, user_id):
     prev_month = now.month - 1 if now.month > 1 else 12
     year = now.year if prev_month != 12 else now.year - 1
@@ -76,8 +82,35 @@ def prev_month_plan(request, user_id):
     context = build_user_service_context(user_id=user_id,year=year,month=prev_month)
     return render(request,'dashboard/user_service.html',context)
 
-def _is_future_month_not_plan(user_id,year, month):
-    now = timezone.now()
-    if (year > now.year) or (year == now.year and month >= now.month):
-        return not ServicePlan.objects.filter(user_id=user_id, year=year, month=month).exists()
-    return False
+#予定通り
+def service_act(request, user_id):
+    year = int(request.GET.get('year', now.year))
+    month = int(request.GET.get('month', now.month))
+
+    col = get_month_days(year=year, month=month)
+    user = get_object_or_404(User, id=user_id)
+
+    query_plans = ServicePlan.objects.filter(
+        user=user,
+        year=year,
+        month=month
+    )
+
+    for plan in query_plans:
+        schedule = plan.schedule_dict      # {"1": "1", "5": "1", ...}
+        actual = plan.actual_dict          # {"1": {"main": "", "addon": []}, ...}
+
+        for day in col:
+            day_str = str(day['day'])
+            if schedule.get(day_str) == '1':
+                actual[day_str]['main'] = '1'
+            else:
+                actual[day_str]['main'] = ''
+
+        plan.actual_json = actual
+        plan.save()
+
+    messages.success(request, '予定で実績を作成しました')
+    return redirect(
+        f"{reverse('dashboard:service', kwargs={'user_id': user_id})}?year={year}&month={month}"
+    )
