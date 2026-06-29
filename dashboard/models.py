@@ -127,9 +127,9 @@ class ServicePlan(models.Model):
         return self.schedule_json or {} #keyが日付、valueが'1'（サービスあり）か''（なし）
     @property
     def actual_dict(self): #-> { "1": {"main": "1", "addon": [1,2]}, "5": {"main": "1", "addon": []}, "12": {"main": "", "addon": [2]} }
-        date = self.actual_json or {} #keyが日付、valueが{"main": "1" or "", "addon": [加算IDのリスト]}
+        date = self.actual_json or {} #keyが日付、valueが{"main": "1" or "", "addon": {加算ID:加算NEME}}
         return {
-            str(i): date.get(str(i), {'main':"",'addon':[]}) for i in range(1, 32)
+            str(i): date.get(str(i), {'main':"",'addon':{}}) for i in range(1, 32)
         }
     def get_total_count(self,row_type)->int: #scheduleなら予定の回数、actualなら実績の回数、addonなら全ての加算回数
         if row_type == "schedule":

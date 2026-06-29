@@ -67,9 +67,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnFilterAddon = document.getElementById('btn_filter_addon');
     if(btnFilterAddon){
         btnFilterAddon.addEventListener('click',()=>{
-            const keyword = document.getElementById('addon_keyword').value.toLowerCase();
+            const keyword = document.getElementById('addon_keyword').value;
             document.querySelectorAll('.addon-row').forEach(row=>{
-            const name = row.getAttribute('data-name').toLowerCase();
+            const name = row.getAttribute('data-name');
             row.style.display = name.includes(keyword) ? '' : 'none';
             });
         });
