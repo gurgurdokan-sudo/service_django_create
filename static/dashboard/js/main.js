@@ -98,10 +98,10 @@ function nextMonth(userId,action) {
             if (dis_month === 13){
                 dis_month = 1;
                 dis_year += 1;
-                window.location.href = `/user/${userId}/service/?year=${dis_year}&month=${String(dis_month).padStart(2,'0')}`;
+                window.location.href = `/user/${userId}/service_prev/?year=${dis_year}&month=${String(dis_month).padStart(2,'0')}`;
                 return;
             }
-            window.location.href = `/user/${userId}/service/?year=${dis_year}&month=${String(dis_month).padStart(2,'0')}`;
+            window.location.href = `/user/${userId}/service_prev/?year=${dis_year}&month=${String(dis_month).padStart(2,'0')}`;
             return;
         }
         else{

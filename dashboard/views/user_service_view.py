@@ -43,7 +43,7 @@ def build_user_service_context(user_id, year, month):
         'calendar': get_month_days(year, month),
         'dis_year': year,
         'dis_month': month,
-        'current_year': now.year, #Excel出力の時間表示用
+        'current_year': now.year, #Excel出力の表示用
         'current_month': now.month,
         'year_range': range(now.year - 1, now.year + 1),
         'month_range': range(1, 13),
@@ -56,7 +56,7 @@ def build_user_service_context(user_id, year, month):
 def user_service(request,user_id):
     dis_year = int(request.GET.get('year', now.year))
     dis_month = int(request.GET.get('month', now.month))
-    if not _exists_prev_month_plan(user_id, dis_year, dis_month):
+    if _exists_prev_month_plan(user_id, dis_year, dis_month):
         print(f'{dis_year}-{dis_month}のサービス提供票が存在しないため、作成画面に遷移',flush=True)
         return redirect('dashboard:createPlan', user_id=user_id)
     print(f'{dis_year}-{dis_month}のサービス提供票に遷移',flush=True)
@@ -68,7 +68,7 @@ def prev_month_plan(request, user_id):
     now = timezone.now()
     prev_month = now.month - 1 if now.month > 1 else 12
     year = now.year if prev_month != 12 else now.year - 1
-    if not _exists_prev_month_plan(user_id, year, prev_month):
+    if _exists_prev_month_plan(user_id, year, prev_month):
         print(f'prev{year}-{prev_month}のサービス提供票が存在しないため、作成画面に遷移',flush=True)
         return redirect('dashboard:createPlan', user_id=user_id)
     print(f'prev{year}-{prev_month}のサービス提供票に遷移',flush=True)
@@ -79,5 +79,5 @@ def _exists_prev_month_plan(user_id, year, month):
     now = timezone.now()
     #未来年月ならUserその月のサービス提供票が存在するか見に行かない
     if (year > now.year) or (year == now.year and month > now.month):
-        return False
-    return ServicePlan.objects.filter(user_id=user_id, year=year, month=month).exists()
+        return ServicePlan.objects.filter(user_id=user_id, year=year, month=month).exists()
+    return False
