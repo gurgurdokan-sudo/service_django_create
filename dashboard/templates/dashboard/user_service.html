@@ -163,11 +163,35 @@
           </td>
         </tr>
         {% endfor %}
+        
         {% empty %}
         <tr class="no-data">
           <td colspan="5">サービス提供予定がありません</td>
         </tr>
         {% endfor %}
+
+        {% if default and plans%}
+          <tr class="addon-row-def">
+            <td class="col-delete">
+              <button type="button" class="btn-delete-row" onclick="">🗑</button>
+            </td>
+            <td class="col-time">--:--</td>
+            <td class="col-service service-addon-name">
+              {{ default.service_name }}
+            </td>
+            <td class="col-office">-</td>
+            <td class="col-calendar">
+              <div class="calendar-row" data-row-type="actual_addon">
+                <div class="label-cell">実績</div>
+                {% for d in calendar %}
+                <div class="">
+                </div>
+                {% endfor %}
+                <div class="total-cell">1</div>
+              </div>
+            </td>
+          </tr>
+        {% endif %}
       </tbody>
     </table>
   </div>
@@ -183,7 +207,11 @@
   
 {#  国保に請求の加算  #}
   {% for service_name, item in add_codes.items %}
-  <li>{{ service_name }}: {{ item.unit|default:item.price }} (単位/円)</li>
+  <li>{{ service_name }}: 
+    {% if item.unit or item.price %}
+      <span>{{ item.unit|default:item.price }} (単位/円)</span>
+    {% endif %}
+  </li>
   {% if item.code == 0 %}
   <dd>サービスコード: {{ office.service_type_code }}{{ item.code }}</dd>
   {% endif %}

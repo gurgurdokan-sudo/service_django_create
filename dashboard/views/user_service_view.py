@@ -11,6 +11,7 @@ now = timezone.now()
 def build_user_service_context(user_id, year, month):
     target = get_object_or_404(User,id=user_id)
     office = Office.objects.filter(id=1).first() #todoログインユーザー事務所
+    default = AddOnService.objects.get(pk=office.default_service.pk)
     plans = ServicePlan.objects.filter(
         user = target,
         year = year,
@@ -37,6 +38,7 @@ def build_user_service_context(user_id, year, month):
     
     return {
         'office': office,
+        'default': default,
         'user': target,
         'plans': plans, 
         'service': all_plans, #userの対象全プラン
