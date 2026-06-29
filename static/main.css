@@ -1,6 +1,13 @@
 /* --- 基本レイアウト --- */
 .container { font-family: "Yu Gothic", "Meiryo", sans-serif; padding: 20px; max-width: 1600px; margin: 0 auto; }
 .header-container { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #2c3e50; padding-bottom: 10px; margin-bottom: 20px; }
+.header-container>h2>span{
+    display: inline-block;
+    max-width: 500px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
 .page-title { margin: 0; font-size: 1.4rem; color: #2c3e50; border-left: 6px solid #2c3e50; padding-left: 15px; }
 /* --- フラッシュメッセージ（通知） --- */
 .messages {
