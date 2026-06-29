@@ -96,7 +96,7 @@
 .calendar-row { display: grid; grid-template-columns: 50px repeat(31, 25px) 60px; width: 885px; }
 .calendar-row div { border-right: 1px solid #455a64; height: 35px; display: flex; align-items: center; justify-content: center; border-bottom: 1px solid #455a64; }
 /* 加算行のスタイル */
-.addon-row { background-color: #fff5f5; }
+.addon-row { background-color: #fff5f5;}
 .service-addon-name { color: #a51212; font-weight: bold; padding-left: 20px !important; }
 
 /* 日付色 */
@@ -207,6 +207,17 @@
     animation: slideInDown 0.3s ease-out;    /* 上からスッと降りてくるアニメーション */
     position: relative;
 }
+.selectable-row{
+    cursor: pointer;
+    height: 80px;
+}
+.basic-row:hover{
+    background-color: #f0faff;
+}
+.addon-row.selectable-row:hover{
+    background-color: #f96262
+}
+
 /* --- 要介護度のバッジ --- */
 .badge {
     font-size: 0.8rem;

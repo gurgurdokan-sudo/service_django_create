@@ -53,7 +53,7 @@
         </thead>
         <tbody>
             {% for s in service %}
-            <tr class="service-row basic-row" data-stay-time="{{ s.get_stay_time_category_display }}">
+            <tr class="service-row basic-row selectable-row" data-stay-time="{{ s.get_stay_time_category_display }}">
             <td class="text-center"><input type="radio" name="selected_basic" value="basic_{{ s.id }}"></td>
             <td>{{ s.service_name }}</td>
             <td>{{ s.get_stay_time_category_display }}</td>
@@ -67,7 +67,7 @@
 
     <div id="tab-addon" class="tab-panel active">
     <div class="table-scroll-container">
-        <table class="data-table select-table">
+    <table class="data-table select-table">
         <thead>
             <tr>
             <th>選択</th>
@@ -77,22 +77,28 @@
             </tr>
         </thead>
         <tbody>
-            {% for a in addon_service %}
-            <tr class="service-row addon-row" data-name="{{ a.service_name }}">
-            <td class="text-center"><input type="radio" name="selected_addon" value="addon_{{ a.id }}"></td>
-            <td><span class="badge {{ a.insurance_type }}">{{ a.get_insurance_type_display }}</span> {{ a.service_name }}</td>
-            <td>
+    {% for a in addon_service %}
+    <tr class="service-row addon-row selectable-row" data-name="{{ a.service_name }}">
+        <td class="text-center">
+            <input type="radio" name="selected_addon" value="addon_{{ a.id }}">
+        </td>
+        <td>
+            <span class="badge {{ a.insurance_type }}">{{ a.get_insurance_type_display }}</span>
+            {{ a.service_name }}
+        </td>
+        <td>
             {% if a.price == 0 or a.unit == 0 %}
                 <span>---</span>
             {% else %}
                 {{ a.price|default:a.unit }}
                 {% if a.price %}円{% else %}単位{% endif %}
             {% endif %}
-            </td>
-            <td>{{ a.category }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
+        </td>
+        <td>{{ a.category }}</td>
+    </tr>
+    {% endfor %}
+</tbody>
+
         </table>
     </div>
     </div>

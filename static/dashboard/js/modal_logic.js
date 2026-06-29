@@ -143,4 +143,11 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+    document.querySelectorAll('.selectable-row').forEach(row => {
+        row.addEventListener('click', () => {
+        const radio = row.querySelector('input[type="radio"]');
+        radio.checked = true;
+        });
+    });
+
 });
