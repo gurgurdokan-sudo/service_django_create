@@ -93,7 +93,6 @@ class PlanForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         user_id = kwargs.pop('user_id', None)
         super().__init__(*args, **kwargs)
-        label_suffix = ''
         if user_id:
             self.user_id = user_id
         for field_name in self.fields:

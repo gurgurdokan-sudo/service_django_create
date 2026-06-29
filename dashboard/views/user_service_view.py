@@ -1,6 +1,7 @@
 from django.shortcuts import render,redirect, get_object_or_404
 from django.utils import timezone
 from django.contrib import messages
+from django.urls import reverse
 
 from dashboard.models import User, ServicePlan, ServiceMaster, AddOnService, Office, Certificate
 from dashboard.calendar_table import get_month_days
@@ -34,7 +35,6 @@ def build_user_service_context(user_id, year, month):
             if addon.unit:
                 monthly_addon_totals[addon_name] = monthly_addon_totals.get(addon_name,0) + addon.unit * len(days)
     
-    now = timezone.now()
     return {
         'office': office,
         'user': target,
@@ -56,28 +56,26 @@ def build_user_service_context(user_id, year, month):
 def user_service(request,user_id):
     dis_year = int(request.GET.get('year', now.year))
     dis_month = int(request.GET.get('month', now.month))
-    if _exists_prev_month_plan(user_id, dis_year, dis_month):
-        print(f'{dis_year}-{dis_month}のサービス提供票が存在しないため、作成画面に遷移',flush=True)
-        return redirect('dashboard:createPlan', user_id=user_id)
+    if _is_future_month_not_plan(user_id,dis_year, dis_month):
+        print(f'{dis_year}-{dis_month}は未来の年月です')
+        url = reverse('dashboard:createPlan',kwargs= {'user_id':user_id})
+        return redirect(
+            f'{url}?year={dis_year}&month={dis_month}'
+            )
     print(f'{dis_year}-{dis_month}のサービス提供票に遷移',flush=True)
     context = build_user_service_context(user_id=user_id,year=dis_year,month=dis_month)
     return render(request,'dashboard/user_service.html',context)
 
 #prevMonth
 def prev_month_plan(request, user_id):
-    now = timezone.now()
     prev_month = now.month - 1 if now.month > 1 else 12
     year = now.year if prev_month != 12 else now.year - 1
-    if _exists_prev_month_plan(user_id, year, prev_month):
-        print(f'prev{year}-{prev_month}のサービス提供票が存在しないため、作成画面に遷移',flush=True)
-        return redirect('dashboard:createPlan', user_id=user_id)
     print(f'prev{year}-{prev_month}のサービス提供票に遷移',flush=True)
     context = build_user_service_context(user_id=user_id,year=year,month=prev_month)
     return render(request,'dashboard/user_service.html',context)
 
-def _exists_prev_month_plan(user_id, year, month):
+def _is_future_month_not_plan(user_id,year, month):
     now = timezone.now()
-    #未来年月ならUserその月のサービス提供票が存在するか見に行かない
-    if (year > now.year) or (year == now.year and month > now.month):
-        return ServicePlan.objects.filter(user_id=user_id, year=year, month=month).exists()
+    if (year > now.year) or (year == now.year and month >= now.month):
+        return not ServicePlan.objects.filter(user_id=user_id, year=year, month=month).exists()
     return False

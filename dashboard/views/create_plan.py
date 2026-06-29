@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.utils import timezone
+from django.urls import reverse
 
 from dashboard.models import User, ServicePlan, ServiceMaster
 from dashboard.forms import PlanForm
@@ -14,13 +15,29 @@ def create_plan(request,user_id):
             plan.user_id = user_id
             plan.build_schedule(form.cleaned_data['weekdays'])
             plan.apply_service_master() #コピー項目
-            form.save()
+            plan.save()
+            year = request.POST.get('year')
+            month = request.POST.get('month')
             messages.success(request,'プランを作成しました')
-            return redirect('dashboard:service',user_id=user_id)
+            url = reverse('dashboard:service',kwargs={'user_id':user_id})
+            return redirect(f'{url}?year={year}&month={month}')
     else:
-        user = get_object_or_404(User, id= user_id)
-        form = PlanForm(user_id=user_id)
-    return render(request,'dashboard/create_plan.html', {
+        now = timezone.now()
+        year = int(request.GET.get('year',now.year))
+        month = int(request.GET.get('month',now.month))
+        form = PlanForm({
+            'year':year,
+            'month':month,
+            'start_time':'09:00',
+            'end_time':'17:00'
+            }, user_id=user_id
+            )
+        print(f'{year}-{month}です',flush=True)
+        return render(request,'dashboard/create_plan.html', {
         'form': form,
-        'user':user
+        'year':year,
+        'month':month,
         })
+    messages.error(request,f'error')
+    return redirect('dashboard:user_list')
+
