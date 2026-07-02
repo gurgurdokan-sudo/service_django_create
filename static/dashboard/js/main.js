@@ -112,12 +112,18 @@ function nextMonth(userId,action) {
     }
 }
 function toAct(userId) {
+    const btn = document.getElementById('copyPlannedToActual');
+    btn.disabled = true;
+    btn.style.opacity = 0.5;
     const thisYear = parseInt(document.getElementById('dis_year').value);
     const thisMonth = parseInt(document.getElementById('dis_month').value);
     console.log(`${thisYear} ${thisMonth} 予定で実績を作成`)
     window.location.href = `/user/${userId}/service_act?year=${thisYear}&month=${String(thisMonth).padStart(2,'0')}`
 }
 function toExcel(userId){
+    const btn = document.getElementById('btn-excel');
+    btn.disabled =true;
+    btn.style.opacity = 0.5;
     const modal = new bootstrap.Modal(document.getElementById('loadingModal'));
     modal.show();
     animateProgressBar();
@@ -127,6 +133,9 @@ function toExcel(userId){
     return;
 }
 function exportExcel(userId){
+    const btn = document.getElementById('btn-export');
+    btn.disabled = true;
+    btn.style.opacity = 0.5;
     const thisYear = parseInt(document.getElementById('dis_year').value);
     const thisMonth = parseInt(document.getElementById('dis_month').value);
     console.log(`exportExcel${thisYear}${thisMonth}`);

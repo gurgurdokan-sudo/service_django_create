@@ -22,6 +22,7 @@ def create_plan(request,user_id):
             url = reverse('dashboard:service',kwargs={'user_id':user_id})
             return redirect(f'{url}?year={year}&month={month}')
     else:
+        user = get_object_or_404(User, id=user_id)
         now = timezone.now()
         year = int(request.GET.get('year',now.year))
         month = int(request.GET.get('month',now.month))
@@ -29,14 +30,23 @@ def create_plan(request,user_id):
             'year':year,
             'month':month,
             'start_time':'09:00',
-            'end_time':'17:00'
-            }, user_id=user_id
+            'end_time':'17:00'},
+            user_id=user_id
             )
+        plans = ServicePlan.objects.filter(user = user,year = year,month = month,)
+        user_code = plans.values_list("service_code",flat=True) #userチェック済みのサービスコード
+        all_plans = list(ServiceMaster.objects #todo関数化
+            .exclude(service_code__in = user_code)
+            .filter(care_level = user.care_level)
+            .values()
+        )
         print(f'{year}-{month}です',flush=True)
         return render(request,'dashboard/create_plan.html', {
         'form': form,
         'year':year,
         'month':month,
+        'user':user,
+        'all_plans':all_plans,
         })
     messages.error(request,f'error')
     return redirect('dashboard:user_list')
