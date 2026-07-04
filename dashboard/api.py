@@ -3,6 +3,8 @@ from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from .models import ServicePlan, AddOnService, User, ServiceMaster
 
+import logging
+loger = logging.getLogger(__name__)
 
 @api_view(["PATCH"])
 def update_schedule(request, planId):
@@ -16,7 +18,7 @@ def update_schedule(request, planId):
         total = 0
         if row_type == "schedule":
             total = int(request.data.get("total", 0))
-            print("scheduleの処理", flush=True)
+            loger.info("scheduleの処理")
             data = plan.schedule_json or {}
             data[day] = value
             plan.schedule_json = data
@@ -27,7 +29,7 @@ def update_schedule(request, planId):
             return Response({"status": "ok", "total": total})
         # 実績（actual）の main を更新
         elif row_type == "actual_main":
-            print(f"actual_mainの処理{value}", flush=True)
+            loger.info(f"actual_mainの処理{value}")
             total = int(request.data.get("total", 0))
             data = plan.actual_json or {}
             day_data = data.get(day, {"main": "", "addon": {}})
@@ -47,7 +49,7 @@ def update_schedule(request, planId):
 
         # 実績（actual）の addon を更新
         elif row_type == "actual_addon":
-            print("actual_addonの処理", flush=True)
+            loger.info("actual_addonの処理")
             total = int(request.data.get("total", 0))
             addon_name = value
             addon_id = str(
@@ -67,7 +69,7 @@ def update_schedule(request, planId):
             day_actual = data.get(day, {"main": "", "addon": {}})
             addon = day_actual.get("addon") or {}
             if addon_id in addon:
-                print(f"addon_id {addon_id} は既に存在するため削除します", flush=True)
+                loger.warning(f"addon_id {addon_id} は既に存在するため削除します")
                 addon.pop(addon_id)
                 if total!=0: total -= int(unit)
 
@@ -91,7 +93,7 @@ def update_schedule(request, planId):
             return Response({"status": "ok", "total": total})
         # 実績FULLバージョン
         elif row_type == "actual_full":
-            print("actual_fullの処理", flush=True)
+            loger.info("actual_fullの処理")
             data = plan.schedule_json or None
             if data:
                 days = set()
@@ -143,7 +145,7 @@ def update_schedule(request, planId):
             plan.save()
             return Response({"status": "ok"})
         else:
-            print("処理error rowtypeがない", flush=True)
+            loger.error("処理error rowtypeがない")
             return Response(
                 {"status": "error", "message": "rowtype not found"}, status=404
             )
@@ -155,11 +157,10 @@ def update_schedule(request, planId):
 
 @api_view(["POST"])
 def create_plan(request, user_id):
-    print(user_id, "POSTの呼び出し", flush=True)
+    loger.info(f"{user_id} POSTの呼び出し")
     target_user = get_object_or_404(User, id=user_id)
-    messages = f"APIでユーザーID {target_user.name} のサービスプランを作成する処理が呼び出されました。"
+    messages = f"{target_user.name} のサービスプランを作成します"
     master_id = request.data.get("selected_service", "")  # "1"
-    print(int(request.data.get("year")),flush=True)
     if master_id:
         master = get_object_or_404(ServiceMaster, id=master_id)
         new_plan = ServicePlan.objects.create(

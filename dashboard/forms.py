@@ -3,6 +3,7 @@ from django.forms.utils import ErrorList
 from django.forms.widgets import SelectDateWidget
 from .models import User, ServicePlan, Certificate, CareManager
 
+
 class UserForm(forms.ModelForm):
     required_css_class = 'required'
     class Meta:

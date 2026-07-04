@@ -8,10 +8,13 @@ from django.utils import timezone
 from django.conf import settings
 from django.http import FileResponse
 import textwrap
+    
+import logging
+loger = logging.getLogger(__name__)
 
 def create_service_sheet(context):
     wb = load_workbook('templatesExcel/service_template.xlsx')
-
+    loger.info(f'サービス提供票のExcelを作成します')
     office = context['office']
     user = context['user']
     year = context['dis_year']
@@ -34,7 +37,7 @@ def create_service_sheet(context):
     ws['AX7'] = f"{to_nengo(year,month)} {month}月 1日" #todo届出年月日
 
     insured_number = str(user.insured_number) #被保険者番号
-    print(insured_number,flush=True)
+    print(insured_number)
     for i,d in enumerate(insured_number):
         cell = f"{chr(ord('G')+i)}7"
         ws[cell] = d

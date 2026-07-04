@@ -8,6 +8,9 @@ from dashboard.calendar_table import get_month_days
 from dashboard.excel.service_sheet import create_service_sheet
 now = timezone.now()
 
+import logging
+loger = logging.getLogger(__name__)
+
 def build_user_service_context(user_id, year, month):
     target = get_object_or_404(User,id=user_id)
     office = Office.objects.filter(id=1).first() #todoログインユーザー事務所
@@ -17,12 +20,14 @@ def build_user_service_context(user_id, year, month):
         year = year,
         month = month,
         )
-    print(f'{year}-{month}のサービス提供票のplansを取得',flush=True)
+    loger.info(f'{year}-{month}のサービス提供票のplansを取得')
+
     user_code = plans.values_list("service_code",flat=True) #userチェック済みのサービスコード
     all_plans = (ServiceMaster.objects
         .exclude(service_code__in = user_code)
         .filter(care_level = target.care_level)
         )
+    loger.info(f'{user_code}以外のplansを取得')
 
     monthly_addon_totals = {}
     add_codes = {} #todo　Excelではcode=0
@@ -32,7 +37,6 @@ def build_user_service_context(user_id, year, month):
         for addon_name,days in addon_names.items():
             addon = AddOnService.objects.filter(service_name = addon_name).first()
             add_codes[addon_name] = {"unit": addon.unit, "code": addon.code, "count": len(days), "price":addon.price}
-            print(days,flush=True)
             if addon.unit:
                 monthly_addon_totals[addon_name] = monthly_addon_totals.get(addon_name,0) + addon.unit * len(days)
     

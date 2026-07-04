@@ -12,7 +12,7 @@
 {% endif %}
 <div class="detail-card">
 
-    {#  同じフォームで認定情報  #}
+    {#  同じフォームでケアマネジャーのプロフィール/利用者プロフィール/認定情報  #}
     <form method="post" id="cmForm" novalidate>
         {% csrf_token %}
         {% if cetrificate %}
@@ -27,7 +27,7 @@
             {% if messages %}
                 <ul class="messages">
                 {% for message in messages %}
-                    <li class="message-item {{message.tags}}">{{message}}</li>        
+                    <li class="message-item {{ message.tags }}">{{ message }}</li>        
                 {% endfor %}
                 </ul>
             {% endif %}

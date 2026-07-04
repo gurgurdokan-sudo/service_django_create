@@ -7,6 +7,9 @@ from dashboard.models import User, ServicePlan, ServiceMaster
 from dashboard.forms import PlanForm
 from dashboard.calendar_table import get_month_days
 
+import logging
+loger = logging.getLogger(__name__)
+
 def create_plan(request,user_id):
     if request.method == 'POST':
         form = PlanForm(request.POST,user_id=user_id)
@@ -40,7 +43,7 @@ def create_plan(request,user_id):
             .filter(care_level = user.care_level)
             .values()
         )
-        print(f'{year}-{month}です',flush=True)
+        loger.info(f'{year}-{month}です',flush=True)
         return render(request,'dashboard/create_plan.html', {
         'form': form,
         'year':year,
