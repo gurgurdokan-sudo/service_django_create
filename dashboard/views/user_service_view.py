@@ -9,7 +9,7 @@ from dashboard.excel.service_sheet import create_service_sheet
 now = timezone.now()
 
 import logging
-loger = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 def build_user_service_context(user_id, year, month):
     target = get_object_or_404(User,id=user_id)
@@ -20,14 +20,14 @@ def build_user_service_context(user_id, year, month):
         year = year,
         month = month,
         )
-    loger.info(f'{year}-{month}のサービス提供票のplansを取得')
+    logger.info(f'{year}-{month}のサービス提供票のplansを取得')
 
     user_code = plans.values_list("service_code",flat=True) #userチェック済みのサービスコード
     all_plans = (ServiceMaster.objects
         .exclude(service_code__in = user_code)
         .filter(care_level = target.care_level)
         )
-    loger.info(f'{user_code}以外のplansを取得')
+    logger.info(f'{user_code}以外のplansを取得')
 
     monthly_addon_totals = {}
     add_codes = {} #todo　Excelではcode=0
@@ -75,7 +75,7 @@ def user_service(request,user_id):
         return redirect(
             f'{url}?year={dis_year}&month={dis_month}'
             )
-    print(f'{dis_year}-{dis_month}のサービス提供票に遷移',flush=True)
+    logger.info(f'{dis_year}-{dis_month}のサービス提供票に遷移')
     context = build_user_service_context(user_id=user_id,year=dis_year,month=dis_month)
     return render(request,'dashboard/user_service.html',context)
 
@@ -88,7 +88,7 @@ def prev_month_plan(request, user_id):
         return redirect(
             f'{url}?year={year}&month={prev_month}'
             )
-    print(f'prev{year}-{prev_month}のサービス提供票に遷移',flush=True)
+    logger.info(f'prev{year}-{prev_month}のサービス提供票に遷移')
     context = build_user_service_context(user_id=user_id,year=year,month=prev_month)
     return render(request,'dashboard/user_service.html',context)
 

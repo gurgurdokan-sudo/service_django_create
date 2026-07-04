@@ -11,7 +11,7 @@ from django.http import FileResponse
 import textwrap
     
 import logging
-loger = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 def create_service_sheet(context):
     wb = load_workbook('templatesExcel/service_template.xlsx')

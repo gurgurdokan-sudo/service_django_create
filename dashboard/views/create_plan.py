@@ -8,7 +8,7 @@ from dashboard.forms import PlanForm
 from dashboard.calendar_table import get_month_days
 
 import logging
-loger = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 def create_plan(request,user_id):
     if request.method == 'POST':
@@ -43,7 +43,7 @@ def create_plan(request,user_id):
             .filter(care_level = user.care_level)
             .values()
         )
-        loger.info(f'{year}-{month}です',flush=True)
+        logger.info(f'{year}-{month}です')
         return render(request,'dashboard/create_plan.html', {
         'form': form,
         'year':year,
