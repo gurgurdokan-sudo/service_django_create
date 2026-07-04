@@ -172,6 +172,7 @@
         </tr>
         {% endfor %}
 
+        {#  defaultの加算行  #}
         {% if default and plans%}
           <tr class="addon-row-def">
             <td class="col-delete">
@@ -186,7 +187,12 @@
               <div class="calendar-row" data-row-type="actual_addon">
                 <div class="label-cell">実績</div>
                 {% for d in calendar %}
-                <div class="">
+                <div class="
+                {% if d.is_sun or d.is_holiday %}
+                  sun-bg
+                {% elif d.is_sat %}
+                  sat-bg
+                {% endif %}">
                 </div>
                 {% endfor %}
                 <div class="total-cell">1</div>
