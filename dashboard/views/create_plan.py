@@ -1,11 +1,16 @@
-import datetime
+from datetime import date
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.utils import timezone
 from django.urls import reverse
 
-from dashboard.models import User, ServicePlan, ServiceMaster, ServiceRecord
+from dashboard.models import (
+    User, 
+    ServicePlan,
+    ServiceMaster,
+    ServiceRecord
+    )
 from dashboard.forms import PlanForm
 from dashboard.calendar_table import get_month_days
 
@@ -28,13 +33,15 @@ def create_plan(request,user_id):
             try:
                 record = ServiceRecord.objects.filter(user=plan.user, date=date).first()
                 if not record:
-                    logger.info(f'{form.cleaned_data["weekdays"]}でServiceRecordを作成します')
                     week_list = form.cleaned_data['weekdays']
+                    logger.info(f'{week_list}でServiceRecordを作成します')
                     record = ServiceRecord(
                         user=plan.user,
                         date=date,
                         weekday_pattern=[int(i) for i in week_list],
                         confirmed=False,
+                        start_time=form.cleaned_data['start_time'],
+                        end_time=form.cleaned_data['end_time']
                     )
                     record.save()
             except Exception as e:
@@ -63,13 +70,9 @@ def create_plan(request,user_id):
         )
         logger.info(f'{year}-{month}です')
         
-        return render(request,'dashboard/create_plan.html', {
-        'form': form,
-        'year':year,
-        'month':month,
-        'user':user,
-        'all_plans':all_plans,
-        })
+        context={'year':year,'month':month,'user':user,'form': form,'all_plans':all_plans}
+        return render(request,'dashboard/create_plan.html', context )
+  
     messages.error(request,f'error')
     return redirect('dashboard:user_list')
 

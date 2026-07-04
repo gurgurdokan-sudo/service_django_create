@@ -164,3 +164,17 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.disabled = true;
     }
 });
+
+function usePreviousPlan() {
+    const userId = document.getElementById('user-id').value;
+    const thisYear = parseInt(document.getElementById('dis_year').value);
+    const thisMonth = parseInt(document.getElementById('dis_month').value);
+    const prevMonth = thisMonth === 1 ? 12 : thisMonth - 1;
+    const prevYear = thisMonth === 1 ? thisYear - 1 : thisYear;
+
+    if (!confirm(`前月(${prevYear}年${prevMonth}月)の同様の週で作成しますか？`)) {
+        return;
+    }
+
+    window.location.href = `/user/${userId}/copy_previous_plan/?year=${thisYear}&month=${String(thisMonth).padStart(2, '0')}`;
+}

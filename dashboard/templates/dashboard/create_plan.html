@@ -37,6 +37,7 @@
     <span class="weekday-inputs">{{ form.weekdays }}</span>
   </p>
   <button type="submit">保存</button>
+  <button type="button" class="btn btn-secondary" onclick="usePreviousPlan()">前月と同様</button>
 </form>
 </div>
 {{ all_plans|json_script:"all-plans" }}
@@ -96,3 +97,6 @@ endTime.addEventListener('change', updatePlan);
 updatePlan();
 </script>
 {% endblock %}
+{% block script %}
+  <script src="{% static 'dashboard/js/main.js' %}?v=1"></script>
+{% endblock script %}
