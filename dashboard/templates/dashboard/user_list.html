@@ -14,13 +14,9 @@
     </div>
       <label><a href="{% url 'dashboard:caremana_create' %}" class="btn btn-create">新規作成</a></label>
   </div>
-  {% if messages %}
-    <ul class="messages">
-      {% for message in messages %}
-        <li class="message-item {{message.tags}}">{{message}}</li>        
-      {% endfor %}
-    </ul>
-  {% endif %}
+  
+    {% include "dashboard/components/messages.html" %}
+
   <table class="data-table">
   <tr>
     {% comment %} <th>ID</th> {% endcomment %}
