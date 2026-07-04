@@ -154,3 +154,13 @@ function animateProgressBar(){
         bar.style.width = progress + "%";
     }, 60); // 60msごとに更新
 }
+document.addEventListener('DOMContentLoaded', () => {
+    const status = document.getElementById('confirmed-status');
+    const confirmed = status.dataset.confirmed === "True";
+    const btn = document.getElementById('btn-excel');
+
+    if (confirmed) {
+        btn.style.opacity = 0.5;
+        btn.disabled = true;
+    }
+});

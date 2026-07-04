@@ -79,6 +79,8 @@
     -webkit-appearance: none;
     -moz-appearance: none;
 } 
+
+
 .btn-outline { border: 1px solid #ccc; background: #fff; padding: 5px 12px; font-size: 13px; border-radius: 4px; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; }
 .blue-text { color: #1a73e8; border-color: #1a73e8; }
 .green-text { color: #2e7d32; border-color: #2e7d32; }

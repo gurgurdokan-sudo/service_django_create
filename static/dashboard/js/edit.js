@@ -1,10 +1,16 @@
-// edit.js
 document.addEventListener('DOMContentLoaded', () => {
     let isFirstEdit = true;
     const editableCells = document.querySelectorAll('.editable-cell');
 
     editableCells.forEach(cell => {
         cell.addEventListener('click', async function() {
+            const status = document.getElementById('confirmed-status');
+            const confirmed = status.dataset.confirmed === "True";
+
+            if (confirmed) {
+                alert('確定済みのため編集できません');
+                return;
+            }
             if(isFirstEdit) {
                 alert('編集を開始します');
                 isFirstEdit = false;

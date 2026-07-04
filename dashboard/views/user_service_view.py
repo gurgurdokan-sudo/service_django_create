@@ -56,6 +56,7 @@ def build_user_service_context(user_id, year, month):
         'add_codes': add_codes, #excelテスト表示
         'addon_service': AddOnService.objects.exclude(code__in=['6102','6100','6099']),
         'monthly_addon_totals': monthly_addon_totals, #tableのtotal
+        'confirmed':True
     }
 
 def _is_future_month_not_plan(user_id,year, month, prev=False):
@@ -77,6 +78,7 @@ def user_service(request,user_id):
             )
     logger.info(f'{dis_year}-{dis_month}のサービス提供票に遷移')
     context = build_user_service_context(user_id=user_id,year=dis_year,month=dis_month)
+    logger.info(f'=============={context['confirmed']}==============')
     return render(request,'dashboard/user_service.html',context)
 
 #一括前月モード
