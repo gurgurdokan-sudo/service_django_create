@@ -1,9 +1,11 @@
+import datetime
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.utils import timezone
 from django.urls import reverse
 
-from dashboard.models import User, ServicePlan, ServiceMaster
+from dashboard.models import User, ServicePlan, ServiceMaster, ServiceRecord
 from dashboard.forms import PlanForm
 from dashboard.calendar_table import get_month_days
 
@@ -22,6 +24,22 @@ def create_plan(request,user_id):
             year = request.POST.get('year')
             month = request.POST.get('month')
             messages.success(request,'プランを作成しました')
+            date = datetime.date(int(year), int(month), 1)
+            try:
+                record = ServiceRecord.objects.filter(user=plan.user, date=date).first()
+                if not record:
+                    logger.info(f'{form.cleaned_data["weekdays"]}でServiceRecordを作成します')
+                    week_list = form.cleaned_data['weekdays']
+                    record = ServiceRecord(
+                        user=plan.user,
+                        date=date,
+                        weekday_pattern=[int(i) for i in week_list],
+                        confirmed=False,
+                    )
+                    record.save()
+            except Exception as e:
+                logger.error(f"サービス提供票の更新中にエラーが発生しました: {e}")
+                raise
             url = reverse('dashboard:service',kwargs={'user_id':user_id})
             return redirect(f'{url}?year={year}&month={month}')
     else:
@@ -44,6 +62,7 @@ def create_plan(request,user_id):
             .values()
         )
         logger.info(f'{year}-{month}です')
+        
         return render(request,'dashboard/create_plan.html', {
         'form': form,
         'year':year,

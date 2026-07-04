@@ -32,17 +32,20 @@ def format_comma(value, default=""):
 
 class ServiceSheetCalculator:
     def __init__(self, context):
-        self.office = context['office']
-        self.user = context['user']
-        self.plans = context['plans']
-        self.add_codes = context.get('add_codes', {})
-        
-        self.unit_price = float(self.office.unit_price)
-        self.benefit_rate = float(self.user.benefit_rate)
-        self.max_payment = int(self.user.max_separate_payment)
-        
-        self.results = self._calculate()
-
+        try:
+            self.office = context['office']
+            self.user = context['user']
+            self.plans = context['plans']
+            self.add_codes = context.get('add_codes', {})
+            
+            self.unit_price = float(self.office.unit_price)
+            self.benefit_rate = float(self.user.benefit_rate)
+            self.max_payment = int(self.user.max_separate_payment)
+            
+            self.results = self._calculate()
+        except (ValueError, TypeError) as e:
+            logger.error(f"officeとuserテーブルの値の変換に失敗しました: {e}")
+            raise
     def _calculate(self):
         # 各プランの単位合計
         plan_items = []

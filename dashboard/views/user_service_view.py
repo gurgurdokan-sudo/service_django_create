@@ -1,11 +1,20 @@
+import datetime
+
 from django.shortcuts import render,redirect, get_object_or_404
 from django.utils import timezone
 from django.contrib import messages
 from django.urls import reverse
 
-from dashboard.models import User, ServicePlan, ServiceMaster, AddOnService, Office, Certificate
+from dashboard.models import(
+    User,
+    ServicePlan, 
+    ServiceMaster,
+    AddOnService,
+    Office,
+    Certificate,
+    ServiceRecord
+)
 from dashboard.calendar_table import get_month_days
-from dashboard.excel.service_sheet import create_service_sheet
 now = timezone.now()
 
 import logging
@@ -39,7 +48,14 @@ def build_user_service_context(user_id, year, month):
             add_codes[addon_name] = {"unit": addon.unit, "code": addon.code, "count": len(days), "price":addon.price}
             if addon.unit:
                 monthly_addon_totals[addon_name] = monthly_addon_totals.get(addon_name,0) + addon.unit * len(days)
-    
+
+    date = datetime.date(year, month, 1)
+    try:
+        record = ServiceRecord.objects.filter(user=target, date=date).first()
+        confirmed = record.confirmed if record else False
+    except Exception as e:
+        logger.error(f"確認状態の取得中にエラーが発生しました: {e}")
+        raise
     return {
         'office': office,
         'default': default,
@@ -56,10 +72,11 @@ def build_user_service_context(user_id, year, month):
         'add_codes': add_codes, #excelテスト表示
         'addon_service': AddOnService.objects.exclude(code__in=['6102','6100','6099']),
         'monthly_addon_totals': monthly_addon_totals, #tableのtotal
-        'confirmed':True #todoその月のレコードあるか
+        'confirmed': confirmed, #サービス提供票の確定状態
     }
 
 def _is_future_month_not_plan(user_id,year, month, prev=False):
+    '''指定された年月が未来で、かつその月のプランが存在しない場合にTrueを返す'''
     now = timezone.now()
     if prev:
         return not ServicePlan.objects.filter(user_id=user_id, year=year, month=month).exists()
@@ -72,13 +89,13 @@ def user_service(request,user_id):
     dis_year = int(request.GET.get('year', now.year))
     dis_month = int(request.GET.get('month', now.month))
     if _is_future_month_not_plan(user_id,dis_year, dis_month):
+        '''プラン作成画面にリダイレクトする'''
         url = reverse('dashboard:createPlan',kwargs= {'user_id':user_id})
-        return redirect(
-            f'{url}?year={dis_year}&month={dis_month}'
-            )
+        return redirect(f'{url}?year={dis_year}&month={dis_month}')
+            
     logger.info(f'{dis_year}-{dis_month}のサービス提供票に遷移')
     context = build_user_service_context(user_id=user_id,year=dis_year,month=dis_month)
-    logger.info(f'=============={context['confirmed']}==============')
+    logger.info(f'=============={context["confirmed"]}==============')
     return render(request,'dashboard/user_service.html',context)
 
 #一括前月モード
@@ -123,6 +140,4 @@ def service_act(request, user_id):
         plan.save()
 
     messages.success(request, '予定で実績を作成しました')
-    return redirect(
-        f"{reverse('dashboard:service', kwargs={'user_id': user_id})}?year={year}&month={month}"
-    )
+    return redirect(f"{reverse('dashboard:service', kwargs={'user_id': user_id})}?year={year}&month={month}")

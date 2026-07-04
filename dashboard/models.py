@@ -3,7 +3,15 @@ from django.db.models import Sum
 from django.utils import timezone
 from datetime import datetime, date
 from dashboard.calendar_table import get_month_days
-LEVEL_CHOICES = [('要支援1', '要支援1'),('要支援2', '要支援2'),('要介護1', '要介護1'),('要介護2', '要介護2'),('要介護3', '要介護3'),('要介護4', '要介護4'),('要介護5', '要介護5'),]
+LEVEL_CHOICES = [
+    # ('要支援1', '要支援1'),
+    # ('要支援2', '要支援2'),
+    ('要介護1', '要介護1'),
+    ('要介護2', '要介護2'),
+    ('要介護3', '要介護3'),
+    ('要介護4', '要介護4'),
+    ('要介護5', '要介護5'),
+]
 class CareManager(models.Model):
     name = models.CharField(max_length=100, verbose_name='担当者名')
     care_manager_number = models.CharField(max_length=20,verbose_name="居宅介護支援専門員番号", blank=True, null=True) #todo
@@ -97,9 +105,9 @@ class ServiceRecord(models.Model):
     confirmed = models.BooleanField(default=False) # 確定フラグ
     date = models.DateField(help_text="月初の日付（例: 2026-07-01）")
     path = models.CharField(max_length=100, blank=True, null=True)  # サービス提供票の格納Path FileFieldに変更するか検討
-    weekday_pattern = models.JSONField(default=list)  # 1=月曜日, 7=日曜日
+    weekday_pattern = models.JSONField(default=list)  # 0=月曜日, 6=日曜日
     def __str__(self):
-        return str(self.user)
+        return f'{self.user} - {self.date.strftime("%Y-%m")}'
 class ServicePlan(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     this_year = datetime.now().year
