@@ -90,11 +90,14 @@ class ServiceMaster(models.Model):
 
 class ServiceRecord(models.Model): 
     '''実際に提供されたサービスの記録を管理するモデル'''
+    class Meta:
+        unique_together = ('user', 'date') #その月のサービス提供票は1件のみ
+
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    date = models.DateField()
-    PATTERN_CHOICES = [('day','日ごと'),('week','週ごと'),('month','各週ごと')]
-    pattern_type = models.CharField(max_length=10, choices=PATTERN_CHOICES)
-    pattern_json = models.JSONField(default=dict)
+    confirmed = models.BooleanField(default=False) # 確定フラグ
+    date = models.DateField(help_text="月初の日付（例: 2026-07-01）")
+    path = models.CharField(max_length=100, blank=True, null=True)  # サービス提供票の格納Path FileFieldに変更するか検討
+    weekday_pattern = models.JSONField(default=list)  # 1=月曜日, 7=日曜日
     def __str__(self):
         return str(self.user)
 class ServicePlan(models.Model):

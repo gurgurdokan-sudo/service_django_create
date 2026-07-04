@@ -56,7 +56,7 @@ def build_user_service_context(user_id, year, month):
         'add_codes': add_codes, #excelテスト表示
         'addon_service': AddOnService.objects.exclude(code__in=['6102','6100','6099']),
         'monthly_addon_totals': monthly_addon_totals, #tableのtotal
-        'confirmed':True
+        'confirmed':True #todoその月のレコードあるか
     }
 
 def _is_future_month_not_plan(user_id,year, month, prev=False):
