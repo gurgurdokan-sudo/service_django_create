@@ -54,12 +54,13 @@ def create_plan(request,user_id):
         now = timezone.now()
         year = int(request.GET.get('year',now.year))
         month = int(request.GET.get('month',now.month))
+        prev = _previous_record(user)
         form = PlanForm({
             'year':year,
             'month':month,
-            'start_time':_previous_record(user)[0] or '9:00',
-            'end_time':_previous_record(user)[1] or '17:00',
-            'weekdays':_previous_record(user)[2] or []},
+            'start_time':prev.start_time if prev else '9:00',
+            'end_time':prev.end_time if prev else '17:00',
+            'weekdays':prev.weekday_pattern if prev else []},
             user_id=user_id
             )
         plans = ServicePlan.objects.filter(user = user,year = year,month = month,)
@@ -78,7 +79,4 @@ def create_plan(request,user_id):
     return redirect('dashboard:user_list')
 
 def _previous_record(user):
-    record = ServiceRecord.objects.filter(user=user).order_by('-date').first()
-    if record:
-        return record.start_time,record.end_time,record.weekday_pattern
-    return '9:00','17:00',[]
+    return ServiceRecord.objects.filter(user=user).order_by('-date').first()
