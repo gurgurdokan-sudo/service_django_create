@@ -20,7 +20,7 @@ class User(models.Model):
     care_manager = models.ForeignKey(CareManager,on_delete=models.SET_NULL,null=True)
     name = models.CharField(max_length=100,verbose_name='被保険者氏名')
     name_kana = models.CharField(max_length=100,verbose_name='フリガナ')
-    insured_number = models.CharField(max_length=10, verbose_name='被保険者番号')
+    insured_number = models.CharField(unique=True, max_length=10, verbose_name='被保険者番号')
     date_of_birth = models.DateField(verbose_name='生年月日')
     GENDER_CHOICES = [('male', '男性'),('female', '女性'),]
     gender = models.CharField(max_length=10, choices=GENDER_CHOICES,verbose_name='性別')
