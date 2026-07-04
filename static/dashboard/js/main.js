@@ -122,6 +122,9 @@ function toAct(userId) {
 }
 function toExcel(userId){
     const btn = document.getElementById('btn-excel');
+    if (!confirm("実績を確定します。\n実績が変更出来なくなります。\nよろしいですか？")) {
+        return;
+    }
     btn.disabled =true;
     btn.style.opacity = 0.5;
     const modal = new bootstrap.Modal(document.getElementById('loadingModal'));
