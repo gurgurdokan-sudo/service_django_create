@@ -29,15 +29,15 @@ def create_plan(request,user_id):
             year = request.POST.get('year')
             month = request.POST.get('month')
             messages.success(request,'プランを作成しました')
-            date = datetime.date(int(year), int(month), 1)
+            date_obj = date(int(year), int(month), 1)
             try:
-                record = ServiceRecord.objects.filter(user=plan.user, date=date).first()
+                record = ServiceRecord.objects.filter(user=plan.user, date=date_obj).first()
                 if not record:
                     week_list = form.cleaned_data['weekdays']
                     logger.info(f'{week_list}でServiceRecordを作成します')
                     record = ServiceRecord(
                         user=plan.user,
-                        date=date,
+                        date=date_obj,
                         weekday_pattern=[int(i) for i in week_list],
                         confirmed=False,
                         start_time=form.cleaned_data['start_time'],
@@ -57,8 +57,9 @@ def create_plan(request,user_id):
         form = PlanForm({
             'year':year,
             'month':month,
-            'start_time':_previous_month_record(user)[0] or '9:00',
-            'end_time':_previous_month_record(user)[1] or '17:00'},
+            'start_time':_previous_record(user)[0] or '9:00',
+            'end_time':_previous_record(user)[1] or '17:00',
+            'weekdays':_previous_record(user)[2] or []},
             user_id=user_id
             )
         plans = ServicePlan.objects.filter(user = user,year = year,month = month,)
@@ -76,8 +77,8 @@ def create_plan(request,user_id):
     messages.error(request,f'error')
     return redirect('dashboard:user_list')
 
-def _previous_month_record(user):
+def _previous_record(user):
     record = ServiceRecord.objects.filter(user=user).order_by('-date').first()
     if record:
-        return record.start_time,record.end_time
-    return '9:00','17:00'
+        return record.start_time,record.end_time,record.weekday_pattern
+    return '9:00','17:00',[]
