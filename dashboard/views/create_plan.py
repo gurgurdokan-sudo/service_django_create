@@ -57,8 +57,8 @@ def create_plan(request,user_id):
         form = PlanForm({
             'year':year,
             'month':month,
-            'start_time':'09:00',
-            'end_time':'17:00'},
+            'start_time':_previous_month_record(user)[0] or '9:00',
+            'end_time':_previous_month_record(user)[1] or '17:00'},
             user_id=user_id
             )
         plans = ServicePlan.objects.filter(user = user,year = year,month = month,)
@@ -76,3 +76,8 @@ def create_plan(request,user_id):
     messages.error(request,f'error')
     return redirect('dashboard:user_list')
 
+def _previous_month_record(user):
+    record = ServiceRecord.objects.filter(user=user).order_by('-date').first()
+    if record:
+        return record.start_time,record.end_time
+    return '9:00','17:00'
