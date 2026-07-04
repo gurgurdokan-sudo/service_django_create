@@ -53,5 +53,7 @@
   {% endif %}
   </table>
 </div>
-<script src="{% static 'dashboard/js/checked.js' %}"></script>
 {% endblock %}
+{% block script %}
+  <script src="{% static 'dashboard/js/checked.js' %}"></script>
+{% endblock script %}

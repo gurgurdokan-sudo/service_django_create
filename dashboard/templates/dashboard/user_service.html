@@ -199,49 +199,50 @@
   </div>
   {% include "dashboard/components/service_modal.html" %}
   </div>
-</div>
-<ul>
-{#  Excelテスト表示行  #}
-  {% for plan in plans %}
-  <li>{{ plan.service_name }}: {{ plan.unit }}単位</li>
-  <dd>サービスコード: {{ office.service_type_code }}{{ plan.service_code }}</dd>
-  {% endfor %}
-  
-{#  国保に請求の加算  #}
-  {% for service_name, item in add_codes.items %}
-  <li>{{ service_name }}: 
-    {% if item.unit or item.price %}
-      <span>{{ item.unit|default:item.price }} (単位/円)</span>
-    {% endif %}
-  </li>
-  {% if item.code == 0 %}
-  <dd>サービスコード: {{ office.service_type_code }}{{ item.code }}</dd>
-  {% endif %}
-  {% endfor %}
-</ul>
-<input type="button" id="btn-excel" class="btn btn-success" value="Excelを作成" onclick="toExcel({{user.id}})">
-<input type="button" id="btn-export" class="btn btn-primary" value="Excelを出力" onclick="exportExcel({{user.id}})">
 
-<!-- ローディングモーダル -->
-<div class="modal fade" id="loadingModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content p-4 text-center">
-      <p class="mb-3">Excel を作成しています…</p>
-      <div class="progress" style="height: 25px;">
-        <div id="loadingBar"
-             class="progress-bar progress-bar-striped progress-bar-animated bg-success"
-             role="progressbar"
-             style="width: 10%">
+  <ul>
+  {#  Excelテスト表示行  #}
+    {% for plan in plans %}
+    <li>{{ plan.service_name }}: {{ plan.unit }}単位</li>
+    <dd>サービスコード: {{ office.service_type_code }}{{ plan.service_code }}</dd>
+    {% endfor %}
+    
+  {#  国保に請求の加算  #}
+    {% for service_name, item in add_codes.items %}
+    <li>{{ service_name }}: 
+      {% if item.unit or item.price %}
+        <span>{{ item.unit|default:item.price }} (単位/円)</span>
+      {% endif %}
+    </li>
+    {% if item.code == 0 %}
+    <dd>サービスコード: {{ office.service_type_code }}{{ item.code }}</dd>
+    {% endif %}
+    {% endfor %}
+  </ul>
+  <input type="button" id="btn-excel" class="btn btn-success" value="Excelを作成" onclick="toExcel({{user.id}})">
+  <input type="button" id="btn-export" class="btn btn-primary" value="Excelを出力" onclick="exportExcel({{user.id}})">
+
+  <!-- ローディングモーダル -->
+  <div class="modal fade" id="loadingModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content p-4 text-center">
+        <p class="mb-3">Excel を作成しています…</p>
+        <div class="progress" style="height: 25px;">
+          <div id="loadingBar"
+              class="progress-bar progress-bar-striped progress-bar-animated bg-success"
+              role="progressbar"
+              style="width: 10%">
+          </div>
         </div>
       </div>
     </div>
   </div>
 </div>
+{% endblock %}
 
-
-
+{% block script %}
 <script src="{% static 'dashboard/js/edit.js' %}?v=1"></script>
 <script src="{% static 'dashboard/js/modal_logic.js' %}?v=11"></script>
 <script src="{% static 'dashboard/js/main.js' %}?v=1"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-{% endblock %}
+{% endblock script %}
