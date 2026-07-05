@@ -1,6 +1,6 @@
 from django.db import models
 from django.urls import reverse
-
+from dashboard.models import User
 
 class Entry(models.Model):
     class Mood(models.TextChoices):
@@ -10,14 +10,15 @@ class Entry(models.Model):
         BAD = 'bad', '😞 いまいち'
         TERRIBLE = 'terrible', '😢 最悪'
 
-    title = models.CharField('タイトル', max_length=200)
-    body = models.TextField('本文')
-    date = models.DateField('日付')
+    user = models.ForeignKey(User, verbose_name='利用者',on_delete=models.CASCADE)
+    title = models.CharField(verbose_name='タイトル', max_length=200)
+    body = models.TextField(verbose_name='本文')
+    date = models.DateField(verbose_name='日付')
     mood = models.CharField(
-        '気分', max_length=10, choices=Mood.choices, default=Mood.NORMAL
+        verbose_name='気分', max_length=10, choices=Mood.choices, default=Mood.NORMAL
     )
     image = models.ImageField(
-        '画像', upload_to='diary_images/%Y/%m/', blank=True, null=True
+        verbose_name='画像', upload_to='diary_images/%Y/%m/', blank=True, null=True
     )
     created_at = models.DateTimeField('作成日時', auto_now_add=True)
     updated_at = models.DateTimeField('更新日時', auto_now=True)
@@ -29,8 +30,8 @@ class Entry(models.Model):
 
     class Meta:
         ordering = ['-date', '-created_at']
-        verbose_name = '日記'
-        verbose_name_plural = '日記'
+        verbose_name = '日報'
+        verbose_name_plural = '日報'
 
     def __str__(self):
         return f'{self.date} {self.title}'
