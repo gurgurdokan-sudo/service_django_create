@@ -1,0 +1,50 @@
+{% extends 'diary/base.html' %}
+
+{% block title %}日記一覧 | マイ日記{% endblock %}
+
+{% block content %}
+<div class="toolbar">
+  <form method="get" action="{% url 'diary:list' %}">
+    <input type="text" name="q" value="{{ keyword }}" placeholder="キーワードで検索">
+    <button type="submit" class="btn">検索</button>
+  </form>
+</div>
+
+{% for entry in entry_list %}
+  <div class="card{% if entry.image %} card-with-thumb{% endif %}">
+    <div class="card-text">
+      <p class="meta">{{ entry.date|date:"Y年n月j日（D）" }}　{{ entry.get_mood_display }}</p>
+      <h2 style="font-size:1.15rem;margin:4px 0;">
+        <a href="{% url 'diary:detail' entry.pk %}" style="color:var(--primary);text-decoration:none;">{{ entry.title }}</a>
+      </h2>
+      <p>{{ entry.body|truncatechars:80 }}</p>
+    </div>
+    {% if entry.image %}
+      <a href="{% url 'diary:detail' entry.pk %}" class="card-thumb">
+        <img src="{{ entry.image.url }}" alt="{{ entry.title }}の画像">
+      </a>
+    {% endif %}
+  </div>
+{% empty %}
+  <div class="empty">
+    {% if keyword %}
+      <p>「{{ keyword }}」に一致する日記はありませんでした。</p>
+    {% else %}
+      <p>まだ日記がありません。</p>
+      <p style="margin-top:12px;"><a class="btn" href="{% url 'diary:create' %}">最初の日記を書く</a></p>
+    {% endif %}
+  </div>
+{% endfor %}
+
+{% if is_paginated %}
+  <div class="pagination">
+    {% if page_obj.has_previous %}
+      <a href="?page={{ page_obj.previous_page_number }}{% if keyword %}&q={{ keyword }}{% endif %}">前へ</a>
+    {% endif %}
+    <span class="current">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_next %}
+      <a href="?page={{ page_obj.next_page_number }}{% if keyword %}&q={{ keyword }}{% endif %}">次へ</a>
+    {% endif %}
+  </div>
+{% endif %}
+{% endblock %}

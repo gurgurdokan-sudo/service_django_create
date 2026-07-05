@@ -1,0 +1,137 @@
+{% load static %}<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}マイ日記{% endblock %}</title>
+  <style>
+    :root {
+      --primary: #5b7c99;
+      --primary-dark: #46617a;
+      --bg: #f7f5f0;
+      --card: #ffffff;
+      --text: #3a3a3a;
+      --muted: #8a8a8a;
+      --border: #e3ded4;
+      --danger: #c0564f;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+    }
+    header {
+      background: var(--primary);
+      color: #fff;
+      padding: 16px 0;
+    }
+    .container { max-width: 760px; margin: 0 auto; padding: 0 20px; }
+    header .container { display: flex; justify-content: space-between; align-items: center; }
+    header a { color: #fff; text-decoration: none; }
+    header h1 { font-size: 1.3rem; }
+    main { padding: 32px 0 64px; }
+    .btn {
+      display: inline-block;
+      padding: 8px 20px;
+      border: none;
+      border-radius: 6px;
+      background: var(--primary);
+      color: #fff;
+      font-size: 0.95rem;
+      text-decoration: none;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn:hover { background: var(--primary-dark); }
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--primary);
+      color: var(--primary);
+    }
+    .btn-outline:hover { background: var(--primary); color: #fff; }
+    .btn-danger { background: var(--danger); }
+    .btn-danger:hover { background: #a34540; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 24px;
+      margin-bottom: 16px;
+    }
+    .messages { list-style: none; margin-bottom: 20px; }
+    .messages li {
+      background: #e8f0e8;
+      border: 1px solid #bcd4bc;
+      border-radius: 6px;
+      padding: 10px 16px;
+      margin-bottom: 8px;
+      color: #3c6b3c;
+    }
+    .meta { color: var(--muted); font-size: 0.85rem; }
+    form p { margin-bottom: 16px; }
+    form label { display: block; font-weight: 600; margin-bottom: 4px; }
+    input[type="text"], input[type="date"], select, textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 1rem;
+      font-family: inherit;
+      background: #fff;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: 2px solid var(--primary);
+      border-color: transparent;
+    }
+    .errorlist { list-style: none; color: var(--danger); font-size: 0.85rem; }
+    .toolbar { display: flex; gap: 12px; align-items: center; margin-bottom: 24px; flex-wrap: wrap; }
+    .toolbar form { display: flex; gap: 8px; flex: 1; min-width: 200px; }
+    .toolbar input[type="text"] { flex: 1; }
+    .pagination { display: flex; gap: 8px; justify-content: center; margin-top: 24px; }
+    .pagination a, .pagination span {
+      padding: 6px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      text-decoration: none;
+      color: var(--primary);
+      background: #fff;
+    }
+    .pagination .current { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .actions { display: flex; gap: 12px; margin-top: 24px; }
+    .empty { text-align: center; color: var(--muted); padding: 48px 0; }
+    .card-with-thumb { display: flex; gap: 16px; align-items: flex-start; }
+    .card-with-thumb .card-text { flex: 1; min-width: 0; }
+    .card-thumb img {
+      width: 120px;
+      height: 120px;
+      object-fit: cover;
+      border-radius: 8px;
+      display: block;
+    }
+    @media (max-width: 480px) {
+      .card-with-thumb { flex-direction: column; }
+      .card-thumb img { width: 100%; height: 160px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1><a href="{% url 'diary:list' %}">📔 マイ日記</a></h1>
+      <a class="btn btn-outline" style="border-color:#fff;color:#fff;" href="{% url 'diary:create' %}">＋ 新しい日記</a>
+    </div>
+  </header>
+  <main>
+    <div class="container">
+      {% if messages %}
+        <ul class="messages">
+          {% for message in messages %}<li>{{ message }}</li>{% endfor %}
+        </ul>
+      {% endif %}
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+</body>
+</html>

@@ -1,0 +1,21 @@
+{% extends 'diary/base.html' %}
+
+{% block title %}{{ entry.title }} | マイ日記{% endblock %}
+
+{% block content %}
+<div class="card">
+  <p class="meta">{{ entry.date|date:"Y年n月j日（D）" }}　{{ entry.get_mood_display }}</p>
+  <h2 style="margin:8px 0 16px;">{{ entry.title }}</h2>
+  {% if entry.image %}
+    <p style="margin-bottom:16px;"><img src="{{ entry.image.url }}" alt="{{ entry.title }}の画像" style="max-width:100%;border-radius:8px;"></p>
+  {% endif %}
+  <p style="white-space:pre-wrap;">{{ entry.body }}</p>
+  <p class="meta" style="margin-top:24px;">最終更新: {{ entry.updated_at|date:"Y/m/d H:i" }}</p>
+</div>
+
+<div class="actions">
+  <a class="btn" href="{% url 'diary:update' entry.pk %}">編集</a>
+  <a class="btn btn-danger" href="{% url 'diary:delete' entry.pk %}">削除</a>
+  <a class="btn btn-outline" href="{% url 'diary:list' %}">一覧に戻る</a>
+</div>
+{% endblock %}

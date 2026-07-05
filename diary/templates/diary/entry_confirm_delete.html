@@ -1,0 +1,18 @@
+{% extends 'diary/base.html' %}
+
+{% block title %}削除の確認 | マイ日記{% endblock %}
+
+{% block content %}
+<div class="card">
+  <h2 style="margin-bottom:16px;">削除の確認</h2>
+  <p>「{{ entry.title }}」（{{ entry.date|date:"Y年n月j日" }}）を削除します。よろしいですか？</p>
+  <p class="meta" style="margin-top:8px;">この操作は取り消せません。</p>
+  <form method="post" style="margin-top:24px;">
+    {% csrf_token %}
+    <div class="actions" style="margin-top:0;">
+      <button type="submit" class="btn btn-danger">削除する</button>
+      <a class="btn btn-outline" href="{% url 'diary:detail' entry.pk %}">キャンセル</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
