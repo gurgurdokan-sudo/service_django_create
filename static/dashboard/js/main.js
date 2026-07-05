@@ -9,6 +9,13 @@ function getCsrfToken() {
  * 基本プランの削除
  */
 async function deletePlan(planId) {
+    const status = document.getElementById('confirmed-status');
+    const confirmed = status.dataset.confirmed === "True";
+
+    if (confirmed) {
+        console.log('確定済みのため消去できません');
+        return;
+    }
     if (!confirm("このサービス予定および実績データをすべて削除しますか？\n(この操作は取り消せません)")) {
         return;
     }
