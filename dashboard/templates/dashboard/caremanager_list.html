@@ -1,0 +1,68 @@
+{% extends "dashboard/base/base.html" %}
+{% block css %}
+{% load static %}
+<style>
+  .no-data {
+    width: 100%;
+    text-align: center;
+    border-collapse: collapse;
+  }
+  .action-buttons{
+    width: 150px;
+  }
+  .action-buttons button{
+    margin-right: 5px;
+    width: 70px;
+  }
+</style>
+<link rel="stylesheet" href="{% static 'temp.css' %}">
+{% endblock css %}
+{% block body %}
+<div class="container">
+  <div class="header-container">
+    <h1 class="page-title">ケアマネジャー一覧</h1>
+  </div>
+  {#  todo検索  #}
+
+  <table class="data-table">
+  <tr>
+    <th class="action-buttons">消去/更新</th>
+    <th>担当者名</th>
+    <th>居宅介護支援専門員番号</th>
+    <th>  </th><!--  あえてスペース  -->
+    <th>居宅介護支援事業所名</th>
+    <th>居宅介護支援事業所番号</th>
+    <th>担当の利用者</th>
+  </tr>
+  {% for caremanager in caremanagers %}
+    <tr>
+      <td class="action-buttons">
+        <a href="{% url 'dashboard:caremana_update' caremanager.id %}" class="btn btn-edit">更新</a>
+        <a href="{% url 'dashboard:caremana_delete' caremanager.id %}" class="btn delete-single">消去</a>
+      </td>
+      <td>{{ caremanager.name }}</td>
+      <td>{{ caremanager.license_number }}</td>
+      <td>  </td><!--  あえてスペース  -->
+      <td>{{ caremanager.office_name }}</td>
+      <td>{{ caremanager.office_number }}</td>
+      <td>
+        {% for user in caremanager.user_set.all %}
+          {{ user.name }}{% if not forloop.last %}<br />{% endif %}
+        {% empty %}
+          担当利用者なし
+        {% endfor %}
+      </td>
+    </tr>
+  {% empty %}
+  <tr>
+    <td colspan="8" class="no-users">ケアマネジャーが登録されていません</td>
+  </tr>
+  {% endfor %}
+  </table>
+</div>
+
+
+
+{% endblock %}
+{% block script %}
+{% endblock script %}

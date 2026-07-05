@@ -22,7 +22,7 @@ def caremana_create(request):
         if form.is_valid():
             caremana = form.save(commit=False)
             caremana.name = caremana.name.replace('　',' ')
-            caremana = form.save()
+            caremana.save()
             request.session['select_manager'] = caremana.id
             return redirect('dashboard:create') # user作成画面へ遷移
     

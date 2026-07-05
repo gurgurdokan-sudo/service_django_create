@@ -26,8 +26,7 @@
     <th>編集</th>
     <th>サービス提供票</th>
   </tr>
-  {% if users %}
-    {% for user in users %}
+  {% for user in users %}
     <tr>
       <td class="badge">{{ user.care_level }}</td>
       <td><a href="{% url 'dashboard:detail' user.id %}" class="link-name">{{ user.name }}</a></td>
@@ -41,12 +40,11 @@
       </a></td>
       </td>
     </tr>
-    {% endfor %}
-  {% else %}
+  {% empty %}
     <li class="no-users">
       <br />利用者が登録されていません<br />
     </li>
-  {% endif %}
+  {% endfor %}
   </table>
 </div>
 {% endblock %}

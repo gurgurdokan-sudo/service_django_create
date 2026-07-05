@@ -1,6 +1,4 @@
-from django.shortcuts import render,redirect, get_object_or_404
-from django.http import HttpResponse
-from django.contrib import messages
+from django.shortcuts import render
 from dashboard.models import User, ServicePlan
 
 #利用者一覧
