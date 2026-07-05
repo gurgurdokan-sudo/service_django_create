@@ -14,15 +14,22 @@
       <a class="btn btn-outline" style="border-color:#fff;color:#fff;" href="{% url 'diary:create' %}">＋ 新しい日記</a>
     </div>
   </header>
-  <main>
-    <div class="container">
-      {% if messages %}
-        <ul class="messages">
-          {% for message in messages %}<li>{{ message }}</li>{% endfor %}
-        </ul>
-      {% endif %}
-      {% block content %}{% endblock %}
+   <div class="position-relative">
+    <!-- サイドバー -->
+    <div id="sidebar">
+        {% include "dashboard/components/sidebar.html" %}
     </div>
-  </main>
+    <!-- メインコンテンツ -->
+    <main>
+      <div class="container">
+        {% if messages %}
+          <ul class="messages">
+            {% for message in messages %}<li>{{ message }}</li>{% endfor %}
+          </ul>
+        {% endif %}
+        {% block content %}{% endblock %}
+      </div>
+    </main>
+  </div>
 </body>
 </html>

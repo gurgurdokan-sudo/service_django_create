@@ -108,3 +108,35 @@
       .card-with-thumb { flex-direction: column; }
       .card-thumb img { width: 100%; height: 160px; }
     }
+    /* サイドバーの基本設定 */
+    #sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 1000;
+        width: 1px; 
+        height: 100vh;
+        transition: width 0.3s ease; /* アニメーション速度 */
+        overflow-x: hidden;
+        white-space: nowrap;
+    }
+
+    /* ホバー時に展開 */
+    #sidebar:hover {
+        width: 250px; /* 展開時の幅 */
+    }
+
+    /* 閉じてる時は文字を隠す（透過度で調整するとスムーズ） */
+    .sidebar-text {
+        opacity: 0;
+        transition: opacity 0.2s ease;
+    }
+
+    #sidebar:hover .sidebar-text {
+        opacity: 1;
+    }
+
+    #main-content {
+        margin-left: 0;
+        margin-top:0;
+    }
