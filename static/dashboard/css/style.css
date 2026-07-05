@@ -1,0 +1,233 @@
+/* ==========================================================================
+   1. 基本レイアウト & 共通設定
+   ========================================================================== */
+body {
+    font-family: "Yu Gothic", "Meiryo", sans-serif;
+    background-color: #fdfdfd;
+    color: #333;
+    margin: 0;
+    padding: 20px;
+}
+
+.container {
+    max-width: 1600px;
+    margin: 0 auto;
+}
+
+/* 全ての要素で枠線を幅に含める計算にする */
+* { box-sizing: border-box !important; }
+
+/* ==========================================================================
+   2. ヘッダー & アクションバー
+   ========================================================================== */
+.header-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #2c3e50;
+    padding-bottom: 12px;
+    margin-bottom: 20px;
+}
+
+.page-title {
+    margin: 0;
+    font-size: 1.4rem;
+    color: #2c3e50;
+    border-left: 8px solid #2c3e50;
+    padding-left: 15px;
+}
+
+.action-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    margin-bottom: 15px;
+}
+
+.month-navigation {
+    display: flex;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.nav-btn {
+    background: #fff;
+    border: none;
+    padding: 5px 12px;
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+.nav-btn:hover { background: #f0f0f0; }
+.nav-btn:not(:last-child) { border-right: 1px solid #ccc; }
+
+/* ==========================================================================
+   3. メインテーブル (枠線制御の核心)
+   ========================================================================== */
+.table-wrapper {
+    overflow-x: auto;
+    background-color: #fff;
+    margin-bottom: 20px;
+}
+
+.schedule-table {
+    width: 1350px !important;
+    min-width: 1350px !important;
+    border-collapse: collapse;
+    table-layout: fixed; 
+    font-size: 0.85rem;
+    border: none; /* 外枠を消す */
+}
+
+/* ヘッダー設定 */
+.navy-header th {
+    background-color: #2c3e50;
+    color: white;
+    height: 40px;
+    border: 1px solid #2c3e50;
+}
+
+/* ★左側4列の枠線を完全に消去 */
+.schedule-table td.col-delete,
+.schedule-table td.col-time,
+.schedule-table td.col-service,
+.schedule-table td.col-office {
+    border: none !important; /* 縦横すべての線を消す */
+    padding: 5px;
+    background-color: #fff;
+}
+
+/* 列幅の固定 */
+.col-delete { width: 40px; text-align: center; }
+.col-time   { width: 90px; text-align: center; line-height: 1.2; }
+.col-service { width: 180px; }
+.col-office  { width: 140px; text-align: center; }
+.col-calendar { width: 900px !important; padding: 0 !important; border: none !important; vertical-align: top; }
+
+/* ==========================================================================
+   4. カレンダーグリッド (高さの余白解消)
+   ========================================================================== */
+.calendar-row {
+    display: grid;
+    grid-template-columns: 50px repeat(31, 25px) 75px; 
+    width: 900px;
+    height: 40px; /* 高さを40pxに固定 */
+    margin: 0;
+    padding: 0;
+}
+
+.calendar-row div {
+    border-right: 1px solid #455a64;
+    border-bottom: 1px solid #455a64;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* 合計列の右端は不要 */
+.calendar-row div:last-child {
+    width: 75px !important;
+    font-weight: bold;
+}
+
+/* 実績行の線を少し強調（黒くする） */
+.calendar-row[data-row-type^="actual"] div {
+    border-right: 1px solid #000;
+    border-bottom: 1px solid #000;
+}
+
+.label-cell {
+    width: 50px !important;
+    background-color: #34495e;
+    color: white;
+    font-size: 11px;
+}
+
+/* 加算行のスタイル */
+.addon-row, .addon-row-def { background-color: #fff5f5; }
+.service-addon-name {
+    color: #a51212;
+    font-weight: bold;
+    padding-left: 20px !important;
+}
+
+/* 背景色設定 */
+/* 1. ヘッダー部分 (日付・曜日) 
+      背景は紺色(#34495e)のまま、文字色だけ変える */
+.navy-header .day-cell.sun,
+.navy-header .day-cell.holi {
+    background-color: #455a64 !important;
+    color: #ff8a8a !important; /* 薄い赤 */
+}
+
+.navy-header .day-cell.sat {
+    background-color: #455a64 !important;
+    color: #8ad4ff !important; /* 薄い青 */
+}
+.total-cell div{
+    border: 1px solid #000
+}
+/* 祝日アイコン（曜日部分の丸枠） */
+.holiday {
+    border: 1px solid #ff8a8a;
+    background-color: transparent;
+    color: #ff8a8a;
+    padding: 1px;
+    border-radius: 50%;
+}
+
+/* 2. データ入力部分 (編集セル) 
+      こちらはこれまで通り背景に色をつける */
+.sun-bg {
+    background-color: #fdeaea !important; /* 薄い赤背景 */
+    color: #d32f2f; /* 濃い赤文字 */
+}
+
+.sat-bg {
+    background-color: #eaf2fd !important; /* 薄い青背景 */
+    color: #1976d2; /* 濃い青文字 */
+}
+
+/* 入力がある場合の文字を強調 */
+.editable-cell:not(:empty) {
+    font-weight: bold;
+}
+/* ==========================================================================
+   5. コンポーネント (ボタン・バッジ等)
+   ========================================================================== */
+.btn-outline {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 6px 12px; border: 1px solid #ccc; background: #fff;
+    border-radius: 4px; font-size: 0.85rem; text-decoration: none; cursor: pointer;
+}
+.blue-text { color: #1a73e8; border-color: #1a73e8; }
+.green-text { color: #2e7d32; border-color: #2e7d32; }
+
+.badge {
+    font-size: 0.7rem; padding: 2px 6px; border-radius: 4px;
+    display: inline-block; vertical-align: middle; margin-left: 5px;
+}
+.bg-danger { background-color: #d32f2f; color: #fff; }
+.bg-secondary { background-color: #6c757d; color: #fff; }
+.insurance { background-color: #e8f0fe; color: #1a73e8; border: 1px solid #1a73e8; }
+
+.btn-delete-row { background: none; border: none; color: #ccc; cursor: pointer; font-size: 1rem; }
+.btn-delete-row:hover { color: #d32f2f; }
+
+/* メッセージ通知 */
+.messages { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 10001; list-style: none; padding: 0; }
+.messages li { padding: 15px 25px; border-radius: 6px; margin-bottom: 10px; font-weight: bold; animation: slideInFade 5s forwards; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+@keyframes slideInFade { 0% { opacity: 0; transform: translateY(-20px); } 10% { opacity: 1; transform: translateY(0); } 90% { opacity: 1; } 100% { opacity: 0; visibility: hidden; } }
+.success { background: #e3f2fd; color: #0d47a1; border: 1px solid #90caf9; }
+
+/* ==========================================================================
+   6. モーダル制御
+   ========================================================================== */
+.modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9999; display: none; }
+.modal-overlay.is-open { display: flex; justify-content: center; align-items: flex-start; padding-top: 20px; }
+.modal-container { background: #fff; width: 95%; max-width: 1400px; border-radius: 4px; overflow: hidden; position: relative; }
