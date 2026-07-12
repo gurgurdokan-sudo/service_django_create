@@ -1,0 +1,53 @@
+{% extends "dashboard/base/base.html" %}
+{% block css %}
+{% load static %}
+<style>
+  .action-buttons{
+    width: 150px;
+  }
+  .action-buttons a{
+    margin-right: 5px;
+  }
+</style>
+<link rel="stylesheet" href="{% static 'temp.css' %}">
+{% endblock css %}
+{% block body %}
+<div class="container">
+  <div class="header-container">
+    <h1 class="page-title">スタッフ一覧</h1>
+    <a href="{% url 'employees:employee_create' %}" class="btn btn-primary">＋ 新規登録</a>
+  </div>
+
+  <table class="data-table">
+  <tr>
+    <th class="action-buttons">更新/消去</th>
+    <th>氏名</th>
+    <th>フリガナ</th>
+    <th>ログインID</th>
+    <th>Slack ID</th>
+    <th>電話番号</th>
+    <th>在籍</th>
+  </tr>
+  {% for employee in employees %}
+    <tr>
+      <td class="action-buttons">
+        <a href="{% url 'employees:employee_update' employee.id %}" class="btn btn-edit">更新</a>
+        <a href="{% url 'employees:employee_delete' employee.id %}" class="btn delete-single">消去</a>
+      </td>
+      <td>{{ employee.get_full_name|default:employee.username }}</td>
+      <td>{{ employee.name_kana }}</td>
+      <td>{{ employee.username }}</td>
+      <td>{% if employee.slack_user_id %}{{ employee.slack_user_id }}{% else %}<span class="text-secondary">未設定</span>{% endif %}</td>
+      <td>{{ employee.tel }}</td>
+      <td>{% if employee.is_active %}在籍{% else %}退職{% endif %}</td>
+    </tr>
+  {% empty %}
+  <tr>
+    <td colspan="7" class="no-users">従業員が登録されていません</td>
+  </tr>
+  {% endfor %}
+  </table>
+</div>
+{% endblock %}
+{% block script %}
+{% endblock script %}
