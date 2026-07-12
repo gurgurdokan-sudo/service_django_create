@@ -1,4 +1,5 @@
 import os
+from urllib.parse import quote
 from django.http import HttpResponse, FileResponse
 from django.contrib import messages
 from django.shortcuts import get_object_or_404,render, redirect
@@ -28,7 +29,8 @@ def download_service_sheet(request, user_id):
             f.read(),
             content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         )
-        response['Content-Disposition'] = f'attachment; filename={filename}'
+        logger.info(f'{filename}を出力')
+        response['Content-Disposition'] = f"attachment; filename*=UTF-8''{quote(filename)}"
         return response
 def export_excel(request,user_id):
     now = timezone.now()

@@ -1,0 +1,47 @@
+{% extends "dashboard/base/base.html" %}
+{% block css %}
+{% load static %}
+<link rel="stylesheet" href="{% static 'temp.css' %}">
+{% endblock css %}
+{% block body %}
+<div class="container">
+  <div class="header-container">
+    <h1 class="page-title">作成済みサービス提供表一覧</h1>
+  </div>
+  {#  todo検索  #}
+
+  <table class="data-table">
+  <tr>
+    <th>利用者</th>
+    <th>作成月</th>
+    <th>確定済み</th>
+    <th>ダウンロード</th>
+  </tr>
+  {% for record in records %}
+    <tr>
+      <td>{{ record.user.name }}</td>
+      <td>{{ record.date }}</td>
+      {%if record.confirmed%}
+        <td>☑</td>
+      {% else %}
+        <td></td>
+      {% endif %}
+      <td>
+      <button onclick="location.href='{% url 'dashboard:download_service_sheet' record.user.id %}?dis_year={{ record.date.year }}&dis_month={{ record.date.month }}'">
+        ダウンロード
+      </button>
+      </td>
+    </tr>
+  {% empty %}
+  <tr>
+    <td colspan="8" class="no-users">サービス提供表が登録されていません</td>
+  </tr>
+  {% endfor %}
+  </table>
+</div>
+
+
+
+{% endblock %}
+{% block script %}
+{% endblock script %}

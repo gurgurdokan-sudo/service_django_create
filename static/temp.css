@@ -292,3 +292,15 @@ label:has(+ select[required])::after,
     padding: 15px 0; 
     margin: 0;
 }
+  .no-data {
+    width: 100%;
+    text-align: center;
+    border-collapse: collapse;
+  }
+  .action-buttons{
+    width: 150px;
+  }
+  .action-buttons button{
+    margin-right: 5px;
+    width: 70px;
+  }
