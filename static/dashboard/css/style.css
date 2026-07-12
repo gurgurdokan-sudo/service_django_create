@@ -62,6 +62,10 @@ body {
     font-size: 0.85rem;
     cursor: pointer;
 }
+.not-disabled { /* Excel出力ボタン切り替え */
+    pointer-events: none;
+    opacity: 0.5;
+  }
 .nav-btn:hover { background: #f0f0f0; }
 .nav-btn:not(:last-child) { border-right: 1px solid #ccc; }
 
