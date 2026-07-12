@@ -21,12 +21,12 @@
   </p>
   <p>
     <label>{{ form.start_time.label }}</label>
-    {{ form.start_time }}
+    {{ form.start_time|default_if_none:"09:00" }}
   </p>
 
   <p>
     <label>{{ form.end_time.label }}</label>
-    {{ form.end_time }}
+    {{ form.end_time|default_if_none:"17:00" }}
   </p>
   <p>
     <label>適応のプラン</label>

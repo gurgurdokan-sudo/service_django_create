@@ -58,7 +58,7 @@ def create_plan(request,user_id):
         form = PlanForm({
             'year':year,
             'month':month,
-            'start_time':prev.start_time if prev else '9:00',
+            'start_time':prev.start_time if prev else '09:00',
             'end_time':prev.end_time if prev else '17:00',
             'weekdays':prev.weekday_pattern if prev else []},
             user_id=user_id
@@ -70,7 +70,7 @@ def create_plan(request,user_id):
             .filter(care_level = user.care_level)
             .values()
         )
-        logger.info(f'{year}-{month}です')
+        logger.info(f'{year}-{month}を作成する為のフォームを表示')
         
         context={'year':year,'month':month,'user':user,'form': form,'all_plans':all_plans}
         return render(request,'dashboard/create_plan.html', context )
