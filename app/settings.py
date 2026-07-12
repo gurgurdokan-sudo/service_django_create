@@ -49,7 +49,9 @@ INSTALLED_APPS = [
     'diary',
     'employees',
 ]
-
+CSRF_TRUSTED_ORIGINS = [
+    "http://taminoie.com",
+]
 # 認証ユーザーは従業員（employees.Employee）。
 # dashboard.User は被保険者（利用者）モデルであり認証には使わない。
 AUTH_USER_MODEL = 'employees.Employee'
