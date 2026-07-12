@@ -13,8 +13,16 @@
       ケアマネジャー一覧
     </a>
 
-    <a href="" class="list-group-item list-group-item-action">
+    <a href="{% url 'employees:employee_list' %}" class="list-group-item list-group-item-action">
       スタッフ一覧
+    </a>
+
+    <a href="{% url 'employees:assignment_list' %}" class="list-group-item list-group-item-action">
+      担当スケジュール
+    </a>
+
+    <a href="{% url 'employees:attendance_list' %}" class="list-group-item list-group-item-action">
+      出退勤記録
     </a>
 
     <a href="" class="list-group-item list-group-item-action">

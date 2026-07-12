@@ -1,0 +1,49 @@
+{% extends "dashboard/base/base.html" %}
+{% block css %}
+{% load static %}
+<style>
+  .date-nav {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 15px;
+  }
+</style>
+<link rel="stylesheet" href="{% static 'temp.css' %}">
+{% endblock css %}
+{% block body %}
+<div class="container">
+  <div class="header-container">
+    <h1 class="page-title">出退勤記録</h1>
+  </div>
+
+  <form method="get" class="date-nav">
+    <label for="date">表示する日付:</label>
+    <input type="date" id="date" name="date" value="{{ target_date|date:'Y-m-d' }}" class="form-control" style="width:auto;">
+    <button type="submit" class="btn btn-secondary">表示</button>
+  </form>
+
+  <h5>{{ target_date|date:"Y年n月j日（D）" }}の記録</h5>
+
+  <table class="data-table">
+  <tr>
+    <th>従業員</th>
+    <th>種別</th>
+    <th>打刻時刻</th>
+  </tr>
+  {% for record in records %}
+    <tr>
+      <td>{{ record.employee }}</td>
+      <td>{{ record.get_kind_display }}</td>
+      <td>{{ record.timestamp|date:"H:i" }}</td>
+    </tr>
+  {% empty %}
+  <tr>
+    <td colspan="3" class="no-users">この日の出退勤記録はありません（Slackのボタンから打刻されるとここに表示されます）</td>
+  </tr>
+  {% endfor %}
+  </table>
+</div>
+{% endblock %}
+{% block script %}
+{% endblock script %}

@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -20,12 +21,18 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-e89z)=0=zoowztki2ds97+ji3fh7ru3zgvjh4c@r$=($mfxt^s'
+# 本番では環境変数 DJANGO_SECRET_KEY を必ず設定すること（デフォルト値は開発用）
+SECRET_KEY = os.environ.get(
+    'DJANGO_SECRET_KEY',
+    'django-insecure-e89z)=0=zoowztki2ds97+ji3fh7ru3zgvjh4c@r$=($mfxt^s',
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# 本番では環境変数 DJANGO_DEBUG=false を設定すること
+DEBUG = os.environ.get('DJANGO_DEBUG', 'true').lower() == 'true'
 
-ALLOWED_HOSTS = ['*']
+# 本番では 'ドメイン名,IPアドレス' のようにカンマ区切りで指定
+ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', '*').split(',')
 
 
 # Application definition
@@ -40,7 +47,12 @@ INSTALLED_APPS = [
     'rest_framework',
     'dashboard',
     'diary',
+    'employees',
 ]
+
+# 認証ユーザーは従業員（employees.Employee）。
+# dashboard.User は被保険者（利用者）モデルであり認証には使わない。
+AUTH_USER_MODEL = 'employees.Employee'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -78,11 +90,11 @@ WSGI_APPLICATION = 'app.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'service_db',
-        'USER': 'django',
-        'PASSWORD': 'django',
-        'HOST': 'db',
-        'PORT': 5432,
+        'NAME': os.environ.get('POSTGRES_DB', 'service_db'),
+        'USER': os.environ.get('POSTGRES_USER', 'django'),
+        'PASSWORD': os.environ.get('POSTGRES_PASSWORD', 'django'),
+        'HOST': os.environ.get('POSTGRES_HOST', 'db'),
+        'PORT': int(os.environ.get('POSTGRES_PORT', 5432)),
     }
 }
 # DATABASES = {
