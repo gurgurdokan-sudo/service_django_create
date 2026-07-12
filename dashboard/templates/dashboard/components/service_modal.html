@@ -1,4 +1,8 @@
   <!-- サービス選択モーダル -->
+{% block css %}
+{% load static %}
+<link rel="stylesheet" href="{% static 'dashboard/main.css' %}">
+{% endblock css %}
 <div id="serviceModalOverlay" class="modal-overlay" style="display: none;">
 {% csrf_token %}
 <div class="modal-container">
