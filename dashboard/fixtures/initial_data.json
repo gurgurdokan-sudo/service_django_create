@@ -1,0 +1,49 @@
+[
+
+  {
+    "model": "dashboard.municipality",
+    "pk": 1,
+    "fields": {
+      "municipality_code": "112300",
+      "prefecture": "埼玉県",
+      "name": "新座市",
+      "area_grade": 5
+    }
+  },
+  {
+    "model": "dashboard.municipality",
+    "pk": 2,
+    "fields": {
+      "municipality_code": "131200",
+      "prefecture": "東京都",
+      "name": "練馬区",
+      "area_grade": 6
+    }
+  },
+  {
+    "model": "dashboard.addonservice",
+    "pk": 1,
+    "fields": {
+        "code": "6107",
+        "type": "rate",
+        "rate": 0.09,
+        "service_name": "通所介護処遇改善加算Ⅱ",
+        "unit": 0,
+        "category": "通所介護",
+        "insurance_type": "insurance",
+        "apply_unit": "monthly"
+    }
+   },
+   {
+    "model": "dashboard.office",
+    "pk": 1,
+    "fields": {
+      "name": "通所介護事業所 民の家",
+      "office_number": 1175101250,
+      "municipality": 1,
+      "default_service": 1,
+      "service_type_code": 78
+    }
+}
+
+]
