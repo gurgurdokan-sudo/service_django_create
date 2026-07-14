@@ -3,7 +3,7 @@
 {% load get_item %}
 {% block css %}
 <link rel="stylesheet" href="{% static 'dashboard/css/style.css' %}">
-{% endblock %}
+{% endblock css %}
 
 {% block body %}
 <div class="container">
@@ -225,8 +225,15 @@
     {% endif %}
     {% endfor %}
   </ul>
-  <input type="button" id="btn-excel" class="btn btn-success" value="Excelを作成" onclick="toExcel({{user.id}})">
-  <input type="button" id="btn-export" class="btn btn-primary" value="Excelを出力" onclick="exportExcel({{user.id}})">
+  <input type="button" id="btn-excel" class="btn btn-success
+  {% if confirmed %}
+  not-disabled
+  {% endif %}"
+  " value="Excelを作成" onclick="toExcel({{user.id}})">
+  <input type="button" id="btn-export" class="btn btn-primary
+  {% if not confirmed %}
+  not-disabled
+  {% endif %}" value="Excelを出力" onclick="exportExcel({{user.id}})">
 
   <!-- ローディングモーダル -->
   <div class="modal fade" id="loadingModal" tabindex="-1" aria-hidden="true">

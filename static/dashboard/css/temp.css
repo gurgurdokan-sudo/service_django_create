@@ -1,0 +1,306 @@
+/* --- フラッシュメッセージ（通知） --- */
+.messages {
+    position: fixed;            /* 画面に対して固定位置 */
+    top: 20px;                  /* 画面上部からの距離 */
+    left: 50%;                  /* 左右中央へ */
+    transform: translateX(-50%); /* 自身の幅の半分戻してピッタリ中央 */
+    z-index: 9999;              /* モーダルよりもさらに上に表示 */
+    list-style: none;
+    padding: 0;
+    width: auto;
+    min-width: 350px;           /* 少し横幅を持たせる */
+    pointer-events: none;       /* メッセージの隙間をクリックしても下の要素に触れるようにする */
+}
+
+.messages li {
+    pointer-events: auto;       /* メッセージ自体はクリック可能に */
+    margin-bottom: 10px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2); /* 浮いている感じを出す影 */
+    border-radius: 6px;
+    padding: 15px 25px;
+    font-weight: bold;
+    text-align: center;
+    opacity: 0;                 /* 初期は透明 */
+    animation: slideInFadeOut 5s forwards; /* 出現して消えるアニメーション */
+}
+
+/* メッセージのアニメーション */
+@keyframes slideInFadeOut {
+    0% { opacity: 0; transform: translateY(-20px); } /* 上から降りてくる */
+    10% { opacity: 1; transform: translateY(0); }    /* 表示完了 */
+    85% { opacity: 1; transform: translateY(0); }    /* 4秒ほど静止 */
+    100% { opacity: 0; transform: translateY(-10px); visibility: hidden; } /* スッと消える */
+}
+.success {
+    background-color: #e3f2fd;
+    color: #0d47a1;
+    border: 1px solid #90caf9;
+    padding: 12px 20px;
+    margin-bottom: 10px;
+    border-radius: 4px;
+    position: relative;
+    animation: fadeOutContainer 5s forwards;
+}
+.error {
+    background-color: #fcc7c7;
+    color: #9f0404;
+    border: 1px solid #f96262;
+    padding: 12px 20px;
+    margin-bottom: 10px;
+    border-radius: 4px;
+    position: relative;
+    animation: fadeOutContainer 5s forwards;
+}
+@keyframes fadeOutContainer {
+    0% { opacity: 1; transform: translateY(0); }
+    80% { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(-10px); display: none; margin: 0; padding: 0; height: 0; border: none; overflow: hidden; }
+} 
+
+/* form */
+.detail-card .form-control {
+    width: 30% !important;
+    display: inline-block !important;
+    border:  var(--bs-border-width) solid var(--bs-border-color);
+    padding: .375rem .75rem;
+    font-size: 1rem;
+}
+/* --- 詳細の曜日関連 --- */
+.weekday-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.weekday-row label{
+    width: 100% !important;
+    border: none;
+}
+#id_weekdays{
+  display: flex;
+  gap: 10px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  box-sizing: revert !important;
+}
+#id_weekdays label{
+    width: 30px;
+    border: 2px solid #666;
+    box-sizing: revert !important;
+}
+/*  */
+/* 共通処理 */
+body {
+    font-family: "Yu Gothic", "Meiryo", "Times New Roman", serif;
+    background-color: #fdfdfd;
+    color: #333;
+    margin: 0;
+    padding: 20px;
+    line-height: 1.6;
+}
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+/* --- ヘッダーエリア --- */
+.header-container {
+    display: flex;
+    justify-content: space-between; /* タイトルは左、新規作成は右 */
+    align-items: center;
+    border-bottom: 2px solid #2c3e50;
+    padding-bottom: 12px;
+    margin-bottom: 25px;
+}
+
+.page-title {
+    margin: 0;
+    font-size: 1.6rem;
+    color: #2c3e50;
+    border-left: 8px solid #2c3e50;
+    padding-left: 15px;
+}
+
+/* --- ボタン基本スタイル --- */
+.btn {
+    display: inline-block;
+    padding: 6px 14px;
+    text-decoration: none;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    border: 1px solid #ccc;
+    background-color: #fff;
+    color: #333;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.btn:hover {
+    background-color: #f0f0f0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* 新規作成（濃紺） */
+.btn-create {
+    background-color: #2c3e50;
+    color: #fff !important;
+    border-color: #2c3e50;
+    padding: 8px 20px;
+}
+.btn-create:hover {
+    background-color: #34495e;
+}
+
+/* 認定情報（緑系） */
+.btn-cert {
+    color: #2e7d32;
+    border-color: #2e7d32;
+}
+.btn-excel:hover {
+    background-color: #edf7ed;
+}
+
+/* 編集（青系） */
+.btn-edit {
+    color: #1a73e8;
+    border-color: #1a73e8;
+}
+.btn-edit:hover {
+    background-color: #e8f0fe;
+}
+
+/* --- テーブルスタイル --- */
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.data-table th {
+    background-color: #2c3e50;
+    color: #fff;
+    padding: 12px;
+    text-align: left;
+    font-weight: normal;
+    font-size: 0.9rem;
+}
+
+.data-table td {
+    padding: 14px 12px;
+    border-bottom: 1px solid #eee;
+    vertical-align: middle;
+}
+
+.data-table tr:hover {
+    background-color: #f9fbfd;
+}
+
+/* 名前リンク */
+.link-name {
+    color: #2c3e50;
+    font-weight: bold;
+    text-decoration: none;
+}
+.link-name:hover {
+    text-decoration: underline;
+}
+/* tableの介護度 */
+.badge{
+    --bs-badge-color:#2c3e50 !important;
+}
+/* --- 詳細画面用スタイル --- */
+.detail-card { 
+    border: 1px solid #ccc; 
+    padding: 30px; 
+    background: #fff; 
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+/* --- 詳細ラベル --- */
+.detail-card label { 
+    display: inline-block; 
+    width: 230px;   
+    font-weight: bold; 
+    background-color: #9cc4ebac; 
+    color: white;           /* 文字は白 */
+    text-align: center; 
+    padding: 5px 10px; 
+    border-radius: 4px;     /* 角丸 */
+    margin-right: 15px; 
+    font-size: 0.9rem;
+    vertical-align: middle;
+}
+
+/* 必須項目のラベルに「必須」バッジを擬似的に追加 */
+
+label:has(+ input[required])::after,
+label:has(+ select[required])::after,
+#my_required::after {
+    content: "必須";
+    font-size: 0.7rem;
+    background-color: #d32f2f;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 3px;
+    margin-left: 8px;
+    vertical-align: middle;
+}
+
+/* --- 入力フォームの調整 --- */
+.form-control {
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    width: 350px;           /* 入力欄の幅 */
+    font-size: 1rem;
+    vertical-align: middle;
+}
+
+
+/* --- Djangoのエラーリスト --- */
+.errorlist {
+    margin: 5px 0 15px 215px; /* ラベルの幅(200px) + 余白(15px)分ずらして整列 */
+    padding: 0;
+    list-style: none;         /* ポッチ(点)を消す */
+    color: #d32f2f;           /* エラーは赤色 */
+    font-size: 0.85rem;
+    font-weight: bold;
+}
+.error-msg{
+    text-align: center;
+    padding: 0;
+    list-style: none;         /* ポッチ(点)を消す */
+    color: #d32f2f;           /* エラーは赤色 */
+    font-size: 0.85rem;
+    font-weight: bold;
+}
+.as_p{
+    position: relative;
+}
+.errorlist {
+    left:400px;
+    position: absolute;
+    display: flex;
+    align-items: center;
+}
+
+/* 項目の区切り */
+.detail-item p { 
+    border-bottom: 1px solid #eee; 
+    padding: 15px 0; 
+    margin: 0;
+}
+  .no-data {
+    width: 100%;
+    text-align: center;
+    border-collapse: collapse;
+  }
+  .action-buttons{
+    width: 150px;
+  }
+  .action-buttons button{
+    margin-right: 5px;
+    width: 70px;
+  }
