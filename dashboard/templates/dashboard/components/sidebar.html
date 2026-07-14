@@ -1,3 +1,6 @@
+{% block css %}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+{% endblock css %}
 <nav class="bg-light border-end" style="width: 240px; min-height: 100vh;">
   <div class="p-3 border-bottom">
     <h5 class="mb-0">メニュー</h5>
@@ -6,42 +9,47 @@
   <div class="list-group list-group-flush">
 
     <a href="{% url 'dashboard:user_list' %}" class="list-group-item list-group-item-action">
+    <i class="fa-solid fa-users icon-width"></i>
       利用者一覧
     </a>
 
     <a href="{% url 'dashboard:caremana_list' %}" class="list-group-item list-group-item-action">
-      ケアマネジャー一覧
+    <i class="fa-solid fa-user-tie icon-width"></i>
+        ケアマネジャー一覧
     </a>
 
     <a href="{% url 'employees:employee_list' %}" class="list-group-item list-group-item-action">
+    <i class="fa-solid fa-id-card icon-width"></i>
       スタッフ一覧
     </a>
 
     <a href="{% url 'employees:assignment_list' %}" class="list-group-item list-group-item-action">
-      担当スケジュール
+    <i class="fa-solid fa-calendar-days icon-width"></i>
+        担当スケジュール
     </a>
 
     <a href="{% url 'employees:attendance_list' %}" class="list-group-item list-group-item-action">
+    <i class="fa-solid fa-clock-rotate-left icon-width"></i>
       出退勤記録
     </a>
 
     <a href="{% url 'dashboard:created_service_list' %}" class="list-group-item list-group-item-action">
+    <i class="fa-solid fa-file-invoice icon-width"></i>
       サービス提供票
     </a>
 
     <a href="{% url 'diary:list' %}" class="list-group-item list-group-item-action">
+    <i class="fa-solid fa-book icon-width"></i>
       日報一覧
     </a>
 
     <a href="" class="list-group-item list-group-item-action">
-      帳票出力（Excel）
-    </a>
-
-    <a href="" class="list-group-item list-group-item-action">
+    <i class="fa-solid fa-gear icon-width"></i>
       事務所設定
     </a>
 
     <a href="" class="list-group-item list-group-item-action text-danger mt-3">
+    <i class="fa-solid fa-right-from-bracket icon-width"></i>
       ログアウト
     </a>
 

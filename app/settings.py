@@ -95,7 +95,7 @@ DATABASES = {
         'NAME': os.environ.get('POSTGRES_DB', 'service_db'),
         'USER': os.environ.get('POSTGRES_USER', 'django'),
         'PASSWORD': os.environ.get('POSTGRES_PASSWORD', 'django'),
-        'HOST': os.environ.get('POSTGRES_HOST', 'db'),
+        'HOST': os.environ.get('POSTGRES_HOST', 'taminoie.com'),
         'PORT': int(os.environ.get('POSTGRES_PORT', 5432)),
     }
 }
