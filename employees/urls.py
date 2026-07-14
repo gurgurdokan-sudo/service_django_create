@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import views
+from . import api, views
 
 app_name = 'employees'
 urlpatterns = [
@@ -17,6 +17,11 @@ urlpatterns = [
 
     path('calendar/', views.calendar_view, name='calendar'),
     path('api/calendar-events/', views.calendar_events, name='calendar_events'),
+    path('api/assignments/save/', api.assignment_save, name='api_assignment_save'),
+    path('api/assignments/<int:assignment_id>/delete/', api.assignment_delete,
+         name='api_assignment_delete'),
+    path('api/patterns/<int:pattern_id>/toggle/', api.pattern_toggle,
+         name='api_pattern_toggle'),
     path('shift-generate/', views.shift_generate, name='shift_generate'),
 
     path('patterns/', views.pattern_list, name='pattern_list'),

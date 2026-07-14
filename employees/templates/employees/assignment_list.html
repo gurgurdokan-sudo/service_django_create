@@ -21,10 +21,11 @@
     <a href="{% url 'employees:assignment_create' %}?date={{ target_date|date:'Y-m-d' }}" class="btn btn-primary">＋ 割当てを追加</a>
   </div>
 
-  <form method="get" class="date-nav">
-    <label for="date">表示する日付:</label>
-    <input type="date" id="date" name="date" value="{{ target_date|date:'Y-m-d' }}" class="form-control" style="width:auto;">
-    <button type="submit" class="btn btn-secondary">表示</button>
+  <form method="get" class="date-nav" id="dateNavForm">
+    <a href="?date={{ prev_date|date:'Y-m-d' }}" class="btn btn-secondary">◀ 前日</a>
+    <input type="date" id="date" name="date" value="{{ target_date|date:'Y-m-d' }}"
+           class="form-control" style="width:auto;" onchange="this.form.submit()">
+    <a href="?date={{ next_date|date:'Y-m-d' }}" class="btn btn-secondary">翌日 ▶</a>
   </form>
 
   <h5>{{ target_date|date:"Y年n月j日（D）" }}の担当</h5>

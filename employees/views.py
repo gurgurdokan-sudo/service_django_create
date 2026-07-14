@@ -61,6 +61,8 @@ def assignment_list(request):
     return render(request, 'employees/assignment_list.html', {
         'assignments': assignments,
         'target_date': target_date,
+        'prev_date': target_date - timedelta(days=1),
+        'next_date': target_date + timedelta(days=1),
     })
 
 
@@ -70,6 +72,19 @@ def assignment_create(request):
         form = AssignmentForm(request.POST)
         if form.is_valid():
             assignment = form.save()
+            # 「毎週◯曜日にシフトパターン登録しますか？」ポップアップでOKした場合
+            if request.POST.get('register_pattern'):
+                _, created = ShiftPattern.objects.get_or_create(
+                    employee=assignment.employee, user=assignment.user,
+                    weekday=assignment.date.weekday(),
+                    defaults={
+                        'start_time': assignment.start_time,
+                        'end_time': assignment.end_time,
+                        'is_daily_reporter': assignment.is_daily_reporter,
+                    },
+                )
+                if created:
+                    messages.success(request, 'シフトパターンにも登録しました。')
             return redirect(f"{_assignment_list_url()}?date={assignment.date.isoformat()}")
     else:
         form = AssignmentForm(initial={'date': initial_date})
@@ -101,10 +116,15 @@ def attendance_list(request):
 
 # カレンダー（利用者=終日イベント、スタッフ担当=時間帯イベント）
 def calendar_view(request):
+    from dashboard.models import User
     today = timezone.localdate()
     return render(request, 'employees/calendar.html', {
         'this_year': today.year,
         'this_month': today.month,
+        # ポップアップ（シフト追加/編集モーダル）の選択肢
+        'staff_options': Employee.objects.filter(is_active=True, is_superuser=False)
+                                         .order_by('username'),
+        'care_user_options': User.objects.all().order_by('name_kana'),
     })
 
 
@@ -139,16 +159,31 @@ def calendar_events(request):
                 'color': '#5b7c99',
             })
 
-    # スタッフの担当（時間帯イベントで表示）
+    # スタッフの担当（時間帯イベント。文字はスタッフ名のみ、人ごとに色分け）
     assignments = (
         Assignment.objects.filter(date__gte=start, date__lt=end)
         .select_related('employee', 'user')
     )
     for a in assignments:
-        title = f'{a.user.name}担当：{a.employee}'
+        title = str(a.employee)
         if a.is_daily_reporter:
-            title += '（日報）'
-        event = {'title': title, 'color': '#3a8a5f'}
+            title += ' 📝'
+        event = {
+            'id': f'assignment-{a.id}',
+            'title': title,
+            'color': _employee_color(a.employee_id),
+            'extendedProps': {
+                'assignmentId': a.id,
+                'employeeId': a.employee_id,
+                'userId': a.user_id,
+                'userName': a.user.name,
+                'date': a.date.isoformat(),
+                'startTime': a.start_time.strftime('%H:%M') if a.start_time else '',
+                'endTime': a.end_time.strftime('%H:%M') if a.end_time else '',
+                'isDailyReporter': a.is_daily_reporter,
+                'note': a.note,
+            },
+        }
         if a.start_time and a.end_time:
             event['start'] = datetime.combine(a.date, a.start_time).isoformat()
             event['end'] = datetime.combine(a.date, a.end_time).isoformat()
@@ -158,6 +193,17 @@ def calendar_events(request):
         events.append(event)
 
     return JsonResponse(events, safe=False)
+
+
+# スタッフごとのイベント色（同時間帯の重なりを人で見分けるため）
+EMPLOYEE_COLORS = [
+    '#2e7d32', '#c62828', '#6a1b9a', '#ef6c00',
+    '#00838f', '#5d4037', '#37474f', '#d81b60',
+]
+
+
+def _employee_color(employee_id):
+    return EMPLOYEE_COLORS[employee_id % len(EMPLOYEE_COLORS)]
 
 
 @require_POST
@@ -175,19 +221,52 @@ def shift_generate(request):
 
 
 # シフトパターン（いつも通りのシフトの型）
+# セレクターで選んだスタッフの曜日別シフトを表示する
 def pattern_list(request):
-    patterns = ShiftPattern.objects.select_related('employee', 'user').all()
-    return render(request, 'employees/pattern_list.html', {'patterns': patterns})
+    staff = Employee.objects.filter(is_active=True, is_superuser=False).order_by('username')
+    selected = None
+    employee_id = request.GET.get('employee')
+    if employee_id:
+        selected = staff.filter(id=employee_id).first()
+    if selected is None:
+        selected = staff.first()
+
+    patterns = (
+        ShiftPattern.objects.filter(employee=selected)
+        .select_related('user')
+        .order_by('weekday', 'start_time')
+    ) if selected else ShiftPattern.objects.none()
+
+    # 曜日ごとにまとめる（月〜日、パターンが無い曜日も行として出す）
+    from .models import WEEKDAY_CHOICES
+    by_weekday = [
+        {'weekday': value, 'label': label,
+         'patterns': [p for p in patterns if p.weekday == value]}
+        for value, label in WEEKDAY_CHOICES
+    ]
+
+    return render(request, 'employees/pattern_list.html', {
+        'staff': staff,
+        'selected': selected,
+        'by_weekday': by_weekday,
+    })
+
+
+def _pattern_list_url(employee_id=None):
+    from django.urls import reverse
+    url = reverse('employees:pattern_list')
+    return f'{url}?employee={employee_id}' if employee_id else url
 
 
 def pattern_create(request):
     if request.method == 'POST':
         form = ShiftPatternForm(request.POST)
         if form.is_valid():
-            form.save()
-            return redirect('employees:pattern_list')
+            pattern = form.save()  # 新規は常に有効（is_activeのデフォルト=True）
+            return redirect(_pattern_list_url(pattern.employee_id))
     else:
-        form = ShiftPatternForm()
+        # 一覧で選択中だったスタッフを初期値にする
+        form = ShiftPatternForm(initial={'employee': request.GET.get('employee')})
     return render(request, 'employees/pattern_form.html', {'form': form, 'title': 'シフトパターンの登録'})
 
 
@@ -197,7 +276,7 @@ def pattern_update(request, pattern_id):
         form = ShiftPatternForm(request.POST, instance=pattern)
         if form.is_valid():
             form.save()
-            return redirect('employees:pattern_list')
+            return redirect(_pattern_list_url(pattern.employee_id))
     else:
         form = ShiftPatternForm(instance=pattern)
     return render(request, 'employees/pattern_form.html', {'form': form, 'title': 'シフトパターンの更新'})
@@ -206,8 +285,9 @@ def pattern_update(request, pattern_id):
 def pattern_delete(request, pattern_id):
     pattern = get_object_or_404(ShiftPattern, id=pattern_id)
     if request.method == 'POST':
+        employee_id = pattern.employee_id
         pattern.delete()
-        return redirect('employees:pattern_list')
+        return redirect(_pattern_list_url(employee_id))
     return render(request, 'employees/pattern_delete.html', {'pattern': pattern})
 
 

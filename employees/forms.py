@@ -89,7 +89,9 @@ class AssignmentForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['employee'].queryset = Employee.objects.filter(is_active=True)
+        # サイト管理者（superuser）はスタッフとして扱わない
+        self.fields['employee'].queryset = Employee.objects.filter(
+            is_active=True, is_superuser=False)
         for field_name, field in self.fields.items():
             self.fields[field_name].widget.attrs['class'] = f'form-control {field_name}'
             if field.required:
@@ -102,8 +104,9 @@ class ShiftPatternForm(forms.ModelForm):
 
     class Meta:
         model = ShiftPattern
+        # is_active は含めない（新規は常に有効。切替は一覧のチェックボックスで行う）
         fields = ['weekday', 'employee', 'user', 'start_time', 'end_time',
-                  'is_daily_reporter', 'is_active']
+                  'is_daily_reporter']
         labels = {
             'employee': '従業員',
             'user': '利用者',
@@ -128,7 +131,8 @@ class ShiftPatternForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['employee'].queryset = Employee.objects.filter(is_active=True)
+        self.fields['employee'].queryset = Employee.objects.filter(
+            is_active=True, is_superuser=False)
         for field_name, field in self.fields.items():
             self.fields[field_name].widget.attrs['class'] = f'form-control {field_name}'
             if field.required:

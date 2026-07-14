@@ -2,56 +2,108 @@
 {% block css %}
 {% load static %}
 <style>
-  .action-buttons{
-    width: 150px;
+  .staff-nav {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 15px;
   }
-  .action-buttons a{
-    margin-right: 5px;
-  }
+  .weekday-cell { width: 60px; font-weight: 600; text-align: center; }
+  .pattern-row-off { color: #999; }
+  .pattern-row-off .pattern-time { text-decoration: line-through; }
+  .action-buttons a { margin-right: 5px; }
+  .no-pattern { color: #bbb; }
 </style>
-<link rel="stylesheet" href="{% static 'temp.css' %}">
+<link rel="stylesheet" href="{% static 'dashboard/css/temp.css' %}">
 {% endblock css %}
 {% block body %}
 <div class="container">
   <div class="header-container">
     <h1 class="page-title">シフトパターン（いつも通りのシフト）</h1>
-    <a href="{% url 'employees:pattern_create' %}" class="btn btn-primary">＋ パターン追加</a>
+    <a href="{% url 'employees:pattern_create' %}{% if selected %}?employee={{ selected.id }}{% endif %}" class="btn btn-primary">＋ パターン追加</a>
   </div>
-  <p class="text-secondary">
-    ここで登録した曜日パターンを、カレンダー画面の「シフトパターンから生成」で月単位のスケジュールに展開します。
-    生成後に個別の日を変更・削除しても、再生成で上書きされません（例外が保持されます）。
-  </p>
 
+  <form method="get" class="staff-nav">
+    <label for="employee">スタッフ:</label>
+    <select id="employee" name="employee" class="form-control" style="width:auto;" onchange="this.form.submit()">
+      {% for e in staff %}
+        <option value="{{ e.id }}" {% if selected and e.id == selected.id %}selected{% endif %}>{{ e }}</option>
+      {% endfor %}
+    </select>
+  </form>
+
+  {% if selected %}
+  <h5>{{ selected }} さんの毎週のシフト</h5>
   <table class="data-table">
   <tr>
-    <th class="action-buttons">更新/消去</th>
-    <th>曜日</th>
-    <th>従業員</th>
+    <th class="weekday-cell">曜日</th>
+    <th>時間</th>
     <th>利用者</th>
-    <th>時間帯</th>
-    <th>日報担当</th>
+    <th>日報</th>
     <th>有効</th>
+    <th class="action-buttons">操作</th>
   </tr>
-  {% for pattern in patterns %}
-    <tr>
-      <td class="action-buttons">
-        <a href="{% url 'employees:pattern_update' pattern.id %}" class="btn btn-edit">更新</a>
-        <a href="{% url 'employees:pattern_delete' pattern.id %}" class="btn delete-single">消去</a>
-      </td>
-      <td>{{ pattern.get_weekday_display }}</td>
-      <td>{{ pattern.employee }}</td>
-      <td>{{ pattern.user.name }}</td>
-      <td>{% if pattern.start_time %}{{ pattern.start_time|time:"H:i" }}〜{{ pattern.end_time|time:"H:i" }}{% endif %}</td>
-      <td>{% if pattern.is_daily_reporter %}○{% endif %}</td>
-      <td>{% if pattern.is_active %}有効{% else %}停止中{% endif %}</td>
-    </tr>
-  {% empty %}
-  <tr>
-    <td colspan="7" class="no-users">シフトパターンが登録されていません</td>
-  </tr>
+  {% for row in by_weekday %}
+    {% if row.patterns %}
+      {% for pattern in row.patterns %}
+      <tr id="pattern-row-{{ pattern.id }}" class="{% if not pattern.is_active %}pattern-row-off{% endif %}">
+        <td class="weekday-cell">{% if forloop.first %}{{ row.label }}{% endif %}</td>
+        <td class="pattern-time">
+          {% if pattern.start_time %}{{ pattern.start_time|time:"H:i" }}〜{{ pattern.end_time|time:"H:i" }}{% else %}時間未設定{% endif %}
+        </td>
+        <td>{{ pattern.user.name }}</td>
+        <td>{% if pattern.is_daily_reporter %}📝{% endif %}</td>
+        <td>
+          <input type="checkbox" class="pattern-toggle" data-pattern-id="{{ pattern.id }}"
+                 {% if pattern.is_active %}checked{% endif %}>
+        </td>
+        <td class="action-buttons">
+          <a href="{% url 'employees:pattern_update' pattern.id %}" class="btn btn-edit">更新</a>
+          <a href="{% url 'employees:pattern_delete' pattern.id %}" class="btn delete-single">消去</a>
+        </td>
+      </tr>
+      {% endfor %}
+    {% else %}
+      <tr>
+        <td class="weekday-cell">{{ row.label }}</td>
+        <td colspan="5" class="no-pattern">シフトなし</td>
+      </tr>
+    {% endif %}
   {% endfor %}
   </table>
+  <p class="text-secondary" style="margin-top:8px;">
+    チェックを外すと無効（次回の一括生成の対象外）になります。生成済みのスケジュールは変わりません。
+  </p>
+  {% else %}
+  <p class="no-users">スタッフが登録されていません。先にスタッフ一覧から従業員を登録してください。</p>
+  {% endif %}
+
+  <p style="margin-top:10px;"><a href="{% url 'employees:calendar' %}">← カレンダーに戻る</a></p>
 </div>
+
+<form id="csrfHolder">{% csrf_token %}</form>
 {% endblock %}
 {% block script %}
+<script>
+// 有効/無効チェックボックス: その場で切り替え
+const TOGGLE_URL_BASE = "{% url 'employees:api_pattern_toggle' 0 %}".replace('0/toggle/', '');
+const csrfToken = document.querySelector('#csrfHolder [name=csrfmiddlewaretoken]').value;
+document.querySelectorAll('.pattern-toggle').forEach(function(checkbox) {
+  checkbox.addEventListener('change', async function() {
+    const id = this.dataset.patternId;
+    const res = await fetch(TOGGLE_URL_BASE + id + '/toggle/', {
+      method: 'POST',
+      headers: {'X-CSRFToken': csrfToken},
+    });
+    if (!res.ok) {
+      alert('切り替えに失敗しました');
+      this.checked = !this.checked;
+      return;
+    }
+    const data = await res.json();
+    document.getElementById('pattern-row-' + id)
+      .classList.toggle('pattern-row-off', !data.is_active);
+  });
+});
+</script>
 {% endblock script %}
