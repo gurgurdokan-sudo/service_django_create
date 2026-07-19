@@ -88,7 +88,7 @@
         </td>
         <td>
             {% if a.rate %}
-                <span>{{ a.rate*100 }}%</span>
+                <span>{{ a.rate100 }}%</span>
             {% elif a.price == 0 and a.unit == 0 %}
                 <span>---</span>
             {% else %}

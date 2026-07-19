@@ -127,7 +127,7 @@ def create_service_sheet(context):
         # 保存処理
         filepath, filename = get_service_sheet_path(user, year, month)
         wb.save(filepath)
-        _recode_model_create(plan, user, year, month)
+        _recode_model_create(user, year, month)
         return FileResponse(open(filepath, "rb"), as_attachment=True, filename=filename)
     except Exception as e:
         logger.error(f"サービス提供表の作成中にエラーが発生しました: {e}")
@@ -152,7 +152,7 @@ def _auto_newline(text, ws, cell, line=10):
     ws[cell] = wrapped
     ws[cell].alignment = Alignment(wrap_text=True, vertical="center",)
 
-def _recode_model_create(plan, user, year, month):
+def _recode_model_create(user, year, month):
     '''ServiceRecordモデルにレコードを作成する'''
     from dashboard.models import ServiceRecord
     date = timezone.datetime(year, month, 1)

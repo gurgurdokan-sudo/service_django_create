@@ -48,7 +48,9 @@ def build_user_service_context(user_id, year, month):
             add_codes[addon_name] = {"unit": addon.unit, "code": addon.code, "count": len(days), "price":addon.price}
             if addon.unit:
                 monthly_addon_totals[addon_name] = monthly_addon_totals.get(addon_name,0) + addon.unit * len(days)
-
+    addon_service = AddOnService.objects.all()
+    for add in addon_service:
+        add.rate100 = int(add.rate*100) if add.rate else ''
     date = datetime.date(year, month, 1)
     try:
         record = ServiceRecord.objects.filter(user=target, date=date).first()
@@ -70,7 +72,7 @@ def build_user_service_context(user_id, year, month):
         'year_range': range(now.year - 1, now.year + 1),
         'month_range': range(1, 13),
         'add_codes': add_codes, #excelテスト表示
-        'addon_service': AddOnService.objects.exclude(code__in=['6102','6100','6099']),
+        'addon_service': addon_service,
         'monthly_addon_totals': monthly_addon_totals, #tableのtotal
         'confirmed': confirmed, #サービス提供票の確定状態
     }
