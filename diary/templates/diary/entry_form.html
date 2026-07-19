@@ -1,10 +1,10 @@
 {% extends 'diary/base.html' %}
 
-{% block title %}{% if form.instance.pk %}日記を編集{% else %}新しい日記{% endif %} | マイ日記{% endblock %}
+{% block title %}{% if form.instance.pk %}日報を編集{% else %}新しい日報{% endif %} | 日報{% endblock %}
 
 {% block content %}
 <div class="card">
-  <h2 style="margin-bottom:20px;">{% if form.instance.pk %}日記を編集{% else %}新しい日記{% endif %}</h2>
+  <h2 style="margin-bottom:20px;">{% if form.instance.pk %}日報を編集{% else %}新しい日報{% endif %}</h2>
   <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
     {{ form.as_p }}

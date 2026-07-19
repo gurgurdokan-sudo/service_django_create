@@ -1,4 +1,4 @@
-"""Slack DMのメッセージを日記に取り込む管理コマンド
+"""Slack DMのメッセージを日報に取り込む管理コマンド
 
 設定はプロジェクト直下の slack_config.json から読む:
     {
@@ -82,7 +82,7 @@ class SlackClient:
 
 
 class Command(BaseCommand):
-    help = 'Slack DMのメッセージを日記に取り込む'
+    help = 'Slack DMのメッセージを日報に取り込む'
 
     def add_arguments(self, parser):
         parser.add_argument('--days', type=int, default=7,
@@ -105,7 +105,7 @@ class Command(BaseCommand):
             and m.get('type') == 'message'
             and not m.get('subtype')
             and (m.get('text', '').strip() or m.get('files'))
-            # APIトークン等の機密文字列を含むメッセージは日記にしない
+            # APIトークン等の機密文字列を含むメッセージは日報にしない
             and not re.search(r'xox[a-z]-[0-9A-Za-z-]+', m.get('text', ''))
         ]
 

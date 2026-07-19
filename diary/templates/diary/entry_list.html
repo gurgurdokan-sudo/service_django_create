@@ -1,6 +1,6 @@
 {% extends 'diary/base.html' %}
 
-{% block title %}日記一覧 | マイ日記{% endblock %}
+{% block title %}日報一覧 | 日報{% endblock %}
 
 {% block content %}
 <div class="toolbar">
@@ -28,10 +28,10 @@
 {% empty %}
   <div class="empty">
     {% if keyword %}
-      <p>「{{ keyword }}」に一致する日記はありませんでした。</p>
+      <p>「{{ keyword }}」に一致する日報はありませんでした。</p>
     {% else %}
-      <p>まだ日記がありません。</p>
-      <p style="margin-top:12px;"><a class="btn" href="{% url 'diary:create' %}">最初の日記を書く</a></p>
+      <p>まだ日報がありません。</p>
+      <p style="margin-top:12px;"><a class="btn" href="{% url 'diary:create' %}">最初の日報を書く</a></p>
     {% endif %}
   </div>
 {% endfor %}

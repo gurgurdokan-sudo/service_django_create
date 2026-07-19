@@ -35,7 +35,7 @@ class EntryCreateView(generic.CreateView):
     form_class = EntryForm
 
     def form_valid(self, form):
-        messages.success(self.request, '日記を作成しました。')
+        messages.success(self.request, '日報を作成しました。')
         return super().form_valid(form)
 
 
@@ -44,7 +44,7 @@ class EntryUpdateView(generic.UpdateView):
     form_class = EntryForm
 
     def form_valid(self, form):
-        messages.success(self.request, '日記を更新しました。')
+        messages.success(self.request, '日報を更新しました。')
         return super().form_valid(form)
 
 
@@ -53,5 +53,5 @@ class EntryDeleteView(generic.DeleteView):
     success_url = reverse_lazy('diary:list')
 
     def form_valid(self, form):
-        messages.success(self.request, '日記を削除しました。')
+        messages.success(self.request, '日報を削除しました。')
         return super().form_valid(form)
