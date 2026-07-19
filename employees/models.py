@@ -15,11 +15,15 @@ class Employee(AbstractUser):
     '''
     slack_user_id = models.CharField(
         'SlackユーザーID', max_length=20, blank=True, default='',
-        help_text='Slackプロフィール →「…」→「メンバーIDをコピー」で取得（例: U0A1E588J2J）',
+        help_text='例: U0A1E588J2J',
     )
     name_kana = models.CharField('フリガナ', max_length=100, blank=True, default='')
     tel = models.CharField('電話番号', max_length=20, blank=True, default='')
-
+    @property
+    def get_full_name(self):
+        # AbstractUser の get_full_name は名→姓の欧米式なので override する
+        full_name = f'{self.last_name} {self.first_name}'.strip()
+        return full_name if full_name else self.username
     class Meta:
         verbose_name = '従業員'
         verbose_name_plural = '従業員'

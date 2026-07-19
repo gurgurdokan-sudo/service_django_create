@@ -1,5 +1,5 @@
 from datetime import date as date_cls, datetime, timedelta
-
+from pykakasi import kakasi
 from django.contrib import messages
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -9,7 +9,7 @@ from django.views.decorators.http import require_POST
 from dashboard.models import ServicePlan
 from diary.models import Entry
 
-from .forms import AssignmentForm, EmployeeForm, ShiftPatternForm
+from .forms import AssignmentForm, EmployeeForm,EmployeeUpdateForm , ShiftPatternForm
 from .models import Assignment, Attendance, Employee, ShiftPattern
 
 
@@ -23,7 +23,23 @@ def employee_create(request):
     if request.method == 'POST':
         form = EmployeeForm(request.POST)
         if form.is_valid():
-            form.save()
+            obj = form.save(commit=False)
+
+            kks = kakasi()
+            conv = kks.convert(f"{obj.last_name} {obj.first_name}")
+
+            # ローマ字だけ抽出
+            ascii_name = "".join([c['hepburn'] for c in conv]).lower()
+
+            # 重複チェック
+            base = ascii_name
+            i = 1
+            while Employee.objects.filter(username=ascii_name).exists():
+                ascii_name = f"{base}{i}"
+                i += 1
+
+            obj.username = ascii_name
+            obj.save()
             return redirect('employees:employee_list')
     else:
         form = EmployeeForm()
@@ -33,7 +49,7 @@ def employee_create(request):
 def employee_update(request, employee_id):
     employee = get_object_or_404(Employee, id=employee_id)
     if request.method == 'POST':
-        form = EmployeeForm(request.POST, instance=employee)
+        form = EmployeeUpdateForm(request.POST, instance=employee)
         if form.is_valid():
             form.save()
             return redirect('employees:employee_list')
@@ -153,7 +169,7 @@ def calendar_events(request):
             if not (start <= target < end):
                 continue
             events.append({
-                'title': f'{plan.start_time:%H:%M}〜{plan.end_time:%H:%M} {plan.user.name}',
+                'title': f'{plan.user.name} {plan.start_time:%H:%M}〜{plan.end_time:%H:%M}',
                 'start': target.isoformat(),
                 'allDay': True,
                 'color': '#5b7c99',
@@ -187,6 +203,7 @@ def calendar_events(request):
         if a.start_time and a.end_time:
             event['start'] = datetime.combine(a.date, a.start_time).isoformat()
             event['end'] = datetime.combine(a.date, a.end_time).isoformat()
+            event['classNames'] = ['custom-width']
         else:
             event['start'] = a.date.isoformat()
             event['allDay'] = True

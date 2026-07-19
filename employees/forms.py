@@ -15,10 +15,10 @@ class EmployeeForm(forms.ModelForm):
 
     class Meta:
         model = Employee
-        fields = ['username', 'last_name', 'first_name', 'name_kana',
+        fields = [ 'last_name', 'first_name', 'name_kana',
                   'email', 'tel', 'slack_user_id', 'is_active']
         labels = {
-            'username': 'ログインID',
+            # 'username': 'ログインID',
             'last_name': '姓',
             'first_name': '名',
             'email': 'メールアドレス',
@@ -48,12 +48,27 @@ class EmployeeForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields['password'].help_text = ''
+        self.fields['is_active'].help_text = ''
         for field_name, field in self.fields.items():
-            self.fields[field_name].widget.attrs['class'] = f'form-control {field_name}'
-            if field.required:
+            if field_name == 'is_active':
+                self.fields['is_active'].widget.attrs['class'] = field_name
+            elif field_name == 'first_name' or field_name == 'last_name':
                 self.fields[field_name].widget.attrs['required'] = True
                 self.fields[field_name].widget.attrs['class'] = f'form-control {field_name} required'
+            elif field.required:
+                self.fields[field_name].widget.attrs['required'] = True
+                self.fields[field_name].widget.attrs['class'] = f'form-control {field_name} required'
+            else:
+                self.fields[field_name].widget.attrs['class'] = f'form-control {field_name}'
 
+class EmployeeUpdateForm(EmployeeForm):
+    class Meta(EmployeeForm.Meta):
+        fields = ['username'] + EmployeeForm.Meta.fields
+        labels = {
+            **EmployeeForm.Meta.labels,
+            'username': 'ログインID',
+        }
 
 class AssignmentForm(forms.ModelForm):
     required_css_class = 'required'

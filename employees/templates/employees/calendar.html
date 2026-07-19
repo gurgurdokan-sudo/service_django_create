@@ -22,6 +22,25 @@
     font-size: 1rem;
     vertical-align: middle;
   }
+  .custom-width.fc-timegrid-event {
+    width: 20px !important;
+    min-width: 20px !important;
+    max-width: 20px !important;
+    overflow: hidden;
+  }
+
+  .custom-width .fc-event-main {
+    writing-mode: vertical-rl;
+    text-orientation: upright;
+    white-space: nowrap;
+    font-size: 12px;
+
+    display: flex !important;
+    justify-content: flex-start !important;
+    align-items: flex-start !important;
+    text-align: left !important;
+    padding: 0 !important;
+  }
 </style>
 <link rel="stylesheet" href="{% static 'dashboard/css/temp.css' %}">
 {% endblock css %}
@@ -50,7 +69,7 @@
     </form>
     <a href="{% url 'employees:pattern_list' %}" class="btn btn-secondary">シフトパターン管理</a>
     <a href="{% url 'employees:unsubmitted_reports' %}" class="btn btn-secondary">日報未提出一覧</a>
-    <div class="legend"><span class="u">利用者（終日）</span><span>スタッフ担当（人ごとに色分け）</span></div>
+    <div class="legend"><span class="u">利用者</span><span>スタッフ担当</span></div>
   </div>
 
   <div id="calendar"></div>
@@ -192,7 +211,9 @@ document.addEventListener('DOMContentLoaded', function() {
     events: "{% url 'employees:calendar_events' %}",
     dayMaxEvents: 4,
     displayEventEnd: true,
-    eventTimeFormat: { hour: '2-digit', minute: '2-digit' },
+    eventTimeFormat: { hour: '2-digit'
+    // , minute: '2-digit'
+     },
     slotEventOverlap: true,
     selectable: true,
     // 週表示：空き枠をクリック/ドラッグ → シフト追加ポップアップ
