@@ -2,14 +2,21 @@
 {% block css %}
 {% load static %}
 <style>
-  #calendar { max-width: 1000px; margin: 0 auto; background: #fff; padding: 10px; border-radius: 8px; }
+  #calendar { max-width: 1100px; margin: 0 auto; background: #fff; padding: 10px; border-radius: 8px; }
   .calendar-toolbar { display: flex; gap: 10px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
   .legend { display: flex; gap: 16px; font-size: 0.85rem; color: #555; }
   .legend span::before { content: '■ '; }
   .legend .u::before { color: #5b7c99; }
-  .legend .s::before { color: #3a8a5f; }
+  /* 同時間帯の重なりを見やすく：白フチ＋わずかな透過で下のイベントも見える */
+  .fc-v-event {
+    border: 2px solid #fff !important;
+    opacity: 0.92;
+    border-radius: 6px;
+  }
+  .fc-v-event .fc-event-time { font-size: 0.72rem; font-weight: 600; }
+  .fc-v-event .fc-event-title { font-size: 0.8rem; }
 </style>
-<link rel="stylesheet" href="{% static 'temp.css' %}">
+<link rel="stylesheet" href="{% static 'dashboard/css/temp.css' %}">
 {% endblock css %}
 {% block body %}
 <div class="container">
@@ -22,11 +29,11 @@
   <div class="calendar-toolbar">
     <form method="post" action="{% url 'employees:shift_generate' %}" style="display:flex;gap:6px;align-items:center;">
       {% csrf_token %}
-      <select name="year" class="form-control" style="width:auto;">
+      <select name="year" id="gen-year" class="form-control" style="width:auto;">
         <option value="{{ this_year }}">{{ this_year }}年</option>
         <option value="{{ this_year|add:1 }}">{{ this_year|add:1 }}年</option>
       </select>
-      <select name="month" class="form-control" style="width:auto;">
+      <select name="month" id="gen-month" class="form-control" style="width:auto;">
         {% for m in "123456789"|make_list %}<option value="{{ m }}" {% if m == this_month|stringformat:"s" %}selected{% endif %}>{{ m }}月</option>{% endfor %}
         <option value="10" {% if this_month == 10 %}selected{% endif %}>10月</option>
         <option value="11" {% if this_month == 11 %}selected{% endif %}>11月</option>
@@ -36,18 +43,136 @@
     </form>
     <a href="{% url 'employees:pattern_list' %}" class="btn btn-secondary">シフトパターン管理</a>
     <a href="{% url 'employees:unsubmitted_reports' %}" class="btn btn-secondary">日報未提出一覧</a>
-    <div class="legend"><span class="u">利用者（終日）</span><span class="s">スタッフ担当（時間帯）</span></div>
+    <div class="legend"><span class="u">利用者（終日）</span><span>スタッフ担当（人ごとに色分け）</span></div>
   </div>
 
   <div id="calendar"></div>
 </div>
+
+<!-- シフト追加/編集ポップアップ -->
+<div class="modal fade" id="shiftModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="shiftModalTitle">シフトの追加</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="閉じる"></button>
+      </div>
+      <div class="modal-body">
+        <form id="shiftForm">
+          {% csrf_token %}
+          <input type="hidden" id="sf-id">
+          <p><label class="form-label">日付</label>
+            <input type="date" id="sf-date" class="form-control" required></p>
+          <p style="display:flex;gap:8px;align-items:end;">
+            <span style="flex:1;"><label class="form-label">開始</label>
+              <input type="time" id="sf-start" class="form-control"></span>
+            <span style="flex:1;"><label class="form-label">終了</label>
+              <input type="time" id="sf-end" class="form-control"></span>
+          </p>
+          <p><label class="form-label">従業員</label>
+            <select id="sf-employee" class="form-control" required>
+              {% for e in staff_options %}<option value="{{ e.id }}">{{ e }}</option>{% endfor %}
+            </select></p>
+          <p><label class="form-label">利用者</label>
+            <select id="sf-user" class="form-control" required>
+              {% for u in care_user_options %}<option value="{{ u.id }}">{{ u.name }}</option>{% endfor %}
+            </select></p>
+          <p><label><input type="checkbox" id="sf-reporter"> 日報担当にする</label></p>
+          <p><label class="form-label">メモ</label>
+            <input type="text" id="sf-note" class="form-control" maxlength="200"></p>
+          <p id="sf-error" class="text-danger" style="display:none;"></p>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="sf-delete" class="btn btn-danger me-auto" style="display:none;">削除</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+        <button type="button" id="sf-save" class="btn btn-primary">保存</button>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}
 {% block script %}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-  const calendarEl = document.getElementById('calendar');
-  const calendar = new FullCalendar.Calendar(calendarEl, {
+  const WEEKDAYS = ['日', '月', '火', '水', '木', '金', '土'];
+  const API_SAVE = "{% url 'employees:api_assignment_save' %}";
+  const API_DELETE_BASE = API_SAVE.replace('save/', '');  // .../api/assignments/
+  const csrfToken = document.querySelector('#shiftForm [name=csrfmiddlewaretoken]').value;
+  const modal = new bootstrap.Modal(document.getElementById('shiftModal'));
+  const field = (id) => document.getElementById(id);
+
+  function openModal(mode, data) {
+    field('sf-id').value = data.assignmentId || '';
+    field('sf-date').value = data.date || '';
+    field('sf-start').value = data.startTime || '';
+    field('sf-end').value = data.endTime || '';
+    if (data.employeeId) field('sf-employee').value = data.employeeId;
+    if (data.userId) field('sf-user').value = data.userId;
+    field('sf-reporter').checked = !!data.isDailyReporter;
+    field('sf-note').value = data.note || '';
+    field('sf-error').style.display = 'none';
+    document.getElementById('shiftModalTitle').textContent =
+      mode === 'edit' ? 'シフトの編集' : 'シフトの追加';
+    field('sf-delete').style.display = mode === 'edit' ? '' : 'none';
+    modal.show();
+  }
+
+  function showError(message) {
+    const el = field('sf-error');
+    el.textContent = message;
+    el.style.display = '';
+  }
+
+  async function postJson(url, body) {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken},
+      body: JSON.stringify(body),
+    });
+    return {ok: res.ok, data: await res.json().catch(() => ({}))};
+  }
+
+  document.getElementById('sf-save').addEventListener('click', async function() {
+    const isCreate = !field('sf-id').value;
+    const dateValue = field('sf-date').value;
+    if (!dateValue) { showError('日付を入力してください'); return; }
+
+    // 作成時のみ：「毎週◯曜日にシフトパターン登録しますか？」ポップアップ
+    let registerPattern = false;
+    if (isCreate) {
+      const weekday = WEEKDAYS[new Date(dateValue + 'T00:00:00').getDay()];
+      registerPattern = confirm('毎週' + weekday + '曜日のシフトパターンとしても登録しますか？\n（OK: 毎週のパターンにする / キャンセル: この日だけ）');
+    }
+
+    const {ok, data} = await postJson(API_SAVE, {
+      id: field('sf-id').value || null,
+      date: dateValue,
+      start_time: field('sf-start').value,
+      end_time: field('sf-end').value,
+      employee: field('sf-employee').value,
+      user: field('sf-user').value,
+      is_daily_reporter: field('sf-reporter').checked,
+      note: field('sf-note').value,
+      register_pattern: registerPattern,
+    });
+    if (!ok) { showError(data.message || '保存に失敗しました'); return; }
+    modal.hide();
+    calendar.refetchEvents();
+  });
+
+  document.getElementById('sf-delete').addEventListener('click', async function() {
+    if (!confirm('このシフトを削除しますか？')) return;
+    const id = field('sf-id').value;
+    const {ok, data} = await postJson(API_DELETE_BASE + id + '/delete/', {});
+    if (!ok) { showError(data.message || '削除に失敗しました'); return; }
+    modal.hide();
+    calendar.refetchEvents();
+  });
+
+  const calendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
     initialView: 'dayGridMonth',
     locale: 'ja',
     height: 'auto',
@@ -55,9 +180,44 @@ document.addEventListener('DOMContentLoaded', function() {
     buttonText: { today: '今日', month: '月', week: '週' },
     events: "{% url 'employees:calendar_events' %}",
     dayMaxEvents: 4,
-    // 日付クリックでその日の担当一覧（例外編集）へ
+    displayEventEnd: true,
+    eventTimeFormat: { hour: '2-digit', minute: '2-digit' },
+    slotEventOverlap: true,
+    selectable: true,
+    // 週表示：空き枠をクリック/ドラッグ → シフト追加ポップアップ
+    select: function(info) {
+      if (info.view.type !== 'timeGridWeek') { calendar.unselect(); return; }
+      const pad = (n) => String(n).padStart(2, '0');
+      const fmt = (d) => pad(d.getHours()) + ':' + pad(d.getMinutes());
+      openModal('create', {
+        date: info.startStr.slice(0, 10),
+        startTime: info.allDay ? '' : fmt(info.start),
+        endTime: info.allDay ? '' : fmt(info.end),
+      });
+      calendar.unselect();
+    },
+    // スタッフのイベントをクリック → 編集ポップアップ
+    eventClick: function(info) {
+      const props = info.event.extendedProps;
+      if (!props || !props.assignmentId) return;  // 利用者（終日）は編集対象外
+      openModal('edit', props);
+    },
+    // 月表示は従来どおり日付クリックでその日の担当一覧へ
     dateClick: function(info) {
-      window.location.href = "{% url 'employees:assignment_list' %}?date=" + info.dateStr;
+      if (info.view.type === 'dayGridMonth') {
+        window.location.href = "{% url 'employees:assignment_list' %}?date=" + info.dateStr;
+      }
+    },
+    // 矢印で移動したら「シフトパターンから生成」の年・月も連動
+    datesSet: function() {
+      const current = calendar.getDate();
+      const yearSelect = document.getElementById('gen-year');
+      const year = String(current.getFullYear());
+      if (![...yearSelect.options].some((o) => o.value === year)) {
+        yearSelect.add(new Option(year + '年', year));
+      }
+      yearSelect.value = year;
+      document.getElementById('gen-month').value = String(current.getMonth() + 1);
     },
   });
   calendar.render();
