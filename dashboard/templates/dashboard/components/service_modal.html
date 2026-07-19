@@ -1,8 +1,4 @@
   <!-- サービス選択モーダル -->
-{% block css %}
-{% load static %}
-<link rel="stylesheet" href="{% static 'dashboard/main.css' %}">
-{% endblock css %}
 <div id="serviceModalOverlay" class="modal-overlay" style="display: none;">
 {% csrf_token %}
 <div class="modal-container">
@@ -91,11 +87,15 @@
             {{ a.service_name }}
         </td>
         <td>
-            {% if a.price == 0 or a.unit == 0 %}
+            {% if a.rate %}
+                <span>{{ a.rate*100 }}%</span>
+            {% elif a.price == 0 and a.unit == 0 %}
                 <span>---</span>
             {% else %}
-                {{ a.price|default:a.unit }}
-                {% if a.price %}円{% else %}単位{% endif %}
+                <span>
+                    {{ a.price|default:a.unit }}
+                    {% if a.price %}円{% else %}単位{% endif %}
+                </span>
             {% endif %}
         </td>
         <td>{{ a.category }}</td>

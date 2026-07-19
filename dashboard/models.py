@@ -127,13 +127,13 @@ class ServicePlan(models.Model):
     def stay_time_category(self):
         delta = datetime.combine(date.min, self.end_time) - datetime.combine(date.min, self.start_time)
         hours = delta.total_seconds() / 3600
-        if hours <= 3: return '<3'
-        elif 3 < hours <= 4: return '3-4'
-        elif 4 < hours <= 5: return '4-5'
-        elif 5 < hours <= 6: return '5-6'
-        elif 6 < hours <= 7: return '6-7'
-        elif 7 < hours <= 8: return '7-8'
-        elif 8 < hours <= 9: return '8-9'
+        if hours < 3: return '<3'
+        elif 3 <= hours < 4: return '3-4'
+        elif 4 <= hours < 5: return '4-5'
+        elif 5 <= hours < 6: return '5-6'
+        elif 6 <= hours < 7: return '6-7'
+        elif 7 <= hours < 8: return '7-8'
+        elif 8 <= hours < 9: return '8-9'
         return None
     @property
     def schedule_dict(self):
