@@ -15,6 +15,13 @@
   }
   .fc-v-event .fc-event-time { font-size: 0.72rem; font-weight: 600; }
   .fc-v-event .fc-event-title { font-size: 0.8rem; }
+  .form-input {
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 1rem;
+    vertical-align: middle;
+  }
 </style>
 <link rel="stylesheet" href="{% static 'dashboard/css/temp.css' %}">
 {% endblock css %}
@@ -63,11 +70,15 @@
           <input type="hidden" id="sf-id">
           <p><label class="form-label">日付</label>
             <input type="date" id="sf-date" class="form-control" required></p>
-          <p style="display:flex;gap:8px;align-items:end;">
-            <span style="flex:1;"><label class="form-label">開始</label>
-              <input type="time" id="sf-start" class="form-control"></span>
-            <span style="flex:1;"><label class="form-label">終了</label>
-              <input type="time" id="sf-end" class="form-control"></span>
+          <p style="display:flex; gap:8px; align-items:end; width: 100%;">
+            <span style="flex:1; width: 30px;">
+              <label class="form-label">開始</label>
+              <input type="time" id="sf-start" class="form-input">
+            </span>
+            <span style="flex:1; width: 30px;">
+              <label class="form-label">終了</label>
+              <input type="time" id="sf-end" class="form-input">
+            </span>
           </p>
           <p><label class="form-label">従業員</label>
             <select id="sf-employee" class="form-control" required>
