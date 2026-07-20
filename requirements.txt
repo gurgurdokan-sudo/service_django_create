@@ -5,3 +5,4 @@ jpholiday
 djangorestframework
 Pillow
 pykakasi
+boto3

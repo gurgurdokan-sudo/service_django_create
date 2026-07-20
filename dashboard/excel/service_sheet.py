@@ -1,4 +1,6 @@
 import os
+import io
+import boto3
 from openpyxl import load_workbook
 from openpyxl.styles import Alignment
 from openpyxl.utils import get_column_letter
@@ -29,6 +31,9 @@ def create_service_sheet(context):
         month = context['dis_month']
         now = timezone.now()
 
+        if not office.default_service:
+            logger.error(f'Officeのデフォルトプランが未設定')
+            return
         # --- Sheet 1: スケジュール ---
         ws = wb['1']
         ws.title = 'スケジュール'
@@ -125,8 +130,17 @@ def create_service_sheet(context):
         ws['BG20'] = format_comma(res['over_cost']) if res['over_cost'] > 0 else ""
 
         # 保存処理
-        filepath, filename = get_service_sheet_path(user, year, month)
-        wb.save(filepath)
+        # filepath, filename = get_service_sheet_path(user, year, month)
+        # wb.save(filepath)
+
+        # s3の場合
+        buffer = io.BytesIO()
+        wb.save(buffer)
+        buffer.seek(0)
+        file_bytes = buffer.getvalue()
+
+        key, filename = get_service_sheet_path(user, year, month)
+        upload_service_sheet_to_s3(key,file_bytes)
         _recode_model_create(user, year, month)
         return FileResponse(open(filepath, "rb"), as_attachment=True, filename=filename)
     except Exception as e:
@@ -159,21 +173,35 @@ def _recode_model_create(user, year, month):
     record = ServiceRecord.objects.filter(user=user, date=date).first()
     if not record:
         record = ServiceRecord(
-            user=user,
-            date=date,
+            user = user,
+            date = date,
             path = get_service_sheet_path(user, year, month)[0],
         )
     record.confirmed = True
     record.save()
 def get_service_sheet_path(user, year, month):#Pathを返す
-    user_dir = os.path.join(
-        settings.MEDIA_ROOT,
-        "service_sheets_export",
-        f"{user.id}_{user.name}"
-    )
-    os.makedirs(user_dir, exist_ok=True)
-    year_month_dir = f"{year}_{month:02d}"
-    date_dir = os.path.join(user_dir, year_month_dir)
-    os.makedirs(date_dir, exist_ok=True)
+    # user_dir = os.path.join(
+    #     settings.MEDIA_ROOT,
+    #     "service_sheets_export",
+    #     f"{user.id}_{user.name}"
+    # )
+    # os.makedirs(user_dir, exist_ok=True)
+    # year_month_dir = f"{year}_{month:02d}"
+    # date_dir = os.path.join(user_dir, year_month_dir)
+    # os.makedirs(date_dir, exist_ok=True)
+    # filename = f"サービス提供表_{user.name}_{year}_{month}.xlsx"
+    # return os.path.join(date_dir, filename), filename
+# s3バージョン
+    key = f"service_sheets_export/{user.id}_{user.name}/{year}_{month:02d}/サービス提供表_{user.name}_{year}_{month}.xlsx"
     filename = f"サービス提供表_{user.name}_{year}_{month}.xlsx"
-    return os.path.join(date_dir, filename), filename
+    return key, filename
+
+def upload_service_sheet_to_s3(key, file_bytes):
+    s3 = boto3.client('s3')
+    s3.put_object(
+        Bucket=settings.AWS_STORAGE_BUCKET_NAME,
+        Key=key,
+        Body=file_bytes,
+        ContentType='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    return f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com/{key}"
