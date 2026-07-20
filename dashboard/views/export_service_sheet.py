@@ -20,7 +20,7 @@ def download_service_sheet(request, user_id):
     year = int(request.GET.get('dis_year',2000))
     month = int(request.GET.get('dis_month',1))
 # s3の場合
-    key, filename = get_service_sheet_s3_key(user, year, month)
+    key, filename = get_service_sheet_path(user, year, month)
     s3 = boto3.client('s3')
     obj = s3.get_object(Bucket=settings.AWS_STORAGE_BUCKET_NAME, Key=key)
     file_bytes = obj['Body'].read()
