@@ -2,6 +2,7 @@ import os
 import boto3
 from urllib.parse import quote
 from django.http import HttpResponse, FileResponse
+from django.conf import settings
 from django.contrib import messages
 from django.shortcuts import get_object_or_404,render, redirect
 from dashboard.models import User, ServicePlan, ServiceMaster
