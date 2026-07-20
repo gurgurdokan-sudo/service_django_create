@@ -142,7 +142,8 @@ def create_service_sheet(context):
         key, filename = get_service_sheet_path(user, year, month)
         upload_service_sheet_to_s3(key,file_bytes)
         _recode_model_create(user, year, month)
-        return FileResponse(open(filepath, "rb"), as_attachment=True, filename=filename)
+        return
+        # return FileResponse(open(filepath, "rb"), as_attachment=True, filename=filename)
     except Exception as e:
         logger.error(f"サービス提供表の作成中にエラーが発生しました: {e}")
         raise
