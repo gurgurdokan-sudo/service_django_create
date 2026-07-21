@@ -12,7 +12,7 @@ from dashboard.models import(
     AddOnService,
     Office,
     Certificate,
-    ServiceRecord
+    ServiceMonthlyRecord
 )
 from dashboard.calendar_table import get_month_days
 now = timezone.now()
@@ -53,7 +53,7 @@ def build_user_service_context(user_id, year, month):
         add.rate100 = int(add.rate*100) if add.rate else ''
     date = datetime.date(year, month, 1)
     try:
-        record = ServiceRecord.objects.filter(user=target, date=date).first()
+        record = ServiceMonthlyRecord.objects.filter(user=target, date=date).first()
         confirmed = record.confirmed if record else False
     except Exception as e:
         logger.error(f"確認状態の取得中にエラーが発生しました: {e}")

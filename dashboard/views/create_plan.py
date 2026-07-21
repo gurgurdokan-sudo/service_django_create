@@ -9,7 +9,7 @@ from dashboard.models import (
     User, 
     ServicePlan,
     ServiceMaster,
-    ServiceRecord
+    ServiceMonthlyRecord
     )
 from dashboard.forms import PlanForm
 from dashboard.calendar_table import get_month_days
@@ -31,11 +31,11 @@ def create_plan(request,user_id):
             messages.success(request,'プランを作成しました')
             date_obj = date(int(year), int(month), 1)
             try:
-                record = ServiceRecord.objects.filter(user=plan.user, date=date_obj).first()
+                record = ServiceMonthlyRecord.objects.filter(user=plan.user, date=date_obj).first()
                 if not record:
                     week_list = form.cleaned_data['weekdays']
-                    logger.info(f'{week_list}でServiceRecordを作成します')
-                    record = ServiceRecord(
+                    logger.info(f'{week_list}でServiceMonthlyRecordを作成します')
+                    record = ServiceMonthlyRecord(
                         user=plan.user,
                         date=date_obj,
                         weekday_pattern=[int(i) for i in week_list],
@@ -79,4 +79,4 @@ def create_plan(request,user_id):
     return redirect('dashboard:user_list')
 
 def _previous_record(user):
-    return ServiceRecord.objects.filter(user=user).order_by('-date').first()
+    return ServiceMonthlyRecord.objects.filter(user=user).order_by('-date').first()

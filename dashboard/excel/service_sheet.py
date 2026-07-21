@@ -168,11 +168,11 @@ def create_service_sheet(context):
         ws['AX20'] = add_comma(res['total_seikyu'])
         ws['BD20'] = add_comma(res['total_hutan'])
         ws['BG20'] = add_comma(res['over_full_share']) if res['over_full_share'] > 0 else ''
-        # 保存処理
+# ローカル保存処理
         # filepath, filename = get_service_sheet_path(user, year, month)
         # wb.save(filepath)
 
-# s3の場合
+# s3の場合保存処理
         buffer = io.BytesIO()
         wb.save(buffer)
         buffer.seek(0)
@@ -206,15 +206,19 @@ def _auto_newline(text, ws, cell, line=10):
     ws[cell].alignment = Alignment(wrap_text=True, vertical="center",)
 
 def _recode_model_create(user, year, month):
-    '''ServiceRecordモデルにレコードを作成する'''
-    from dashboard.models import ServiceRecord
+    '''ServiceMonthlyRecordモデルにレコードを作成する'''
+    from dashboard.models import ServiceMonthlyRecord
     date = timezone.datetime(year, month, 1)
-    record = ServiceRecord.objects.filter(user=user, date=date).first()
+    record = ServiceMonthlyRecord.objects.filter(user=user, date=date).first()
     if not record:
-        record = ServiceRecord(
+        record = ServiceMonthlyRecord(
             user = user,
             date = date,
             path = get_service_sheet_path(user, year, month)[0],
+            total_seikyu = res['total_seikyu'],
+            addon_cords = res['addon_items']['cord'],
+            total_hutan = res['total_hutan'],
+            within_units = res['within_units'],
         )
     record.confirmed = True
     record.save()

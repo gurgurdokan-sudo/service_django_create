@@ -96,18 +96,34 @@ class ServiceMaster(models.Model):
             return None
         return plan if plan else None
 
-class ServiceRecord(models.Model): 
+class ServiceMonthlyRecord(models.Model): 
     '''実際に提供されたサービスの記録を管理するモデル'''
     class Meta:
         unique_together = ('user', 'date') #その月のサービス提供票は1件のみ
 
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     confirmed = models.BooleanField(default=False) # 確定フラグ
+    confirmed_at = models.DateField(verbose_name='確定日',blank=True,null=True)
     date = models.DateField(help_text="月初の日付（例: 2026-07-01）")
     path = models.CharField(max_length=100, blank=True, null=True)  # サービス提供票の格納Path FileFieldに変更するか検討
     weekday_pattern = models.JSONField(default=list)  # 0=月曜日, 6=日曜日
     start_time = models.TimeField(default="09:00")
     end_time = models.TimeField(default="17:00")
+
+    # 単位関連
+    total_units = models.IntegerField(verbose_name='総単位数',default=0)        # （限度内＋超過）
+    within_units = models.IntegerField(verbose_name='区分支給限度内単位数',default=0)
+    over_units = models.IntegerField(verbose_name='限度超過単位数',default=0)
+
+    # 金額関連
+    total_cost = models.IntegerField(verbose_name='総費用',default=0)         # （給付対象＋超過分）
+    benefit_amount = models.IntegerField(verbose_name='給付費請求額',default=0)     # （国保連に請求する額）
+    user_share_amount = models.IntegerField(verbose_name='利用者負担額',default=0)  # （生活保護０,1〜3割＋超過分自己負担）
+
+    # 超過分の内訳
+    over_cost = models.IntegerField(verbose_name='限度超過分の総額',default=0)
+    over_user_share = models.IntegerField(verbose_name='限度超過分の自己負担額',default=0)
+
     def __str__(self):
         return f'{self.user} - {self.date.strftime("%Y-%m")}'
 class ServicePlan(models.Model):
