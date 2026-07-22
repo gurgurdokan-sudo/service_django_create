@@ -5,6 +5,7 @@ from django.contrib.auth.decorators import login_required
 from dashboard.models import CareManager, User
 from dashboard.forms import CareManagerForm
 from django.shortcuts import render,redirect,get_object_or_404
+from employees.permissions import delete_permission_required
 #ケアマネジャー一覧
 def caremana_list(request):
     caremanagers = CareManager.objects.all()
@@ -26,6 +27,7 @@ def caremana_update(request, caremanager_id):
     return render(request, 'dashboard/caremanager_update.html', {'form': form})
 
 # @login_required
+@delete_permission_required
 def caremana_delete(request, caremanager_id):
     target = get_object_or_404(CareManager, id=caremanager_id)
     if request.method == 'POST':

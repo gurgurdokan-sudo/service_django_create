@@ -4,7 +4,8 @@ from datetime import date as date_cls, time as time_cls
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from .models import Assignment, Employee, ShiftPattern
+from .models import Assignment, Staff, ShiftPattern
+from .permissions import has_delete_permission
 
 
 def _parse_time(value):
@@ -26,8 +27,8 @@ def assignment_save(request):
     data = request.data
     try:
         target_date = date_cls.fromisoformat(str(data.get('date')))
-        employee = Employee.objects.get(id=data.get('employee'))
-    except (ValueError, TypeError, Employee.DoesNotExist):
+        employee = Staff.objects.get(id=data.get('employee'))
+    except (ValueError, TypeError, Staff.DoesNotExist):
         return Response({'status': 'error', 'message': '日付または従業員が不正です'}, status=400)
 
     from dashboard.models import User
@@ -81,6 +82,8 @@ def assignment_save(request):
 
 @api_view(['POST'])
 def assignment_delete(request, assignment_id):
+    if not has_delete_permission(request.user):
+        return Response({'status': 'error', 'message': '削除権限がありません'}, status=403)
     deleted, _ = Assignment.objects.filter(id=assignment_id).delete()
     if not deleted:
         return Response({'status': 'error', 'message': '対象が見つかりません'}, status=404)

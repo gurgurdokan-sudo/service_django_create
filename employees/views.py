@@ -9,19 +9,20 @@ from django.views.decorators.http import require_POST
 from dashboard.models import ServicePlan
 from diary.models import Entry
 
-from .forms import AssignmentForm, EmployeeForm,EmployeeUpdateForm , ShiftPatternForm
-from .models import Assignment, Attendance, Employee, ShiftPattern
+from .forms import AssignmentForm, StaffForm, StaffUpdateForm, ShiftPatternForm
+from .permissions import delete_permission_required
+from .models import Assignment, Attendance, Staff, ShiftPattern
 
 
 # 従業員一覧
 def employee_list(request):
-    employees = Employee.objects.filter(is_superuser=False).order_by('-is_active', 'username')
+    employees = Staff.objects.filter(is_superuser=False).order_by('-is_active', 'username')
     return render(request, 'employees/employee_list.html', {'employees': employees})
 
 
 def employee_create(request):
     if request.method == 'POST':
-        form = EmployeeForm(request.POST)
+        form = StaffForm(request.POST)
         if form.is_valid():
             obj = form.save(commit=False)
 
@@ -34,7 +35,7 @@ def employee_create(request):
             # 重複チェック
             base = ascii_name
             i = 1
-            while Employee.objects.filter(username=ascii_name).exists():
+            while Staff.objects.filter(username=ascii_name).exists():
                 ascii_name = f"{base}{i}"
                 i += 1
 
@@ -42,24 +43,25 @@ def employee_create(request):
             obj.save()
             return redirect('employees:employee_list')
     else:
-        form = EmployeeForm()
+        form = StaffForm()
     return render(request, 'employees/employee_form.html', {'form': form, 'title': '従業員の新規登録'})
 
 
 def employee_update(request, employee_id):
-    employee = get_object_or_404(Employee, id=employee_id)
+    employee = get_object_or_404(Staff, id=employee_id)
     if request.method == 'POST':
-        form = EmployeeUpdateForm(request.POST, instance=employee)
+        form = StaffUpdateForm(request.POST, instance=employee)
         if form.is_valid():
             form.save()
             return redirect('employees:employee_list')
     else:
-        form = EmployeeForm(instance=employee)
+        form = StaffForm(instance=employee)
     return render(request, 'employees/employee_form.html', {'form': form, 'title': '従業員情報の更新'})
 
 
+@delete_permission_required
 def employee_delete(request, employee_id):
-    employee = get_object_or_404(Employee, id=employee_id)
+    employee = get_object_or_404(Staff, id=employee_id)
     if request.method == 'POST':
         employee.delete()
         return redirect('employees:employee_list')
@@ -107,6 +109,7 @@ def assignment_create(request):
     return render(request, 'employees/assignment_form.html', {'form': form, 'title': '担当スケジュールの登録'})
 
 
+@delete_permission_required
 def assignment_delete(request, assignment_id):
     assignment = get_object_or_404(Assignment, id=assignment_id)
     if request.method == 'POST':
@@ -138,7 +141,7 @@ def calendar_view(request):
         'this_year': today.year,
         'this_month': today.month,
         # ポップアップ（シフト追加/編集モーダル）の選択肢
-        'staff_options': Employee.objects.filter(is_active=True, is_superuser=False)
+        'staff_options': Staff.objects.filter(is_active=True, is_superuser=False)
                                          .order_by('username'),
         'care_user_options': User.objects.all().order_by('name_kana'),
     })
@@ -240,7 +243,7 @@ def shift_generate(request):
 # シフトパターン（いつも通りのシフトの型）
 # セレクターで選んだスタッフの曜日別シフトを表示する
 def pattern_list(request):
-    staff = Employee.objects.filter(is_active=True, is_superuser=False).order_by('username')
+    staff = Staff.objects.filter(is_active=True, is_superuser=False).order_by('username')
     selected = None
     employee_id = request.GET.get('employee')
     if employee_id:
@@ -299,6 +302,7 @@ def pattern_update(request, pattern_id):
     return render(request, 'employees/pattern_form.html', {'form': form, 'title': 'シフトパターンの更新'})
 
 
+@delete_permission_required
 def pattern_delete(request, pattern_id):
     pattern = get_object_or_404(ShiftPattern, id=pattern_id)
     if request.method == 'POST':
@@ -353,3 +357,16 @@ def _months_between(start, end):
 def _assignment_list_url():
     from django.urls import reverse
     return reverse('employees:assignment_list')
+
+
+# ログイン（superuserは管理サイトへ、スタッフは業務画面へ振り分ける）
+from django.contrib.auth.views import LoginView
+
+
+class StaffLoginView(LoginView):
+    template_name = 'registration/login.html'
+
+    def get_success_url(self):
+        if self.request.user.is_superuser:
+            return '/admin/'
+        return super().get_success_url()

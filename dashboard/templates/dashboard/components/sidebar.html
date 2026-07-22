@@ -51,10 +51,13 @@
       事務所設定
     </a>
 
-    <a href="" class="list-group-item list-group-item-action text-danger mt-3">
-    <i class="fa-solid fa-right-from-bracket icon-width"></i>
-      ログアウト
-    </a>
+    <form method="post" action="{% url 'logout' %}" class="mt-3">
+      {% csrf_token %}
+      <button type="submit" class="list-group-item list-group-item-action text-danger w-100 text-start">
+        <i class="fa-solid fa-right-from-bracket icon-width"></i>
+        ログアウト{% if request.user.is_authenticated %}（{{ request.user }}）{% endif %}
+      </button>
+    </form>
 
   </div>
 </nav>

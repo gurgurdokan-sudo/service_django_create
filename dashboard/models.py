@@ -285,6 +285,16 @@ class Office(models.Model):
     SERVICE_TYPE_CHOICES = [(78, "地域密着型通所介護"),(79, "通所介護（通常規模）"),(80, "通所介護（大規模Ⅰ）"),(81, "通所介護（大規模Ⅱ）"),]
     service_type_code = models.IntegerField(choices=SERVICE_TYPE_CHOICES,default=78, verbose_name = '種類コード') #種類コード: 78 （地域密着型通所介護）
 
+    # Slack連携設定（事業所ごとにボットを持てるようにする。値は管理サイトから設定）
+    slack_bot_token = models.CharField(
+        'Slack Botトークン', max_length=100, blank=True, default='',
+        help_text='xoxb- で始まるトークン。出退勤ボタン・日報プロンプトの送信に使用',
+    )
+    slack_app_token = models.CharField(
+        'Slack Appトークン', max_length=100, blank=True, default='',
+        help_text='xapp- で始まるトークン（Socket Mode接続用）',
+    )
+
     @property # 地域区分ごとの単位単価テーブル
     def unit_price(self):
         return self.UNIT_PRICE_TABLE.get(self.municipality.area_grade, 0)  

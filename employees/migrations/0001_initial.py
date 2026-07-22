@@ -19,7 +19,7 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='Employee',
+            name='Staff',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('password', models.CharField(max_length=128, verbose_name='password')),
@@ -41,6 +41,7 @@ class Migration(migrations.Migration):
             options={
                 'verbose_name': '従業員',
                 'verbose_name_plural': '従業員',
+                'db_table': 'employees_employee',
             },
             managers=[
                 ('objects', django.contrib.auth.models.UserManager()),

@@ -1,14 +1,18 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
-from .models import Assignment, Attendance, Employee, ShiftPattern
+from .models import Assignment, Attendance, Staff, ShiftPattern
 
 
-@admin.register(Employee)
-class EmployeeAdmin(UserAdmin):
-    list_display = ['username', 'last_name', 'first_name', 'slack_user_id', 'is_active']
+@admin.register(Staff)
+class StaffAdmin(UserAdmin):
+    list_display = ['username', 'last_name', 'first_name', 'slack_user_id',
+                    'can_delete', 'is_active']
+    list_filter = UserAdmin.list_filter + ('can_delete',)
+    # 削除権限（can_delete）はこの管理サイトからのみ付与・剥奪する
     fieldsets = UserAdmin.fieldsets + (
-        ('従業員情報', {'fields': ('name_kana', 'tel', 'slack_user_id')}),
+        ('スタッフ情報', {'fields': ('name_kana', 'tel', 'slack_user_id')}),
+        ('アプリ内権限', {'fields': ('can_delete',)}),
     )
 
 

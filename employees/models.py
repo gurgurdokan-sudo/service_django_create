@@ -6,10 +6,12 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 
 
-class Employee(AbstractUser):
-    '''従業員（ログインユーザー）
+class Staff(AbstractUser):
+    '''スタッフ（ログインユーザー）
 
     AUTH_USER_MODEL として使用する。dashboard.User（被保険者/利用者）とは別物なので注意。
+    - superuser はサイト管理専用で、スタッフ一覧・選択肢には出さない
+    - can_delete（削除権限）は Django 管理サイトからのみ付与する
     Slack連携: slack_user_id にSlackのメンバーID（U...）を設定すると
     出退勤ボタン・日報プロンプトの送信対象になる。
     '''
@@ -19,14 +21,20 @@ class Employee(AbstractUser):
     )
     name_kana = models.CharField('フリガナ', max_length=100, blank=True, default='')
     tel = models.CharField('電話番号', max_length=20, blank=True, default='')
+    can_delete = models.BooleanField(
+        '削除権限', default=False,
+        help_text='ONのスタッフは各画面でデータの削除ができる。付与・剥奪は管理サイトからのみ行う',
+    )
     @property
     def get_full_name(self):
         # AbstractUser の get_full_name は名→姓の欧米式なので override する
         full_name = f'{self.last_name} {self.first_name}'.strip()
         return full_name if full_name else self.username
     class Meta:
-        verbose_name = '従業員'
-        verbose_name_plural = '従業員'
+        verbose_name = 'スタッフ'
+        verbose_name_plural = 'スタッフ'
+        # Employee時代のテーブル名を維持（リネームによる既存DBの移行作業を不要にするため）
+        db_table = 'employees_employee'
 
     def __str__(self):
         # 日本式の「姓 名」で表示する（get_full_name は名→姓の欧米式のため使わない）
@@ -173,3 +181,7 @@ class Attendance(models.Model):
 
     def __str__(self):
         return f'{self.date} {self.employee} {self.get_kind_display()}'
+
+
+# 旧名の互換エイリアス（Slackワーカー等、既存コードからのimportを壊さないため）
+Employee = Staff

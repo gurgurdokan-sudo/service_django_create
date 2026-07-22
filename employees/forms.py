@@ -1,10 +1,10 @@
 from django import forms
 from django.forms.utils import ErrorList
 
-from .models import Assignment, Employee, ShiftPattern
+from .models import Assignment, Staff, ShiftPattern
 
 
-class EmployeeForm(forms.ModelForm):
+class StaffForm(forms.ModelForm):
     required_css_class = 'required'
 
     password = forms.CharField(
@@ -14,7 +14,7 @@ class EmployeeForm(forms.ModelForm):
     )
 
     class Meta:
-        model = Employee
+        model = Staff
         fields = [ 'last_name', 'first_name', 'name_kana',
                   'email', 'tel', 'slack_user_id', 'is_active']
         labels = {
@@ -62,11 +62,11 @@ class EmployeeForm(forms.ModelForm):
             else:
                 self.fields[field_name].widget.attrs['class'] = f'form-control {field_name}'
 
-class EmployeeUpdateForm(EmployeeForm):
-    class Meta(EmployeeForm.Meta):
-        fields = ['username'] + EmployeeForm.Meta.fields
+class StaffUpdateForm(StaffForm):
+    class Meta(StaffForm.Meta):
+        fields = ['username'] + StaffForm.Meta.fields
         labels = {
-            **EmployeeForm.Meta.labels,
+            **StaffForm.Meta.labels,
             'username': 'ログインID',
         }
 
@@ -105,7 +105,7 @@ class AssignmentForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # サイト管理者（superuser）はスタッフとして扱わない
-        self.fields['employee'].queryset = Employee.objects.filter(
+        self.fields['employee'].queryset = Staff.objects.filter(
             is_active=True, is_superuser=False)
         for field_name, field in self.fields.items():
             self.fields[field_name].widget.attrs['class'] = f'form-control {field_name}'
@@ -146,7 +146,7 @@ class ShiftPatternForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['employee'].queryset = Employee.objects.filter(
+        self.fields['employee'].queryset = Staff.objects.filter(
             is_active=True, is_superuser=False)
         for field_name, field in self.fields.items():
             self.fields[field_name].widget.attrs['class'] = f'form-control {field_name}'

@@ -52,6 +52,13 @@ class EntryDeleteView(generic.DeleteView):
     model = Entry
     success_url = reverse_lazy('diary:list')
 
+    def dispatch(self, request, *args, **kwargs):
+        from employees.permissions import has_delete_permission
+        if not has_delete_permission(request.user):
+            from django.core.exceptions import PermissionDenied
+            raise PermissionDenied('削除権限がありません')
+        return super().dispatch(request, *args, **kwargs)
+
     def form_valid(self, form):
         messages.success(self.request, '日報を削除しました。')
         return super().form_valid(form)

@@ -3,6 +3,9 @@ from django.contrib import messages
 
 from dashboard.models import User
 
+from employees.permissions import delete_permission_required
+
+@delete_permission_required
 def user_delete(request,user_id):
     target = get_object_or_404(User,id=user_id)
     if request.method=='POST':

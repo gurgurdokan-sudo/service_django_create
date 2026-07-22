@@ -182,6 +182,9 @@ def create_plan(request, user_id):
 
 @api_view(["DELETE"])
 def delete_plan(request, planId):
+    from employees.permissions import has_delete_permission
+    if not has_delete_permission(request.user):
+        return Response({"status": "error", "message": "削除権限がありません"}, status=403)
     try:
         plan = ServicePlan.objects.get(id=planId)
         plan.delete()

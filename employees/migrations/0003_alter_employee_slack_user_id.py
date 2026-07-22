@@ -11,7 +11,7 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.AlterField(
-            model_name='employee',
+            model_name='staff',
             name='slack_user_id',
             field=models.CharField(blank=True, default='', help_text='例: U0A1E588J2J', max_length=20, verbose_name='SlackユーザーID'),
         ),

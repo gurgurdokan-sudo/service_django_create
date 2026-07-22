@@ -54,7 +54,7 @@ CSRF_TRUSTED_ORIGINS = [
 ]
 # 認証ユーザーは従業員（employees.Employee）。
 # dashboard.User は被保険者（利用者）モデルであり認証には使わない。
-AUTH_USER_MODEL = 'employees.Employee'
+AUTH_USER_MODEL = 'employees.Staff'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -64,7 +64,14 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    # 全ページをログイン必須にする（ログイン画面・admin等は自動で除外される）
+    'django.contrib.auth.middleware.LoginRequiredMiddleware',
 ]
+
+# ログイン設定
+LOGIN_URL = '/login/'
+LOGIN_REDIRECT_URL = '/users/'
+LOGOUT_REDIRECT_URL = '/login/'
 
 ROOT_URLCONF = 'app.urls'
 
