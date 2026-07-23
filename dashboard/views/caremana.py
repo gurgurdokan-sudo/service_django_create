@@ -1,11 +1,10 @@
-import json
-from django.http import JsonResponse
-from django.views.decorators.http import require_POST
-from django.contrib.auth.decorators import login_required
+
 from dashboard.models import CareManager, User
 from dashboard.forms import CareManagerForm
 from django.shortcuts import render,redirect,get_object_or_404
 from employees.permissions import delete_permission_required
+
+from django.contrib import messages
 #ケアマネジャー一覧
 def caremana_list(request):
     caremanagers = CareManager.objects.all()
@@ -34,6 +33,41 @@ def caremana_delete(request, caremanager_id):
         target.delete()
         return redirect('dashboard:caremana_list')
     return render(request,'dashboard/user_delete.html',{'user':target})
+
+
+# ケアマネジャー情報1
+def caremana_create(request):
+    caremanagers = CareManager.objects.all()
+    for cm in caremanagers:
+        if len(cm.office_name) > 5:
+            select_name = f'{cm.office_name[:8]}...'
+        else:
+            select_name = cm.office_name
+        cm.select = f'{cm.name}({select_name})'
+
+    if request.method == 'POST':
+        if 'skip' in request.POST:
+            selected = request.POST.get('existing_manager')
+            if selected:
+                request.session['select_manager'] = selected
+                return redirect('dashboard:create')
+            else:
+                messages.error(request, '既存マネジャーを選択してください')
+        form = CareManagerForm(request.POST)
+        if form.is_valid():
+            caremana = form.save(commit=False)
+            caremana.name = caremana.name.replace('　', ' ')
+            caremana.save()
+            request.session['select_manager'] = caremana.id
+            return redirect('dashboard:create')  # user作成画面へ遷移
+
+    else:
+        form = CareManagerForm()
+    return render(request, 'dashboard/user_form.html', {
+        'form': form,
+        'title': 'ケアマネジャー登録',
+        'caremanagers': caremanagers,
+    })
 
 # # @login_required
 # @require_POST

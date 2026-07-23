@@ -4,6 +4,8 @@ from django.shortcuts import render, redirect, get_object_or_404
 from dashboard.forms import UserForm, CertificateForm, CertificateUpdateForm
 from dashboard.models import User, ServicePlan
 
+from employees.permissions import delete_permission_required
+
 #利用者一覧
 def user_list(request):
     users = User.objects.all()
@@ -70,7 +72,9 @@ def user_update(request, user_id):
         title = f'{user.name} 基本情報 更新'
     return render(request, 'dashboard/user_form.html', {'form': form, 'title':title})
 
+
 #詳細（JSのboutton遷移で消去
+@delete_permission_required
 def user_detail(request, user_id):
     user = get_object_or_404(User, id=user_id)
     labels = {f.name: f.verbose_name for f in user._meta.fields}
