@@ -89,7 +89,7 @@ def create_service_sheet(context):
         # Addonの自費は除外
         self_pay_usage_map = {}
         self_pay_addon_names = AddOnService.objects.filter(
-            insurance_type=self_pay).values_list('service_name', flat=True)
+            insurance_type="self_pay").values_list('service_name', flat=True)
         # 加算行の書き込み (plan.get_addon_summary を使用)
         for plan in context['plans']:
             addon_summary = plan.get_addon_summary
@@ -148,7 +148,7 @@ def create_service_sheet(context):
         if office.default_service:
             current_row += 1
             ws[f'A{current_row}'] = '\n'.join(office_name)
-            ws[f'G{current_row}'] = office_number
+            ws[f'G{current_row}'] = office.office_number
             _auto_newline(office.default_service.service_name, ws, f'L{current_row}', 6)
             ws[f'Z{current_row}'] = f"({add_comma(res['def_unit'])})"
             ws[f'AO{current_row}'] = f"({add_comma(res['def_unit'])})"
@@ -180,7 +180,7 @@ def create_service_sheet(context):
         key, filename = get_service_sheet_path(user, year, month)
         upload_service_sheet_to_s3(key,file_bytes)
         
-        _recode_model_create(user, year, month)
+        _recode_model_create(user, year, month,res)
         return
     except Exception as e:
         logger.error(f"サービス提供表の作成中にエラーが発生しました: {e}")
@@ -205,7 +205,7 @@ def _auto_newline(text, ws, cell, line=10):
     ws[cell] = wrapped
     ws[cell].alignment = Alignment(wrap_text=True, vertical="center",)
 
-def _recode_model_create(user, year, month):
+def _recode_model_create(user, year, month,res):
     '''ServiceMonthlyRecordモデルにレコードを作成する'''
     from dashboard.models import ServiceMonthlyRecord
     date = timezone.datetime(year, month, 1)
