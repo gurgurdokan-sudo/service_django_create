@@ -33,6 +33,40 @@ def caremana_delete(request, caremanager_id):
         return redirect('dashboard:caremana_list')
     return render(request,'dashboard/user_delete.html',{'user':target})
 
+
+def caremana_create(request):
+    caremanagers = CareManager.objects.all()
+    for cm in caremanagers:
+        if len(cm.office_name) > 5:
+            select_name = f'{cm.office_name[:8]}...'
+        else:
+            select_name = cm.office_name
+        cm.select = f'{cm.name}({select_name})'
+
+    if request.method == 'POST':
+        if 'skip' in request.POST:
+            selected = request.POST.get('existing_manager')
+            if selected:
+                request.session['select_manager'] = selected
+                return redirect('dashboard:create')
+            else:
+                messages.error(request, '既存マネジャーを選択してください')
+        form = CareManagerForm(request.POST)
+        if form.is_valid():
+            caremana = form.save(commit=False)
+            caremana.name = caremana.name.replace('　', ' ')
+            caremana.save()
+            request.session['select_manager'] = caremana.id
+            return redirect('dashboard:create')  # user作成画面へ遷移
+
+    else:
+        form = CareManagerForm()
+    return render(request, 'dashboard/user_form.html', {
+        'form': form,
+        'title': 'ケアマネジャー登録',
+        'caremanagers': caremanagers,
+    })
+
 # # @login_required
 # @require_POST
 # def caremana_bulk_delete(request):
