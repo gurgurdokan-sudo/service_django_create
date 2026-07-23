@@ -286,11 +286,11 @@ class Office(models.Model):
     service_type_code = models.IntegerField(choices=SERVICE_TYPE_CHOICES,default=78, verbose_name = '種類コード') #種類コード: 78 （地域密着型通所介護）
 
     # Slack連携設定（事業所ごとにボットを持てるようにする。値は管理サイトから設定）
-    slack_bot_token = models.CharField(
+    _slack_bot_token = models.CharField(
         'Slack Botトークン', max_length=100, blank=True, default='',
         help_text='xoxb- で始まるトークン。出退勤ボタン・日報プロンプトの送信に使用',
     )
-    slack_app_token = models.CharField(
+    _slack_app_token = models.CharField(
         'Slack Appトークン', max_length=100, blank=True, default='',
         help_text='xapp- で始まるトークン（Socket Mode接続用）',
     )

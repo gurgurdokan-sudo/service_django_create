@@ -1,7 +1,7 @@
 from django import forms
 from django.forms.utils import ErrorList
 from django.forms.widgets import SelectDateWidget
-from .models import User, ServicePlan, Certificate, CareManager
+from .models import User, ServicePlan, Certificate, CareManager, Office
 
 
 class UserForm(forms.ModelForm):
@@ -155,3 +155,9 @@ class CareManagerForm(forms.ModelForm):
                 self.fields[field_name].widget.attrs['required'] = True
                 self.fields[field_name].widget.attrs['class']= f'form-control {field_name} required'
             else: self.fields[field_name].widget.attrs['class']= f'form-control {field_name}'
+
+class officeSettigForm(forms.ModelForm):
+    required_css_class = 'required'
+    class Meta:
+        model = Office
+        fields = ['_slack_bot_token', '_slack_app_token']

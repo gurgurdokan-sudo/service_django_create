@@ -1,4 +1,5 @@
 from django.urls import path
+from .views.office_setting import office_setting
 from .views.user_views import (
     user_create,
     certificate_create,
@@ -18,6 +19,7 @@ from . import api
 
 app_name = 'dashboard'
 urlpatterns = [
+    path('office_setting/', office_setting, name='office_setting'),
     path('users/', user_list, name='user_list'),
     path('users/caremana_create', caremana_create, name='caremana_create'),
     path('users/user_create', user_create, name='create'),

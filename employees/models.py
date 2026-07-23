@@ -19,6 +19,13 @@ class Staff(AbstractUser):
         'SlackユーザーID', max_length=20, blank=True, default='',
         help_text='例: U0A1E588J2J',
     )
+    office = models.ForeignKey(
+        'dashboard.Office',  # Officeモデルへの参照
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        verbose_name='所属事務所'
+    )
     name_kana = models.CharField('フリガナ', max_length=100, blank=True, default='')
     tel = models.CharField('電話番号', max_length=20, blank=True, default='')
     can_delete = models.BooleanField(

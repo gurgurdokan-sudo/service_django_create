@@ -1,3 +1,4 @@
+from django.contrib.auth.decorators import login_required
 
 from dashboard.models import CareManager, User
 from dashboard.forms import CareManagerForm
@@ -6,12 +7,13 @@ from employees.permissions import delete_permission_required
 
 from django.contrib import messages
 #ケアマネジャー一覧
+@login_required
 def caremana_list(request):
     caremanagers = CareManager.objects.all()
     # caremanagers.users = [User.objects.filter(care_manager=caremanager) for caremanager in caremanagers]
     return render(request, 'dashboard/caremanager_list.html', {'caremanagers': caremanagers})
 
-# @login_required
+@login_required
 def caremana_update(request, caremanager_id):
     caremanager = get_object_or_404(CareManager, id=caremanager_id)
     if request.method == 'POST':
@@ -25,7 +27,6 @@ def caremana_update(request, caremanager_id):
         form = CareManagerForm(instance=caremanager)
     return render(request, 'dashboard/caremanager_update.html', {'form': form})
 
-# @login_required
 @delete_permission_required
 def caremana_delete(request, caremanager_id):
     target = get_object_or_404(CareManager, id=caremanager_id)
@@ -36,6 +37,7 @@ def caremana_delete(request, caremanager_id):
 
 
 # ケアマネジャー情報1
+@login_required
 def caremana_create(request):
     caremanagers = CareManager.objects.all()
     for cm in caremanagers:

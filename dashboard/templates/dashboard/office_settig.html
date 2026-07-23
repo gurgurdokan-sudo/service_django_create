@@ -1,10 +1,14 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>$Title$</title>
-</head>
-<body>
-$END$
-</body>
-</html>
+{% extends "dashboard/base/base.html" %}
+{% block body %}
+{% for label, value in display_labels.items %}
+    <div class="row mb-2 pb-2 border-bottom align-items-center">
+        <dt class="col-sm-4 col-md-3 fw-bold text-secondary">
+            {{ label }}
+        </dt>
+        <dd class="col-sm-8 col-md-9 border-bottom py-2 mb-0">
+            {{ value }}
+        </dd>
+    </div>
+{% endfor %}
+    {{ form.as_p }}
+{% endblock %}

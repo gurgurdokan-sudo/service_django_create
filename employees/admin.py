@@ -11,7 +11,7 @@ class StaffAdmin(UserAdmin):
     list_filter = UserAdmin.list_filter + ('can_delete',)
     # 削除権限（can_delete）はこの管理サイトからのみ付与・剥奪する
     fieldsets = UserAdmin.fieldsets + (
-        ('スタッフ情報', {'fields': ('name_kana', 'tel', 'slack_user_id')}),
+        ('スタッフ情報', {'fields': ('office', 'name_kana', 'tel', 'slack_user_id')}),
         ('アプリ内権限', {'fields': ('can_delete',)}),
     )
 

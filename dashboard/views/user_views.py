@@ -48,7 +48,7 @@ def certificate_create(request,user_id):
         'title': '利用者の介護保険被保険者証',
         'cetrificate': '1'
         })
-
+#消去
 def user_delete(request,user_id):
     target = get_object_or_404(User,id=user_id)
     if request.method=='POST':
@@ -73,7 +73,7 @@ def user_update(request, user_id):
     return render(request, 'dashboard/user_form.html', {'form': form, 'title':title})
 
 
-#詳細（JSのboutton遷移で消去
+#詳細（JSのbutton遷移で消去
 @delete_permission_required
 def user_detail(request, user_id):
     user = get_object_or_404(User, id=user_id)
