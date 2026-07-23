@@ -1,9 +1,4 @@
 from django.urls import path
-# from .views.user_list import user_list
-# from .views.user_create import user_create, certificate_create, caremana_create
-# from .views.user_detail import user_detail
-# from .views.user_update import user_update
-# from .views.user_delete import user_delete
 from .views.user_views import (
     user_create,
     certificate_create,
