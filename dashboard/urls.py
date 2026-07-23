@@ -1,14 +1,17 @@
 from django.urls import path
-from .views.user_list import user_list
-from .views.user_create import user_create, certificate_create, caremana_create
+from .views.user_views import (
+    user_create,
+    certificate_create,
+    user_list,
+    user_detail,
+    user_update,
+    user_delete,
+    )
 from .views.export_service_sheet import download_service_sheet, export_excel
-from .views.user_detail import user_detail
-from .views.user_update import user_update
-from .views.user_delete import user_delete
 from .views.user_service_view import user_service, prev_month_plan, service_act
 from .views.create_plan import create_plan
 from .views.init_plan import init_plan
-from .views.caremana import caremana_list,caremana_update,caremana_delete
+from .views.caremana import caremana_list,caremana_update,caremana_delete, caremana_create
 from .views.created_service_list import created_service_list
 
 from . import api
