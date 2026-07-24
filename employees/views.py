@@ -33,7 +33,7 @@ def employee_create(request):
             ascii_name = "".join([c['hepburn'] for c in conv]).lower()
 
             # 重複チェック
-            base = ascii_name
+            base = ascii_name.replace(' ','')
             i = 1
             while Staff.objects.filter(username=ascii_name).exists():
                 ascii_name = f"{base}{i}"
