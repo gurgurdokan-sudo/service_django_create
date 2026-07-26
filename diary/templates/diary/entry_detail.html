@@ -4,6 +4,7 @@
 
 {% block content %}
 <div class="card">
+    {% include "dashboard/components/messages.html" %}
   <p class="meta">{{ entry.date|date:"Y年n月j日（D）" }}　{{ entry.get_mood_display }}</p>
   <h2 style="margin:8px 0 16px;">{{ entry.title }}</h2>
   {% if entry.image %}

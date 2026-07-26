@@ -9,7 +9,7 @@
     <button type="submit" class="btn">検索</button>
   </form>
 </div>
-
+    {% include "dashboard/components/messages.html" %}
 {% for entry in entry_list %}
   <div class="card{% if entry.image %} card-with-thumb{% endif %}">
     <div class="card-text">
@@ -17,7 +17,7 @@
       <h2 style="font-size:1.15rem;margin:4px 0;">
         <a href="{% url 'diary:detail' entry.pk %}" style="color:var(--primary);text-decoration:none;">{{ entry.title }}</a>
       </h2>
-      <p>{{ entry.body|truncatechars:80 }}</p>
+      <p><label>利用者： </label><span>{{ entry.user.name }}</span></p>
     </div>
     {% if entry.image %}
       <a href="{% url 'diary:detail' entry.pk %}" class="card-thumb">

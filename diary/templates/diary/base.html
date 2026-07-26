@@ -21,13 +21,6 @@
         {% include "dashboard/components/sidebar.html" %}
     </div>
     <!-- メインコンテンツ -->
-    <main>
-      <div class="container">
-        {% if messages %}
-          <ul class="messages">
-            {% for message in messages %}<li>{{ message }}</li>{% endfor %}
-          </ul>
-        {% endif %}
         {% block content %}{% endblock %}
       </div>
     </main>
