@@ -39,4 +39,4 @@ env/
 frontend/dist/
 
 # Copied static assets
-static/frontend/assets/
+# static/frontend/assets/
