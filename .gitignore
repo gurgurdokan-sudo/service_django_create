@@ -34,3 +34,9 @@ env/
 # --- Excel ---
 .xlsx#
 .xlsx
+
+# React build output
+frontend/dist/
+
+# Copied static assets
+static/frontend/assets/
