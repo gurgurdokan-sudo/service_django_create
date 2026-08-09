@@ -180,6 +180,7 @@ def create_service_sheet(context):
         key, filename = get_service_sheet_path(user, year, month)
         upload_service_sheet_to_s3(key,file_bytes)
         
+# 後処理
         _recode_model_create(user, year, month,res)
         return
     except Exception as e:
@@ -223,21 +224,21 @@ def _recode_model_create(user, year, month,res):
     record.confirmed = True
     record.save()
 def get_service_sheet_path(user, year, month):#Pathを返す
-    # user_dir = os.path.join(
-    #     settings.MEDIA_ROOT,
-    #     "service_sheets_export",
-    #     f"{user.id}_{user.name}"
-    # )
-    # os.makedirs(user_dir, exist_ok=True)
-    # year_month_dir = f"{year}_{month:02d}"
-    # date_dir = os.path.join(user_dir, year_month_dir)
-    # os.makedirs(date_dir, exist_ok=True)
-    # filename = f"サービス提供表_{user.name}_{year}_{month}.xlsx"
-    # return os.path.join(date_dir, filename), filename
-# s3バージョン
-    key = f"service_sheets_export/{user.id}_{user.name}/{year}_{month:02d}/サービス提供表_{user.name}_{year}_{month}.xlsx"
+    user_dir = os.path.join(
+        settings.MEDIA_ROOT,
+        "service_sheets_export",
+        f"{user.id}_{user.name}"
+    )
+    os.makedirs(user_dir, exist_ok=True)
+    year_month_dir = f"{year}_{month:02d}"
+    date_dir = os.path.join(user_dir, year_month_dir)
+    os.makedirs(date_dir, exist_ok=True)
     filename = f"サービス提供表_{user.name}_{year}_{month}.xlsx"
-    return key, filename
+    return os.path.join(date_dir, filename), filename
+# s3バージョン
+    # key = f"service_sheets_export/{user.id}_{user.name}/{year}_{month:02d}/サービス提供表_{user.name}_{year}_{month}.xlsx"
+    # filename = f"サービス提供表_{user.name}_{year}_{month}.xlsx"
+    # return key, filename
 
 def upload_service_sheet_to_s3(key, file_bytes):
     s3 = boto3.client('s3')

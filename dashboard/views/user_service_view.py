@@ -49,9 +49,11 @@ def build_user_service_context(user_id, year, month):
             if addon.unit:
                 monthly_addon_totals[addon_name] = monthly_addon_totals.get(addon_name,0) + addon.unit * len(days)
     addon_service = AddOnService.objects.all()
-    for add in addon_service:
-        add.rate100 = int(add.rate*100) if add.rate else ''
+    # for add in addon_service:
+    #     if add.rete:
+    #         add.rate100 = int(add.rate*100) if add.rate else ''
     date = datetime.date(year, month, 1)
+    logger.info(f'{year}-{month}のサービス提供票の確認状態を取得')
     try:
         record = ServiceMonthlyRecord.objects.filter(user=target, date=date).first()
         confirmed = record.confirmed if record else False

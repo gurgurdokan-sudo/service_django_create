@@ -13,7 +13,7 @@ from .views.user_service_view import user_service, prev_month_plan, service_act
 from .views.create_plan import create_plan
 from .views.init_plan import init_plan
 from .views.caremana import caremana_list,caremana_update,caremana_delete, caremana_create
-from .views.created_service_list import created_service_list
+from .views.created_service_list import created_service_list, created_service_list_api
 
 from . import api
 
@@ -34,6 +34,7 @@ urlpatterns = [
     path('user/<int:user_id>/service_act/',service_act, name='service_act'),
     path('user/<int:user_id>/create_plan/', create_plan, name='createPlan'),
     path('created_service_list/', created_service_list, name='created_service_list'),
+    path('created_service_list/api/', created_service_list_api, name='created_service_list_api'),
     path('caremanagers/', caremana_list, name='caremana_list'),
     path('caremanagers/<int:caremanager_id>/update/', caremana_update, name='caremana_update'),
     path('caremanagers/<int:caremanager_id>/delete/', caremana_delete, name='caremana_delete'),

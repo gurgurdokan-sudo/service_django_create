@@ -5,3 +5,18 @@ from dashboard.models import ServiceMonthlyRecord
 def created_service_list(request):
     records = ServiceMonthlyRecord.objects.all().filter(confirmed=True).order_by('-date')
     return render(request, 'dashboard/created_service_list.html', {'records': records})
+
+from django.http import JsonResponse
+
+def created_service_list_api(request):
+    records = ServiceMonthlyRecord.objects.filter(confirmed=True).order_by('-date')
+    data = [
+        {
+            "user": record.user.name,
+            "date": record.date.strftime("%Y-%m"),
+            "confirmed": record.confirmed,
+            "download_url": f"/dashboard/download_service_sheet/{record.user.id}?dis_year={record.date.year}&dis_month={record.date.month}"
+        }
+        for record in records
+    ]
+    return JsonResponse({"records": data})

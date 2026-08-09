@@ -1,5 +1,4 @@
 import os
-import boto3
 from urllib.parse import quote
 from django.http import HttpResponse, FileResponse
 from django.conf import settings
@@ -26,25 +25,25 @@ def download_service_sheet(request, user_id):
     obj = s3.get_object(Bucket=settings.AWS_STORAGE_BUCKET_NAME, Key=key)
     file_bytes = obj['Body'].read()
 
-    response = HttpResponse(
-        file_bytes,
-        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    )
-    response['Content-Disposition'] = f"attachment; filename*=UTF-8''{quote(filename)}"
-    return response
+    # response = HttpResponse(
+    #     file_bytes,
+    #     content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    # )
+    # response['Content-Disposition'] = f"attachment; filename*=UTF-8''{quote(filename)}"
+    # return response
 # ローカルの場合
-    # file_path, filename = get_service_sheet_path(user, year, month)
-    # if not file_path or not os.path.exists(file_path):
-    #     messages.error(request, 'ファイルが作成されていません')
-    #     return redirect('dashboard:user_list')
-    # with open(file_path, 'rb') as f:
-    #     response = HttpResponse(
-    #         f.read(),
-    #         content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    #     )
-    #     logger.info(f'{filename}を出力')
-    #     response['Content-Disposition'] = f"attachment; filename*=UTF-8''{quote(filename)}"
-    #     return response
+    file_path, filename = get_service_sheet_path(user, year, month)
+    if not file_path or not os.path.exists(file_path):
+        messages.error(request, 'ファイルが作成されていません')
+        return redirect('dashboard:user_list')
+    with open(file_path, 'rb') as f:
+        response = HttpResponse(
+            f.read(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        logger.info(f'{filename}を出力')
+        response['Content-Disposition'] = f"attachment; filename*=UTF-8''{quote(filename)}"
+        return response
 def export_excel(request,user_id):
     now = timezone.now()
     year = int(request.GET.get('dis_year', now.year))
