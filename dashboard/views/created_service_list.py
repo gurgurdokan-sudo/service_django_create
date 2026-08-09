@@ -9,7 +9,14 @@ def created_service_list(request):
 from django.http import JsonResponse
 
 def created_service_list_api(request):
-    records = ServiceMonthlyRecord.objects.filter(confirmed=True).order_by('-date')
+    year = request.GET.get('year')
+    month = request.GET.get('month')
+
+    records = ServiceMonthlyRecord.objects.filter(
+        confirmed=True,
+        date__year=year,
+        date__month=month
+    ).order_by('-date')
     data = [
         {
             "user": record.user.name,
