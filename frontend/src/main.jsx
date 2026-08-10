@@ -1,8 +1,22 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import CreatedServiceList from './pages/CreatedServiceList'
+import Breadcrumb from './components/Breadcrumb'
 
-ReactDOM.createRoot(document.getElementById('root')).render(
-  <CreatedServiceList />
-)
+const breadEl = document.getElementById('bread');
+
+if (breadEl) {
+  try {
+    const itemsStr = breadEl.getAttribute('data-items');
+    const items = itemsStr ? JSON.parse(itemsStr) : [];
     
+    console.log("Reactが受け取ったデータ:", items); // ブラウザのコンソールに表示されます
+
+    ReactDOM.createRoot(breadEl).render(
+      <React.StrictMode>
+        <Breadcrumb items={items} />
+      </React.StrictMode>
+    );
+  } catch (error) {
+    console.error("JSONの解析に失敗しました:", error);
+  }
+}

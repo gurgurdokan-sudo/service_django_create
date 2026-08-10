@@ -11,7 +11,7 @@
 <h2>新規作成</h2> 
 {% endif %}
 <div class="detail-card">
-
+<div id="bread" data-items="{{breadcrumbs}}"></div>
     {#  同じフォームでケアマネジャーのプロフィール/利用者プロフィール/認定情報  #}
     <form method="post" id="cmForm" novalidate>
         {% csrf_token %}

@@ -1,20 +1,29 @@
 from django.contrib.auth.decorators import login_required
+from django.shortcuts import render,redirect,get_object_or_404
+from django.urls import reverse
 
 from dashboard.models import CareManager, User
 from dashboard.forms import CareManagerForm
-from django.shortcuts import render,redirect,get_object_or_404
-from employees.permissions import delete_permission_required
+from dashboard.utils import BreadcrumbUtil
 
+from employees.permissions import delete_permission_required
 from django.contrib import messages
 #ケアマネジャー一覧
 @login_required
 def caremana_list(request):
+    crumbs = [("ケアマネジャー一覧", None)]
     caremanagers = CareManager.objects.all()
     # caremanagers.users = [User.objects.filter(care_manager=caremanager) for caremanager in caremanagers]
-    return render(request, 'dashboard/caremanager_list.html', {'caremanagers': caremanagers})
+    return render(request, 'dashboard/caremanager_list.html', {
+        'caremanagers': caremanagers,
+        'breadcrumbs': BreadcrumbUtil.create(crumbs),
+    })
 
-@login_required
 def caremana_update(request, caremanager_id):
+    crumbs = [
+        ("ケアマネジャー一覧", reverse("dashboard:caremana_list")),
+        (f"{caremanager.name} 様 更新", None)
+    ]
     caremanager = get_object_or_404(CareManager, id=caremanager_id)
     if request.method == 'POST':
         form = CareManagerForm(request.POST, instance=caremanager)
@@ -25,20 +34,34 @@ def caremana_update(request, caremanager_id):
             return redirect('dashboard:caremana_list')
     else:
         form = CareManagerForm(instance=caremanager)
-    return render(request, 'dashboard/caremanager_update.html', {'form': form})
+    return render(request, 'dashboard/caremanager_update.html', {
+        'form': form,
+        'breadcrumbs': BreadcrumbUtil.create(crumbs),
+    })
 
 @delete_permission_required
 def caremana_delete(request, caremanager_id):
+    crumbs = [
+        ("ケアマネジャー一覧", reverse("dashboard:caremana_list")),
+        (f"{target.name} 様 削除確認", None)
+    ]
     target = get_object_or_404(CareManager, id=caremanager_id)
     if request.method == 'POST':
         target.delete()
         return redirect('dashboard:caremana_list')
-    return render(request,'dashboard/user_delete.html',{'user':target})
+    return render(request,'dashboard/user_delete.html',{
+        'user':target,
+        'breadcrumbs': BreadcrumbUtil.create(crumbs)
+        })
 
 
-# ケアマネジャー情報1
+# ケアマネジャー情報1 (利用者登録フローの途中)
 @login_required
 def caremana_create(request):
+    crumbs = [
+        ("利用者一覧", reverse("dashboard:user_list")),
+        ("ケアマネジャー登録", None)
+    ]
     caremanagers = CareManager.objects.all()
     for cm in caremanagers:
         if len(cm.office_name) > 5:
@@ -69,22 +92,5 @@ def caremana_create(request):
         'form': form,
         'title': 'ケアマネジャー登録',
         'caremanagers': caremanagers,
+        'breadcrumbs': BreadcrumbUtil.create(crumbs)
     })
-
-# # @login_required
-# @require_POST
-# def caremana_bulk_delete(request):
-#     try:
-#         # JSONデータをパース
-#         data = json.loads(request.body)
-#         ids = data.get('ids', [])
-        
-#         if ids:
-#             # 指定されたIDのケアマネジャーを一括削除
-#             deleted_count, _ = CareManager.objects.filter(id__in=ids).delete()
-#             return JsonResponse({'status': 'ok', 'deleted_count': deleted_count})
-        
-#         return JsonResponse({'status': 'error', 'message': '削除対象が選択されていません'}, status=400)
-    
-#     except Exception as e:
-#         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)

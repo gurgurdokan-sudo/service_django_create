@@ -1,8 +1,10 @@
 from django.contrib import messages
 from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
 
 from dashboard.forms import UserForm, CertificateForm, CertificateUpdateForm
 from dashboard.models import User, ServicePlan
+from dashboard.utils import BreadcrumbUtil
 
 from employees.permissions import delete_permission_required
 
@@ -13,6 +15,10 @@ def user_list(request):
 
 #新規作成2
 def user_create(request):
+    crumbs = [
+        # ("利用者一覧", reverse("dashboard:user_list")),
+        ("利用者新規登録", None)
+    ]
     cm_id = request.session.get('select_manager')
     if request.method == 'POST':
         form = UserForm(request.POST)
@@ -26,11 +32,18 @@ def user_create(request):
     else: form = UserForm(initial={'benefit_rate':0.9})
     return render(request,'dashboard/user_form.html', {
         'form': form,
+        'breadcrumbs': BreadcrumbUtil.create(crumbs),
         })
 
 #認定情報3
 def certificate_create(request,user_id):
     user = get_object_or_404(User,id = user_id)
+    crumbs = [
+        # ("利用者一覧", reverse("dashboard:user_list")),
+        (f"{user.name} 様", None),
+        ("被保険者証情報の登録", None)
+    ]
+
     if request.method == 'POST':
         form = CertificateForm(request.POST)
         if form.is_valid():
@@ -46,21 +59,35 @@ def certificate_create(request,user_id):
         'form': form,
         'user': user,
         'title': '利用者の介護保険被保険者証',
-        'cetrificate': '1'
+        'cetrificate': '1',
+        'breadcrumbs': BreadcrumbUtil.create(crumbs),
         })
 #消去
 def user_delete(request,user_id):
     target = get_object_or_404(User,id=user_id)
+    crumbs = [
+        # ("利用者一覧", reverse("dashboard:user_list")),
+        (f"{target.name} 様 詳細", reverse("dashboard:detail", args=[target.id])),
+        ("削除確認", None)
+    ]
+
     if request.method=='POST':
         messages.error(request,f'{target.name}さんを消去しました')
         target.delete()
         return redirect('dashboard:user_list')
-    return render(request,'dashboard/user_delete.html',{'user':target})
+    return render(request,'dashboard/user_delete.html',{
+        'user':target,
+        'breadcrumbs': BreadcrumbUtil.create(crumbs),
+        })
 
 #更新
 def user_update(request, user_id):
     user = get_object_or_404(User,id=user_id)
     title ='error' #titleの初期値を設定
+    breadcrumbs = BreadcrumbUtil.get_items("利用者一覧")
+    crumbs = [
+        (f"{user.name}様 更新画面",None),
+    ]
     if request.method == 'POST':
         form = UserForm(request.POST, instance=user)
         if form.is_valid():
@@ -70,7 +97,11 @@ def user_update(request, user_id):
     else:
         form = UserForm(instance=user)
         title = f'{user.name} 基本情報 更新'
-    return render(request, 'dashboard/user_form.html', {'form': form, 'title':title})
+    return render(request, 'dashboard/user_form.html', {
+        'form': form,
+        'title':title,
+        'breadcrumbs': BreadcrumbUtil.create(crumbs),
+        })
 
 
 #詳細（JSのbutton遷移で消去
@@ -87,7 +118,7 @@ def user_detail(request, user_id):
             'limit_start': prev_cert.limit_start,
             'limit_end': prev_cert.limit_end,
         }
-#介護認定変更 is_superuserのときのみ表示など考えてる
+#介護認定変更 
     if request.method == 'POST':
         form = CertificateUpdateForm(request.POST)
 
@@ -106,6 +137,7 @@ def user_detail(request, user_id):
     return render(request, 'dashboard/user_detail.html', {
         'user': user,
         'form': form,
-        'labels':labels
+        'labels':labels,
+        # 'breadcrumbs': BreadcrumbUtil.create(crumbs),
     })
 
