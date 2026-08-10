@@ -11,7 +11,6 @@ from dashboard.models import(
     ServiceMaster,
     AddOnService,
     Office,
-    Certificate,
     ServiceMonthlyRecord
 )
 from dashboard.calendar_table import get_month_days
@@ -92,6 +91,13 @@ def _is_future_month_not_plan(user_id,year, month, prev=False):
 def user_service(request,user_id):
     dis_year = int(request.GET.get('year', now.year))
     dis_month = int(request.GET.get('month', now.month))
+    user = User.objects.get(id=user_id)
+    if not user.care_manager or user.care_level == '認定情報更新が必要':
+        '''利用者画面にリダイレクトする'''
+        logger.error(f'{user.name}')
+        messages.error(request,'認定情報またはケアマネジャーが設定されてません')
+        return redirect('dashboard:user_list')
+        
     if _is_future_month_not_plan(user_id,dis_year, dis_month):
         '''プラン作成画面にリダイレクトする'''
         url = reverse('dashboard:createPlan',kwargs= {'user_id':user_id})
@@ -99,7 +105,10 @@ def user_service(request,user_id):
             
     logger.info(f'{dis_year}-{dis_month}のサービス提供票に遷移')
     context = build_user_service_context(user_id=user_id,year=dis_year,month=dis_month)
-    logger.info(f'=============={context["confirmed"]}==============')
+    crumbs = [
+        (f"{user.name}サービス提供表作成", None)
+    ]
+    logger.info(f'======{user.name} 様 提供表確定 {context["confirmed"]}======')
     return render(request,'dashboard/user_service.html',context)
 
 #一括前月モード

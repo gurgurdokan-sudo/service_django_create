@@ -1,22 +1,24 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render,redirect,get_object_or_404
 from django.urls import reverse
+from django.contrib import messages
 
-from dashboard.models import CareManager, User
+from dashboard.models import CareManager
 from dashboard.forms import CareManagerForm
 from dashboard.utils import BreadcrumbUtil
 
-from employees.permissions import delete_permission_required
-from django.contrib import messages
+from employees.permissions import delete_permission_required, has_delete_permission
 #ケアマネジャー一覧
 @login_required
 def caremana_list(request):
     crumbs = [("ケアマネジャー一覧", None)]
+    can_delete = has_delete_permission(request.user)
     caremanagers = CareManager.objects.all()
     # caremanagers.users = [User.objects.filter(care_manager=caremanager) for caremanager in caremanagers]
     return render(request, 'dashboard/caremanager_list.html', {
         'caremanagers': caremanagers,
         'breadcrumbs': BreadcrumbUtil.create(crumbs),
+        'can_delete':can_delete,
     })
 
 def caremana_update(request, caremanager_id):
@@ -41,17 +43,17 @@ def caremana_update(request, caremanager_id):
 
 @delete_permission_required
 def caremana_delete(request, caremanager_id):
+    target = get_object_or_404(CareManager, id=caremanager_id)
     crumbs = [
-        ("ケアマネジャー一覧", reverse("dashboard:caremana_list")),
+        # ("ケアマネジャー一覧", reverse("dashboard:caremana_list")),
         (f"{target.name} 様 削除確認", None)
     ]
-    target = get_object_or_404(CareManager, id=caremanager_id)
     if request.method == 'POST':
         target.delete()
         return redirect('dashboard:caremana_list')
     return render(request,'dashboard/user_delete.html',{
         'user':target,
-        'breadcrumbs': BreadcrumbUtil.create(crumbs)
+        'breadcrumbs': BreadcrumbUtil.create(crumbs),
         })
 
 
@@ -59,7 +61,6 @@ def caremana_delete(request, caremanager_id):
 @login_required
 def caremana_create(request):
     crumbs = [
-        ("利用者一覧", reverse("dashboard:user_list")),
         ("ケアマネジャー登録", None)
     ]
     caremanagers = CareManager.objects.all()

@@ -67,7 +67,7 @@ def user_delete(request,user_id):
     target = get_object_or_404(User,id=user_id)
     crumbs = [
         # ("利用者一覧", reverse("dashboard:user_list")),
-        (f"{target.name} 様 詳細", reverse("dashboard:detail", args=[target.id])),
+        (f"{target.name} 様 詳細", reverse("dashboard:user_detail", args=[target.id])),
         ("削除確認", None)
     ]
 
@@ -84,7 +84,6 @@ def user_delete(request,user_id):
 def user_update(request, user_id):
     user = get_object_or_404(User,id=user_id)
     title ='error' #titleの初期値を設定
-    breadcrumbs = BreadcrumbUtil.get_items("利用者一覧")
     crumbs = [
         (f"{user.name}様 更新画面",None),
     ]
@@ -98,8 +97,8 @@ def user_update(request, user_id):
         form = UserForm(instance=user)
         title = f'{user.name} 基本情報 更新'
     return render(request, 'dashboard/user_form.html', {
-        'form': form,
         'title':title,
+        'form': form,
         'breadcrumbs': BreadcrumbUtil.create(crumbs),
         })
 
