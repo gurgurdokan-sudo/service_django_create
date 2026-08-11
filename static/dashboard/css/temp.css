@@ -269,8 +269,8 @@ label:has(+ select[required])::after,
     width: 80%;
 }
 .post-err{
-    width: 20%;
-    text-align: center;
+    width: 30%;
+    text-align: left;
     padding: 0;
     list-style: none;
     color: #d32f2f;
@@ -304,15 +304,6 @@ label:has(+ select[required])::after,
     color: #d32f2f;           /* エラーは赤色 */
     font-size: 0.85rem;
     font-weight: bold;
-}
-.as_p{
-    position: relative;
-}
-.errorlist {
-    left:400px;
-    position: absolute;
-    display: flex;
-    align-items: center;
 }
 
 /* 項目の区切り */

@@ -45,7 +45,7 @@ def caremana_update(request, caremanager_id):
 def caremana_delete(request, caremanager_id):
     target = get_object_or_404(CareManager, id=caremanager_id)
     crumbs = [
-        # ("ケアマネジャー一覧", reverse("dashboard:caremana_list")),
+        ("ケアマネジャー一覧", "dashboard:caremana_list"),
         (f"{target.name} 様 削除確認", None)
     ]
     if request.method == 'POST':
@@ -61,22 +61,22 @@ def caremana_delete(request, caremanager_id):
 @login_required
 def caremana_create(request):
     crumbs = [
+        ("ケアマネジャー一覧", "dashboard:caremana_list"),
         ("ケアマネジャー登録", None)
     ]
     caremanagers = CareManager.objects.all()
     for cm in caremanagers:
-        if len(cm.office_name) > 5:
-            select_name = f'{cm.office_name[:8]}...'
+        if len(cm.office_name) >= 8:
+            select_offic_name = f'{cm.office_name[:5]}...'
         else:
-            select_name = cm.office_name
-        cm.select = f'{cm.name}({select_name})'
+            select_offic_name = cm.office_name
+        cm.select = f'{cm.name}({select_offic_name})'
 
     if request.method == 'POST':
         if 'skip' in request.POST:
-            selected = request.POST.get('existing_manager')
-            if selected:
-                request.session['select_manager'] = selected
-                return redirect('dashboard:create')
+            selected_id = request.POST.get('existing_manager')
+            if selected_id:
+                return redirect('dashboard:create',cm_id= selected_id)
             else:
                 messages.error(request, '既存マネジャーを選択してください')
         form = CareManagerForm(request.POST)
@@ -84,8 +84,7 @@ def caremana_create(request):
             caremana = form.save(commit=False)
             caremana.name = caremana.name.replace('　', ' ')
             caremana.save()
-            request.session['select_manager'] = caremana.id
-            return redirect('dashboard:create')  # user作成画面へ遷移
+            return redirect('dashboard:create',cm_id=caremana.id)  # user作成画面へ遷移
 
     else:
         form = CareManagerForm()

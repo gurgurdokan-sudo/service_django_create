@@ -1,0 +1,112 @@
+{% extends 'dashboard/base/base.html' %}
+{% block css %}
+  {% load static %}
+  <link rel="stylesheet" href="{% static 'dashboard/css/temp.css' %}" />
+{% endblock %}
+{% block body %}
+  <h2>{{ title }}</h2>
+  <div class="detail-card">
+    <div id="bread" data-items="{{ breadcrumbs }}"></div>
+    {# 同じフォームでケアマネジャーのプロフィール/利用者プロフィール/認定情報 #}
+    <form method="post" id="cmForm" novalidate>
+      {% csrf_token %}
+      <div>
+        <div class="label-input-err">
+          {% comment %}要介護状態区分{% endcomment %}
+          <div class="label-input">{{ form.care_level.label_tag }}
+            {{ form.care_level }}</div>
+          <div class="post-err">
+            {% for error in form.care_level.errors %}
+              {{ error }}
+            {% endfor %}
+          </div>
+        </div>
+
+        <p>
+          {% comment %}生活保護受給{% endcomment %}
+          {{ form.public_assistance_flag.label_tag }}
+          {{ form.public_assistance_flag }}
+        </p>
+
+        <p>
+          {% comment %}給付制限{% endcomment %}
+          {{ form.benefit_limit_flag.label_tag }}
+          {{ form.benefit_limit_flag }}
+        </p>
+        <p>
+          {% comment %}区分支給限度基準額区分{% endcomment %}
+          {{ form.limit_amount_type.label_tag }}
+          {{ form.limit_amount_type }}
+        </p>
+        {% comment %}任意限度額{% endcomment %}
+        <p class="none" id="limit-amount-value">
+          {{ form.limit_amount_value.label_tag }}
+          {{ form.limit_amount_value }}
+          <ul class="error-msg">
+            <li>現在、任意限度額に対応してない</li>
+            {% for error in form.limit_amount_value.errors %}
+              <li>{{ error }}</li>
+            {% endfor %}
+          </ul>
+        </p>
+        <p>
+          <label id="required">認定有効期間:</label>
+          {{ form.limit_start }}
+          〜
+          {{ form.limit_end }}
+        </p>
+        <div id="act-row" class="act-row">
+          <ul class="error-msg">
+            {% for error in form.limit_start.errors %}
+              <li>{{ error }}</li>
+            {% endfor %}
+          </ul>
+          <div id="required-buttons">
+            <button class="btn" type="button" onclick="addYears(1)">1年後</button>
+            <button class="btn" type="button" onclick="addYears(3)">3年後</button>
+            <button class="btn" type="button" onclick="addYears(4)">4年後</button>
+          </div>
+        </div>
+      </div>
+      <button class="btn btn-primary" type="submit">保存</button>
+    </form>
+  </div>
+  <script>
+  document.addEventListener('DOMContentLoaded',() =>{
+      const amountTypeSlect = document.getElementById('id_limit_amount_type');
+      const amountContainer = document.getElementById('limit-amount-value');
+
+      const toggleAmountDisplay = () => {
+          console.log(`${amountTypeSlect.value}`)
+          if (amountTypeSlect.value == '任意'){
+              amountContainer.classList.remove('none');
+          } else {
+              amountContainer.classList.add('none');
+          }
+      }
+      toggleAmountDisplay();
+      amountTypeSlect.addEventListener('change', toggleAmountDisplay);
+  })
+  function addYears(years) {
+      const startInput = document.getElementById("id_limit_start");
+      const endInput = document.getElementById("id_limit_end");
+
+      const startDate = new Date(startInput.value);
+      if (isNaN(startDate)) {
+          alert("開始日を入力してください");
+          return;
+      }
+
+      const endDate = new Date(startDate);
+      endDate.setFullYear(endDate.getFullYear() + years);
+
+      endDate.setDate(endDate.getDate() - 1); // 1日前に設定
+      const yyyy = endDate.getFullYear();
+      const mm = String(endDate.getMonth() + 1).padStart(2, '0');
+      const dd = String(endDate.getDate()).padStart(2, '0');
+
+      endInput.value = `${yyyy}-${mm}-${dd}`;
+  }
+
+  </script>
+{% endblock %}

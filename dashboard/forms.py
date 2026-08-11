@@ -12,7 +12,6 @@ class UserForm(forms.ModelForm):
         labels = {
             'name': '氏名',
             'name_kana': 'フリガナ',
-            'care_level': '要介護状態区分',
             'insured_number': '被保険者番号',
             'date_of_birth': '生年月日',
             'gender': '性別',
@@ -23,10 +22,6 @@ class UserForm(forms.ModelForm):
         }
     def clean(self):
         cleaned = super().clean()
-        care_level = cleaned.get('care_level')
-        mitaiyou = ('要支援1','要支援2')
-        if care_level in mitaiyou: #todo　要支援1,2は未対応の為、登録不可
-            self._errors['care_level'] = ErrorList(['未対応な為、要支援1,2は登録できません'])
         dob = cleaned.get('date_of_birth')
         if not dob:
             self._errors['date_of_birth'] = ErrorList(['生年月日は必須です'])
@@ -118,10 +113,13 @@ class CertificateForm(forms.ModelForm):
         cleaned = super().clean()
         care_level = cleaned.get('care_level')
         limit_amount_type = cleaned.get('limit_amount_type')
+        limit_amount_value =cleaned.get('limit_amount_value')
         if care_level is None:
             self._errors['care_level'] = ErrorList(['要介護状態区分は必須です'])
         if limit_amount_type is None:
             self._errors['limit_amount_type'] = ErrorList(['限度額区分は必須です'])
+        if limit_amount_value and 1000000> limit_amount_value >0 : #todo　とりあえず可笑しな値をはじく
+            self._errors['limit_amount_value'] = ErrorList(['正式な限度額を設定してください'])
         return cleaned
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
