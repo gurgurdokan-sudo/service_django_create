@@ -1,21 +1,26 @@
 import os
 import io
 import boto3
+import textwrap
+
 from openpyxl import load_workbook
 from openpyxl.styles import Alignment
 from openpyxl.utils import get_column_letter
-from dashboard.models import User, Office, Municipality, AddOnService
-from dashboard.calendar_table import get_month_days
-from dashboard.excel.service_salculator import ServiceSheetCalculator,to_nengo, format_comma
+
+from django.conf import settings
 from django.utils import timezone
 from django.conf import settings
-from django.http import FileResponse
-import textwrap
-    
+
+from dashboard.models import AddOnService
+from dashboard.excel.service_salculator import ServiceSheetCalculator, to_nengo, format_comma
+
 import logging
 logger = logging.getLogger(__name__)
 
 def create_service_sheet(context):
+    """
+    サービス提供表を作成すユーティリティ関数。ユーザーIDと年月を指定して、サービス提供表を生成し、ローカルまたはS3に保存する。
+    """    
     try:
         wb = load_workbook('templatesExcel/service_template.xlsx')
         calc = ServiceSheetCalculator(context)
@@ -169,16 +174,18 @@ def create_service_sheet(context):
         ws['BD20'] = add_comma(res['total_hutan'])
         ws['BG20'] = add_comma(res['over_full_share']) if res['over_full_share'] > 0 else ''
 # ローカル保存処理
-        # filepath, filename = get_service_sheet_path(user, year, month)
-        # wb.save(filepath)
+        if settings.DJANGO_ENV == 'dev':
+            filepath, filename = get_service_sheet_path(user, year, month)
+            wb.save(filepath)
 
 # s3の場合保存処理
-        buffer = io.BytesIO()
-        wb.save(buffer)
-        buffer.seek(0)
-        file_bytes = buffer.getvalue()
-        key, filename = get_service_sheet_path(user, year, month)
-        upload_service_sheet_to_s3(key,file_bytes)
+        else:
+            buffer = io.BytesIO()
+            wb.save(buffer)
+            buffer.seek(0)
+            file_bytes = buffer.getvalue()
+            key, filename = get_service_sheet_path(user, year, month)
+            upload_service_sheet_to_s3(key,file_bytes)
         
 # 後処理
         _recode_model_create(user, year, month,res)
@@ -223,22 +230,25 @@ def _recode_model_create(user, year, month,res):
         )
     record.confirmed = True
     record.save()
-def get_service_sheet_path(user, year, month):#Pathを返す
-    user_dir = os.path.join(
-        settings.MEDIA_ROOT,
-        "service_sheets_export",
-        f"{user.id}_{user.name}"
-    )
-    os.makedirs(user_dir, exist_ok=True)
-    year_month_dir = f"{year}_{month:02d}"
-    date_dir = os.path.join(user_dir, year_month_dir)
-    os.makedirs(date_dir, exist_ok=True)
-    filename = f"サービス提供表_{user.name}_{year}_{month}.xlsx"
-    return os.path.join(date_dir, filename), filename
+def get_service_sheet_path(user, year, month):
+    '''サービス提供表の保存パスを取得するユーティリティ関数。ユーザーIDと年月を指定して、ローカルまたはS3のパスを返す。'''
+    if settings.DJANGO_ENV == 'dev':
+        user_dir = os.path.join(
+            settings.MEDIA_ROOT,
+            "service_sheets_export",
+            f"{user.id}_{user.name}"
+        )
+        os.makedirs(user_dir, exist_ok=True)
+        year_month_dir = f"{year}_{month:02d}"
+        date_dir = os.path.join(user_dir, year_month_dir)
+        os.makedirs(date_dir, exist_ok=True)
+        filename = f"サービス提供表_{user.name}_{year}_{month}.xlsx"
+        return os.path.join(date_dir, filename), filename
 # s3バージョン
-    # key = f"service_sheets_export/{user.id}_{user.name}/{year}_{month:02d}/サービス提供表_{user.name}_{year}_{month}.xlsx"
-    # filename = f"サービス提供表_{user.name}_{year}_{month}.xlsx"
-    # return key, filename
+    else:
+        key = f"service_sheets_export/{user.id}_{user.name}/{year}_{month:02d}/サービス提供表_{user.name}_{year}_{month}.xlsx"
+        filename = f"サービス提供表_{user.name}_{year}_{month}.xlsx"
+        return key, filename
 
 def upload_service_sheet_to_s3(key, file_bytes):
     s3 = boto3.client('s3')
