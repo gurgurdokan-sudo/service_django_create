@@ -325,3 +325,15 @@ class Certificate(models.Model):
         return "消去"
     def __str__(self):
         return self.user.name + f'({self.limit_end})'
+    
+class PublicAssistance(models.Model):
+    """生活保護情報を管理するモデル"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="public_assistance")
+    hogo_number = models.CharField(max_length=8, verbose_name="保護番号") # 法別番号25など
+    recipient_number = models.CharField(max_length=10, verbose_name="受給者番号")
+    start_date = models.DateField(verbose_name="適用開始日")
+    end_date = models.DateField(verbose_name="適用終了日")
+    is_active = models.BooleanField(default=True, verbose_name="有効フラグ")
+
+    def __str__(self):
+        return f"{self.user.name} - 生保 ({self.hogo_number})"
