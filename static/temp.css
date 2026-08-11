@@ -248,6 +248,14 @@ label:has(+ select[required])::after,
     vertical-align: middle;
 }
 
+/* --- アクションボタンとエラー --- */
+.act-row{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
 /* --- 入力フォームの調整 --- */
 .form-control {
     padding: 8px 12px;

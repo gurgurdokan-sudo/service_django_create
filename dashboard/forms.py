@@ -1,7 +1,7 @@
 from django import forms
 from django.forms.utils import ErrorList
 from django.forms.widgets import SelectDateWidget
-from .models import User, ServicePlan, Certificate, CareManager, Office
+from .models import User, ServicePlan, Certificate, CareManager, Office, PublicAssistance
 
 
 class UserForm(forms.ModelForm):
@@ -100,14 +100,20 @@ class PlanForm(forms.ModelForm):
             if not field_name.startswith('weekdays'):
                 self.fields[field_name].widget.attrs['class']= f'form-control {field_name}'
 class CertificateForm(forms.ModelForm):
+    "  認定情報from "
     required_css_class = 'required'
     class Meta:
         model = Certificate
-        fields = ['care_level', 'limit_amount_type','benefit_limit_flag', 'limit_start', 'limit_end']
+        fields = ['care_level', 'limit_amount_type', 'public_assistance_flag', 'benefit_limit_flag', 'limit_amount_value', 'limit_start', 'limit_end']
         widgets = {
             'limit_start': forms.DateInput(attrs={'type': 'date'}),
             'limit_end': forms.DateInput(attrs={'type': 'date'}),
         }
+    public_assistance_flag = forms.BooleanField(
+        label='生活保護受給',
+        required=False,
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
+    )
     def clean(self):
         cleaned = super().clean()
         care_level = cleaned.get('care_level')
@@ -120,10 +126,18 @@ class CertificateForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         for field_name,field in self.fields.items():
-            if 'benefit_limit_flag' != field_name:
-                self.fields[field_name].widget.attrs['class']= f'form-control {field_name}'
+            if isinstance(field.widget, forms.CheckboxInput):
+                field.widget.attrs['class'] = f'form-check-input {field_name}'
+            else:
+                field.widget.attrs['class']= f'form-control {field_name}'
             if field.required:
-                self.fields[field_name].widget.attrs['required'] = True
+                field.widget.attrs['required'] = True
+                
+class PublicAssistanceForm(forms.ModelForm):
+    class Meta:
+        model = PublicAssistance
+        fields = "__all__"
+        
 class CertificateUpdateForm(forms.ModelForm):
     required_css_class = 'required'
     class Meta:

@@ -17,17 +17,29 @@
         {% csrf_token %}
         {% if cetrificate %}
         <div>
-            <p>{{ form.care_level.label_tag }}{{ form.care_level }}</p> 
-            <ul class="error-msg">
-                {% for error in form.care_level.errors %}
-                    <li>{{ error }}</li>
-                {% endfor %}
-            </ul>
+            <div class="label-input-err">
+                {% comment %} 要介護状態区分 {% endcomment %}
+                <div class="label-input">
+                    {{ form.care_level.label_tag }}
+                    {{ form.care_level }} 
+                </div>
+                <div class="post-err">
+                    {% for error in form.care_level.errors %}
+                        {{ error }}
+                    {% endfor %}
+                </div>
+            </div>
 
-            {% include "dashboard/components/messages.html" %}
+            <p>
+                {% comment %} 生活保護受給 {% endcomment %}
+                {{ form.public_assistance_flag.label_tag }}
+                {{ form.public_assistance_flag }}
+            </p>
             
             <p>
-                {{ form.benefit_limit_flag.label_tag }}{{ form.benefit_limit_flag }}
+                {% comment %} 給付制限 {% endcomment %}
+                {{ form.benefit_limit_flag.label_tag }}
+                {{ form.benefit_limit_flag }}
                 <ul class="error-msg">
                     {% for error in form.benefit_limit_flag.errors %}
                         <li>{{ error }}</li>
@@ -35,38 +47,41 @@
                 </ul>
             </p>
             <p>
-                {{ form.limit_amount_type.label_tag }}{{ form.limit_amount_type }}
+                {% comment %} 区分支給限度基準額区分 {% endcomment %}
+                {{ form.limit_amount_type.label_tag }}
+                {{ form.limit_amount_type }}
+            </p>
+            {% comment %} 任意限度額 {% endcomment %}
+            <p class="none" id="limit-amount-value">
+                {{ form.limit_amount_value.label_tag }}
+                {{ form.limit_amount_value }}
+            </p>
+            <p>
+                <label id="required">認定有効期間:</label>
+                {{ form.limit_start }}
+                〜
+                {{ form.limit_end }}
+            </p>
+            <div id="act-row" class="act-row">
                 <ul class="error-msg">
-                    {% for error in form.limit_amount_type.errors %}
+                    {% for error in form.limit_start.errors %}
                         <li>{{ error }}</li>
                     {% endfor %}
                 </ul>
-            </p>
-            <p>
-            <label id="my_required">認定有効期間</label>
-            <input type="date" id="limit_start" name="limit_start" value="{{ form.limit_start.value|default:'' }}">
-            〜
-            <input type="date" id="limit_end" name="limit_end" value="{{ form.limit_end.value|default:'' }}">
-
-            <button type="button" onclick="addYears(1)">1年後</button>
-            <button type="button" onclick="addYears(3)">3年後</button>
-            <button type="button" onclick="addYears(4)">4年後</button>
-            <ul class="error-msg">
-                {% for error in form.limit_start.errors %}
-                    <li>{{ error }}</li>
-                {% endfor %}
-            </ul>
-            </p>
+                <div id="required-buttons">
+                    <button class="btn" type="button" onclick="addYears(1)">1年後</button>
+                    <button class="btn" type="button" onclick="addYears(3)">3年後</button>
+                    <button class="btn" type="button" onclick="addYears(4)">4年後</button>
+                </div>
+            </div>
         </div>
         {% else %}
         <div class="as_p">
             {{ form.as_p }}
         </div>
-        <div>
-            {% endif %}
+        {% endif %}
             <button class="btn btn-primary" type="submit">保存</button>
-            {% if caremanagers %}
-        </div>
+        {% if caremanagers %}
         <hr class="text-secondary opacity-25" />
         <br />
             <h3>ケアマネジャーを選択</h3>
@@ -83,6 +98,21 @@
     </form>
 </div>
 <script>
+document.addEventListener('DOMContentLoaded',() =>{
+    const amountTypeSlect = document.getElementById('id_limit_amount_type');
+    const amountContainer = document.getElementById('limit-amount-value');
+
+    const toggleAmountDisplay = () => {
+        console.log(`${amountTypeSlect.value}`)
+        if (amountTypeSlect.value == '任意'){
+            amountContainer.classList.remove('none');
+        } else {
+            amountContainer.classList.add('none');
+        }
+    }
+    toggleAmountDisplay();
+    amountTypeSlect.addEventListener('change', toggleAmountDisplay);
+})
 function skipCM() {
     const cm = document.getElementById("existingCM").value;
     if (cm === "") {
@@ -100,8 +130,8 @@ function skipCM() {
     form.submit();
 }
 function addYears(years) {
-    const startInput = document.getElementById("limit_start");
-    const endInput = document.getElementById("limit_end");
+    const startInput = document.getElementById("id_limit_start");
+    const endInput = document.getElementById("id_limit_end");
 
     const startDate = new Date(startInput.value);
     if (isNaN(startDate)) {

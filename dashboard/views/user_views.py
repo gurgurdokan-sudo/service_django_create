@@ -2,7 +2,7 @@ from django.contrib import messages
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 
-from dashboard.forms import UserForm, CertificateForm, CertificateUpdateForm
+from dashboard.forms import UserForm, CertificateForm, CertificateUpdateForm, PublicAssistanceForm
 from dashboard.models import User, ServicePlan
 from dashboard.utils import BreadcrumbUtil
 
@@ -52,14 +52,35 @@ def certificate_create(request,user_id):
             cert.benefit_rate = user.benefit_rate
             cert.insured_number =user.insured_number
             cert.save()
-            messages.success(request,'新規登録完了しました')
+            messages.success(request,f'{user.name}様 新規登録完了しました')
+            if form.cleaned_data.get('public_assistance_flag'): redirect('dashboard:public_assistance_create',user_id=user.id)
             return redirect('dashboard:user_list')
     else: form = CertificateForm()
     return render(request, 'dashboard/user_form.html',{
         'form': form,
         'user': user,
-        'title': '利用者の介護保険被保険者証',
+        'title': '利用者の介護保険被保険者証登録',
         'cetrificate': '1',
+        'breadcrumbs': BreadcrumbUtil.create(crumbs),
+        })
+#生活保護情報4
+def public_assistance_create(request,user_id):
+    user = get_object_or_404(User,id = user_id)
+    crumbs =[
+        (f"{user.name} 様", "dashborad:delete"), #詳細へ
+        ("生活保護情報の登録", None)
+    ]
+    if request.method == 'POST':
+        form = PublicAssistanceForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.info(request, f"{user.name}様 の生活保護登録")
+            return redirect('dashboard:user_list')
+    else: form = PublicAssistanceForm()
+    return render(request, 'dashboard/user_form.html',{
+        'form': form,
+        'user': user,
+        'title': '利用者の生活保護登録',
         'breadcrumbs': BreadcrumbUtil.create(crumbs),
         })
 #消去

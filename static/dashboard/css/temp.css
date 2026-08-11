@@ -23,7 +23,10 @@
     opacity: 0;                 /* 初期は透明 */
     animation: slideInFadeOut 5s forwards; /* 出現して消えるアニメーション */
 }
-
+/* 非表示input */
+.none{
+    display: none;
+}
 /* メッセージのアニメーション */
 @keyframes slideInFadeOut {
     0% { opacity: 0; transform: translateY(-20px); } /* 上から降りてくる */
@@ -247,7 +250,33 @@ label:has(+ select[required])::after,
     margin-left: 8px;
     vertical-align: middle;
 }
-
+/* --- アクションボタンとエラー --- */
+.act-row{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin:0 10% 0 10%;
+}
+.label-input-err{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 1rem;
+}
+.label-input{
+    width: 80%;
+}
+.post-err{
+    width: 20%;
+    text-align: center;
+    padding: 0;
+    list-style: none;
+    color: #d32f2f;
+    font-size: 0.85rem;
+    font-weight: bold;
+}
 /* --- 入力フォームの調整 --- */
 .form-control {
     padding: 8px 12px;

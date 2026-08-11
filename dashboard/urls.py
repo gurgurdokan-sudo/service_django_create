@@ -3,6 +3,7 @@ from .views.office_setting import office_setting
 from .views.user_views import (
     user_create,
     certificate_create,
+    public_assistance_create,
     user_list,
     user_detail,
     user_update,
@@ -24,6 +25,7 @@ urlpatterns = [
     path('users/caremana_create', caremana_create, name='caremana_create'),
     path('users/user_create', user_create, name='create'),
     path('user/<int:user_id>/user_create/', certificate_create, name='certificate_create'),
+    path('user/<int:user_id>/user_create/', public_assistance_create, name='public_assistance_create'),
     path('user/<int:user_id>/create_sheet/', export_excel, name='create_sheet'),
     path('user/<int:user_id>/export/', download_service_sheet, name='download_service_sheet'),
     path('user/<int:user_id>/detail/', user_detail, name='detail'),

@@ -312,7 +312,7 @@ class Certificate(models.Model):
     benefit_rate = models.FloatField(choices=BENEFIT_RATE_CHOICES,verbose_name="給付率")
     limit_amount_type = models.CharField(default="規定",max_length=10,choices=[("規定", "規定通り"), ("任意", "任意設定")],verbose_name="区分支給限度基準額区分")
     benefit_limit_flag = models.BooleanField(default=False,verbose_name="給付制限")
-    limit_amount_value = models.IntegerField(null=True,blank=True,verbose_name="任意設定の限度額") #todo任意対応
+    limit_amount_value = models.IntegerField(null=True,blank=True,verbose_name="任意設定の限度額") 
     limit_start = models.DateField(verbose_name="限度額適用開始日")
     limit_end = models.DateField(verbose_name="限度額適用終了日")
     @property
@@ -337,3 +337,4 @@ class PublicAssistance(models.Model):
 
     def __str__(self):
         return f"{self.user.name} - 生保 ({self.hogo_number})"
+    
