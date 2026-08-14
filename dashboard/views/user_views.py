@@ -5,7 +5,7 @@ from django.contrib import messages
 from django.shortcuts import render, redirect, get_object_or_404
 
 from dashboard.forms import UserForm, CertificateForm, CertificateUpdateForm, PublicAssistanceForm
-from dashboard.models import User, CareManager
+from dashboard.models import User, CareManager, PublicAssistance
 from dashboard.utils import BreadcrumbUtil
 
 from employees.permissions import delete_permission_required
@@ -47,7 +47,7 @@ def user_create(request, cm_id):
 def certificate_create(request,user_id):
     user = get_object_or_404(User,id = user_id)
     crumbs = [
-        # ("利用者一覧", reverse("dashboard:user_list")),
+        # ("利用者一覧", "dashboard:user_list"),
         (f"{user.name} 様", None),
         ("被保険者証情報の登録", None)
     ]
@@ -77,13 +77,14 @@ def certificate_create(request,user_id):
 #生活保護情報4
 def public_assistance_create(request,user_id):
     user = get_object_or_404(User,id = user_id)
+    zen = PublicAssistance.objects.filter(user= user,is_active = True).first()
     crumbs =[
-        (f"{user.name} 様", "dashboard:delete"), #詳細へ
+        # ("利用者一覧", "dashboard:user_list"),
+        (f"{user.name} 様", "dashboard:detele", [user_id]), #詳細へ
         ("生活保護情報の登録", None)
     ]
     if request.method == 'POST':
         form = PublicAssistanceForm(request.POST)
-        zen = user.publicAssistance.object.filter(is_active = True).flst()
         if form.is_valid():
             pa = form.save(commit=False)
             pa.user = user
@@ -95,7 +96,8 @@ def public_assistance_create(request,user_id):
             pa.is_active = True
 
             #前回の生活保護があればis_activeをFalse
-            if zen: 
+            if zen:
+                logger.info(f'以前の生活保護あり')
                 zen.is_active = False
                 zen.save()
             messages.info(request, f"{user.name}様 の生活保護登録")
@@ -103,6 +105,7 @@ def public_assistance_create(request,user_id):
     else:
         initial_data = {}
         if zen:
+            logger.info(f'以前の生活保護あり')
             initial_data = {
                 'hogo_number' : zen.hogo_number,
                 'recipient_number' : zen.recipient_number,
@@ -112,14 +115,14 @@ def public_assistance_create(request,user_id):
         'form': form,
         'user': user,
         'title': f'{user.name}様 生活保護登録',
-        # 'breadcrumbs': BreadcrumbUtil.create(crumbs),
+        'breadcrumbs': BreadcrumbUtil.create(crumbs),
         })
 #消去
 def user_delete(request,user_id):
     target = get_object_or_404(User,id=user_id)
     crumbs = [
         # ("利用者一覧", reverse("dashboard:user_list")),
-        (f"{target.name} 様 詳細", reverse("dashboard:user_detail", args=[target.id])),
+        (f"{target.name} 様 詳細", "dashboard:user_detail", [target.id]),
         ("削除確認", None)
     ]
 
