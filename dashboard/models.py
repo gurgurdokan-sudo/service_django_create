@@ -1,8 +1,9 @@
 from django.db import models
-from django.db.models import Sum
 from django.utils import timezone
 from datetime import datetime, date
 from dashboard.calendar_table import get_month_days
+from dateutil.relativedelta import relativedelta
+
 LEVEL_CHOICES = [
     # ('要支援1', '要支援1'),
     # ('要支援2', '要支援2'),
@@ -21,7 +22,6 @@ class CareManager(models.Model):
     care_management_office_number = models.CharField(max_length=10,verbose_name="居宅介護支援事業所番号")
     tel = models.CharField(max_length=20, blank=True, null=True)
     fax = models.CharField(max_length=20, blank=True, null=True)
-
     def __str__(self):
         return f"{self.name}（{self.office_name}）"
 
@@ -42,6 +42,19 @@ class User(models.Model):
     notes = models.TextField(blank=True,default="",verbose_name='メモ')
     def __str__(self):
         return self.name
+    def get_public_assistance(self, target_date):
+        """ 指定した日付時点で有効な生保データを1件返す """
+        return self.public_assistance.filter(
+            is_active=True,
+            start_date__lte=target_date,
+            end_date__gte=target_date
+        ).first()
+    
+    def was_public_assistance_last_month(self, year, month):
+        """ 前月の1日時点で生保だったか判定する """
+        current_month_first_day = date(year, month, 1)
+        last_month_first_day = current_month_first_day - relativedelta(months=1)
+        return self.get_public_assistance(last_month_first_day)
 
     @property
     def max_separate_payment(self):

@@ -44,7 +44,22 @@
         {{ form.start_month }}
       </p>
 
+      {% if is_from_service %}
+        <button class="btn btn-primary" type="button" onclick="confirmRelease()">生活保護を解除して戻る</button>
+      {% endif %}
+
       <button class="btn btn-primary" type="submit">保存</button>
     </form>
   </div>
 {% endblock %}
+{% block script %}
+<script>
+function confirmRelease() {
+    if(confirm("利用者の生活保護設定を解除して、提供表画面へ戻りますか？")) {
+        const urlParams = new URLSearchParams(window.location.search);
+        urlParams.set('change', 'true');
+        window.location.href = "{% url 'dashboard:public_assistance_create' user.id %}?" + urlParams.toString();
+    }
+}
+</script>
+{% endblock script %}

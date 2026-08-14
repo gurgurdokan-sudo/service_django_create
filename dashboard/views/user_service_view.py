@@ -1,5 +1,4 @@
-import datetime
-
+from datetime import datetime, date
 from django.shortcuts import render,redirect, get_object_or_404
 from django.utils import timezone
 from django.contrib import messages
@@ -79,7 +78,7 @@ def build_user_service_context(user_id, year, month):
         'confirmed': confirmed, #サービス提供票の確定状態
     }
 
-def _is_future_month_not_plan(user_id,year, month, prev=False):
+def _is_future_month_not_plan(user_id, year, month, prev=False):
     '''指定された年月が未来で、かつその月のプランが存在しない場合にTrueを返す'''
     now = timezone.now()
     if prev:
@@ -98,12 +97,21 @@ def user_service(request,user_id):
         logger.error(f'{user.name}')
         messages.error(request,'認定情報またはケアマネジャーが設定されてません')
         return redirect('dashboard:user_list')
+
+    # 「今月の生保データ」が未登録なのに、「前月は生保だった」場合、先に生保登録へ誘導
+    target_date = date(dis_year, dis_month, 1)
+    if not user.get_public_assistance(target_date):
+        if user.was_public_assistance_last_month(dis_year, dis_month):
+            messages.warning(request, f'前月が生活保護受給のため、{dis_month}月分の情報を先に登録してください')
+            url = reverse('dashboard:public_assistance_create', kwargs={'user_id': user.id})
+            return redirect(f'{url}?year={dis_year}&month={dis_month}')
         
     if _is_future_month_not_plan(user_id,dis_year, dis_month):
         '''プラン作成画面にリダイレクトする'''
+        messages.error(request, '生活保護情報を入力してください')
         url = reverse('dashboard:createPlan',kwargs= {'user_id':user_id})
         return redirect(f'{url}?year={dis_year}&month={dis_month}')
-            
+
     logger.info(f'{dis_year}-{dis_month}のサービス提供票に遷移')
     context = build_user_service_context(user_id=user_id,year=dis_year,month=dis_month)
     crumbs = [

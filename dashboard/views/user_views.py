@@ -2,6 +2,7 @@ from datetime import date
 from dateutil.relativedelta import relativedelta
 
 from django.contrib import messages
+from django.urls import reverse
 from django.shortcuts import render, redirect, get_object_or_404
 
 from dashboard.forms import UserForm, CertificateForm, CertificateUpdateForm, PublicAssistanceForm
@@ -78,11 +79,26 @@ def certificate_create(request,user_id):
 def public_assistance_create(request,user_id):
     user = get_object_or_404(User,id = user_id)
     zen = PublicAssistance.objects.filter(user= user,is_active = True).first()
+    q_year = request.GET.get('year')
+    q_month = request.GET.get('month')
+    is_from_service = True if q_year else False
+
+    change = request.GET.get('change')
+    # 「解除」リクエストの処理
+    change = request.GET.get('change')
+    if change:
+        user.public_assistance.filter(is_active=True).update(is_active=False)
+        
+        url = reverse('dashboard:user_service', args=[user_id])
+        y = q_year or date.today().year
+        m = q_month or date.today().month
+        return redirect(f'{url}?year={y}&month={m}')
     crumbs =[
         # ("利用者一覧", "dashboard:user_list"),
         (f"{user.name} 様", "dashboard:detail", [user_id]), #詳細へ
         ("生活保護情報の登録", None)
     ]
+
     if request.method == 'POST':
         form = PublicAssistanceForm(request.POST)
         if form.is_valid():
@@ -101,9 +117,18 @@ def public_assistance_create(request,user_id):
                 zen.is_active = False
                 zen.save()
             messages.success(request, f"{user.name}様 の生活保護登録")
-            return redirect('dashboard:user_list')
+            if is_from_service:
+                url = reverse('dashboard:user_service', args=user_id)
+                return redirect(f'{url}?year={y}&month={m}')
+            else:
+                return redirect('dashboard:user_list')
     else:
-        initial_data = {}
+        # 初期値
+        today = date.today()
+        initial_data = {
+            'start_year': q_year or today.year,
+            'start_month': q_month or today.month,
+        }
         if zen:
             logger.info(f'以前の生活保護あり')
             initial_data = {
@@ -116,6 +141,7 @@ def public_assistance_create(request,user_id):
         'user': user,
         'title': f'{user.name}様 生活保護登録',
         'breadcrumbs': BreadcrumbUtil.create(crumbs),
+        'is_from_service' : is_from_service,
         })
 #消去
 def user_delete(request,user_id):
