@@ -43,7 +43,8 @@
           {{ form.limit_amount_value.label_tag }}
           {{ form.limit_amount_value }}
           <ul class="error-msg">
-            <li>現在、任意限度額に対応してない</li>
+            <li id="gendo" class="none" >現在は、任意限度額に対応していません</li> 
+            {% comment %} todo 任意限度額 対応 {% endcomment %}
             {% for error in form.limit_amount_value.errors %}
               <li>{{ error }}</li>
             {% endfor %}
@@ -75,13 +76,16 @@
   document.addEventListener('DOMContentLoaded',() =>{
       const amountTypeSlect = document.getElementById('id_limit_amount_type');
       const amountContainer = document.getElementById('limit-amount-value');
+      const gendo = document.getElementById('gendo');
 
       const toggleAmountDisplay = () => {
           console.log(`${amountTypeSlect.value}`)
           if (amountTypeSlect.value == '任意'){
               amountContainer.classList.remove('none');
+              gendo.classList.remove('none');
           } else {
               amountContainer.classList.add('none');
+              gendo.classList.add('none');
           }
       }
       toggleAmountDisplay();

@@ -88,7 +88,7 @@ def caremana_create(request):
 
     else:
         form = CareManagerForm()
-    return render(request, 'dashboard/user_form.html', {
+    return render(request, 'dashboard/caremanager_form.html', {
         'form': form,
         'title': 'ケアマネジャー登録',
         'caremanagers': caremanagers,

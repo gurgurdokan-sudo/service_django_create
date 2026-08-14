@@ -6,3 +6,4 @@ djangorestframework
 Pillow
 pykakasi
 boto3
+python-dateutil

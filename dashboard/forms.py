@@ -1,6 +1,7 @@
+from datetime import date
+
 from django import forms
 from django.forms.utils import ErrorList
-from django.forms.widgets import SelectDateWidget
 from .models import User, ServicePlan, Certificate, CareManager, Office, PublicAssistance
 
 
@@ -132,9 +133,28 @@ class CertificateForm(forms.ModelForm):
                 field.widget.attrs['required'] = True
                 
 class PublicAssistanceForm(forms.ModelForm):
+    this_year = date.today().year
+    YEAR_CHOICES = [(y, f"{y}年") for y in range(this_year - 1, this_year + 1)]
+    MONTH_CHOICES = [(m, f"{m}月") for m in range(1, 13)]
+    start_year = forms.ChoiceField(choices=YEAR_CHOICES, label="開始年", initial=this_year)
+    start_month = forms.ChoiceField(choices=MONTH_CHOICES, label="開始月", initial=date.today().month)
     class Meta:
         model = PublicAssistance
-        fields = "__all__"
+        fields = [
+            'hogo_number',
+            'recipient_number',
+        ]
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field_name, field in self.fields.items():
+            field.widget.attrs['class'] = f'form-control {field_name}'
+            if field.required:
+                field.widget.attrs['required'] = True
+
+    def clean(self):
+        self.cleaned = super().clean()
+
+        
         
 class CertificateUpdateForm(forms.ModelForm):
     required_css_class = 'required'

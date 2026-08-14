@@ -9,9 +9,8 @@ from django.shortcuts import get_object_or_404, redirect
 from django.utils import timezone
 
 from dashboard.models import User
-from dashboard.excel.service_sheet import get_service_sheet_path
+from dashboard.excel.excel_writer import get_service_sheet_path, create_service_sheet
 from dashboard.views.user_service_view import build_user_service_context
-from dashboard.excel.service_sheet import create_service_sheet
 
 import logging
 logger = logging.getLogger(__name__)

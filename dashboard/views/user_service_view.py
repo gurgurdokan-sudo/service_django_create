@@ -5,6 +5,7 @@ from django.utils import timezone
 from django.contrib import messages
 from django.urls import reverse
 
+from dashboard.utils import BreadcrumbUtil
 from dashboard.models import(
     User,
     ServicePlan, 
@@ -108,6 +109,7 @@ def user_service(request,user_id):
     crumbs = [
         (f"{user.name}サービス提供表作成", None)
     ]
+    context['breadcrumbs'] = BreadcrumbUtil.create(crumbs)
     logger.info(f'======{user.name} 様 提供表確定 {context["confirmed"]}======')
     return render(request,'dashboard/user_service.html',context)
 

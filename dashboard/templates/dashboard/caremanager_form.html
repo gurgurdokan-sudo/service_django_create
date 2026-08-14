@@ -6,7 +6,6 @@
 {% endblock %}
 {% block body %}
 <h2>{{ title }}</h2>
-{% endif %}
 <div class="detail-card">
   <div id="bread" data-items="{{breadcrumbs}}"></div>
   {# 同じフォームでケアマネジャーのプロフィール/利用者プロフィール/認定情報 #}
@@ -92,7 +91,7 @@
         {% endfor %}
       </div>
     </div>
-
+    <button class="btn btn-primary" type="submit">保存</button>
     <hr class="text-secondary opacity-25" />
 
     <br />
@@ -106,7 +105,6 @@
         {% endfor %}
       </select>
       <button class="btn btn-primary" type="button" onClick="skipCM()">skip</button>
-      {% endif %}
   </form>
 </div>
 <script>

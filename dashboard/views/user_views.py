@@ -1,6 +1,8 @@
+from datetime import date
+from dateutil.relativedelta import relativedelta
+
 from django.contrib import messages
 from django.shortcuts import render, redirect, get_object_or_404
-from django.urls import reverse
 
 from dashboard.forms import UserForm, CertificateForm, CertificateUpdateForm, PublicAssistanceForm
 from dashboard.models import User, CareManager
@@ -59,10 +61,13 @@ def certificate_create(request,user_id):
             cert.insured_number =user.insured_number
             cert.save()
             messages.success(request,f'{user.name}様 新規登録完了しました')
-            if form.cleaned_data.get('public_assistance_flag'): redirect('dashboard:public_assistance_create',user_id=user.id)
+            flag =form.cleaned_data.get('public_assistance_flag')
+            if flag:
+                logger.info(f'生活保護 : {flag}')
+                return redirect('dashboard:public_assistance_create',user_id=user.id)
             return redirect('dashboard:user_list')
     else: form = CertificateForm()
-    return render(request, 'dashboard/user_form.html',{
+    return render(request, 'dashboard/certificate_form.html',{
         'form': form,
         'user': user,
         'title': '利用者の介護保険被保険者証登録',
@@ -73,21 +78,41 @@ def certificate_create(request,user_id):
 def public_assistance_create(request,user_id):
     user = get_object_or_404(User,id = user_id)
     crumbs =[
-        (f"{user.name} 様", "dashborad:delete"), #詳細へ
+        (f"{user.name} 様", "dashboard:delete"), #詳細へ
         ("生活保護情報の登録", None)
     ]
     if request.method == 'POST':
         form = PublicAssistanceForm(request.POST)
+        zen = user.publicAssistance.object.filter(is_active = True).flst()
         if form.is_valid():
-            form.save()
+            pa = form.save(commit=False)
+            pa.user = user
+            y = int(form.cleaned_data.get('start_year'))
+            m = int(form.cleaned_data.get('start_month'))
+            pa.start_date = date(y, m, 1) # 自動的に1日をセット
+
+            pa.end_date = pa.start_date + relativedelta(month=1, day=-1)
+            pa.is_active = True
+
+            #前回の生活保護があればis_activeをFalse
+            if zen: 
+                zen.is_active = False
+                zen.save()
             messages.info(request, f"{user.name}様 の生活保護登録")
             return redirect('dashboard:user_list')
-    else: form = PublicAssistanceForm()
-    return render(request, 'dashboard/user_form.html',{
+    else:
+        initial_data = {}
+        if zen:
+            initial_data = {
+                'hogo_number' : zen.hogo_number,
+                'recipient_number' : zen.recipient_number,
+            }
+        form = PublicAssistanceForm( initial = initial_data )
+    return render(request, 'dashboard/public_assistance_form.html',{
         'form': form,
         'user': user,
-        'title': '利用者の生活保護登録',
-        'breadcrumbs': BreadcrumbUtil.create(crumbs),
+        'title': f'{user.name}様 生活保護登録',
+        # 'breadcrumbs': BreadcrumbUtil.create(crumbs),
         })
 #消去
 def user_delete(request,user_id):
@@ -123,7 +148,7 @@ def user_update(request, user_id):
     else:
         form = UserForm(instance=user)
         title = f'{user.name} 基本情報 更新'
-    return render(request, 'dashboard/user_form.html', {
+    return render(request, 'dashboard/new_user_form.html', { #いったん
         'title':title,
         'form': form,
         'breadcrumbs': BreadcrumbUtil.create(crumbs),

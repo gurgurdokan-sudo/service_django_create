@@ -1,0 +1,30 @@
+{% extends "dashboard/base/base.html" %}
+{% block css %}
+{% load static %}
+{% load get_item %}
+<link rel="stylesheet" href="{% static 'dashboard/css/temp.css' %}">
+{% endblock %}
+{% block body %}
+<h2>{{ title }}</h2> 
+<div class="detail-card">
+<div id="bread" data-items="{{breadcrumbs}}"></div>
+  <form method="post" id="cmForm" novalidate>
+    {% csrf_token %}
+    {{ form.as_p }}
+testtest=================================================
+    {% comment %} メモ
+    <div class="label-input-err">
+      {{ form.notes.label_tag }}
+      {{ form.notes }}
+      <div class="post-err">
+          {% for error in form.notes.errors %}
+              {{ error }}
+          {% endfor %}
+      </div>
+    </div> {% endcomment %}
+
+    <button class="btn btn-primary" type="submit">保存</button>
+  </form>
+</div>
+{% endblock %}
+
