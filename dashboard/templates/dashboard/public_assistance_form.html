@@ -5,12 +5,12 @@
   <link rel="stylesheet" href="{% static 'dashboard/css/temp.css' %}" />
 {% endblock %}
 {% block body %}
+{% include "dashboard/components/messages.html" %}
   <h2>{{ title }}</h2>
   <div class="detail-card">
     <div id="bread" data-items="{{ breadcrumbs }}"></div>
-    <form method="post" id="cmForm" novalidate>
+    <form method="post" id="public_assistance_Form"  novalidate>
       {% csrf_token %}
-
       {# 保護番号 #}
       <div class="label-input-err">
         <div class="label-input">
@@ -44,22 +44,23 @@
         {{ form.start_month }}
       </p>
 
-      {% if is_from_service %}
-        <button class="btn btn-primary" type="button" onclick="confirmRelease()">生活保護を解除して戻る</button>
-      {% endif %}
+      
+      <div class="d-flex gap-2 mt-4">
+          <button class="btn btn-primary" type="submit" name="action" value="save">保存して進む</button>
 
-      <button class="btn btn-primary" type="submit">保存</button>
+          {% if is_from_service %}
+            <button form="releaseForm" class="btn btn-outline-danger" type="submit" 
+                    onclick="return confirm('設定を解除して提供表に戻りますか？')">
+                生活保護を解除して戻る
+            </button>
+          {% endif %}
+      </div>
+    </form>
+
+    {% comment %} 解除用の隠しフォーム クエリパラメータを維持 {% endcomment %}
+    <form id="releaseForm" method="post" action="?{{ request.GET.urlencode }}">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="release">
     </form>
   </div>
 {% endblock %}
-{% block script %}
-<script>
-function confirmRelease() {
-    if(confirm("利用者の生活保護設定を解除して、提供表画面へ戻りますか？")) {
-        const urlParams = new URLSearchParams(window.location.search);
-        urlParams.set('change', 'true');
-        window.location.href = "{% url 'dashboard:public_assistance_create' user.id %}?" + urlParams.toString();
-    }
-}
-</script>
-{% endblock script %}

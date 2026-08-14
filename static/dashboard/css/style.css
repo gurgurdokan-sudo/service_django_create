@@ -228,7 +228,7 @@ body {
 .messages li { padding: 15px 25px; border-radius: 6px; margin-bottom: 10px; font-weight: bold; animation: slideInFade 5s forwards; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
 @keyframes slideInFade { 0% { opacity: 0; transform: translateY(-20px); } 10% { opacity: 1; transform: translateY(0); } 90% { opacity: 1; } 100% { opacity: 0; visibility: hidden; } }
 .success { background: #e3f2fd; color: #0d47a1; border: 1px solid #90caf9; }
-
+.error { background-color: #fcc7c7; color: #9f0404; border: 1px solid #f96262; padding: 12px 20px; margin-bottom: 10px; border-radius: 4px; position: relative; animation: fadeOutContainer 5s forwards;}
 /* ==========================================================================
    6. モーダル制御
    ========================================================================== */

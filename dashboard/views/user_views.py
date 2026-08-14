@@ -83,16 +83,6 @@ def public_assistance_create(request,user_id):
     q_month = request.GET.get('month')
     is_from_service = True if q_year else False
 
-    change = request.GET.get('change')
-    # 「解除」リクエストの処理
-    change = request.GET.get('change')
-    if change:
-        user.public_assistance.filter(is_active=True).update(is_active=False)
-        
-        url = reverse('dashboard:user_service', args=[user_id])
-        y = q_year or date.today().year
-        m = q_month or date.today().month
-        return redirect(f'{url}?year={y}&month={m}')
     crumbs =[
         # ("利用者一覧", "dashboard:user_list"),
         (f"{user.name} 様", "dashboard:detail", [user_id]), #詳細へ
@@ -100,28 +90,40 @@ def public_assistance_create(request,user_id):
     ]
 
     if request.method == 'POST':
-        form = PublicAssistanceForm(request.POST)
-        if form.is_valid():
-            pa = form.save(commit=False)
-            pa.user = user
-            y = int(form.cleaned_data.get('start_year'))
-            m = int(form.cleaned_data.get('start_month'))
-            pa.start_date = date(y, m, 1) # 自動的に1日をセット
+        action = request.POST.get('action')
 
-            pa.end_date = pa.start_date + relativedelta(months=1, days=-1)
-            pa.is_active = True
+        if action == 'release':
+            # 「解除」リクエストの処理
+            user.public_assistance.filter(is_active=True).update(is_active=False)
+            
+            url = reverse('dashboard:service', args=[user_id])
+            y = q_year or date.today().year
+            m = q_month or date.today().month
+            return redirect(f'{url}?year={y}&month={m}')
+        if action == 'save':
+            form = PublicAssistanceForm(request.POST)
+            if form.is_valid():
+                pa = form.save(commit=False)
+                pa.user = user
+                y = int(form.cleaned_data.get('start_year'))
+                m = int(form.cleaned_data.get('start_month'))
+                pa.start_date = date(y, m, 1) # 自動的に1日をセット
 
-            #前回の生活保護があればis_activeをFalse
-            if zen:
-                logger.info(f'以前の生活保護あり')
-                zen.is_active = False
-                zen.save()
-            messages.success(request, f"{user.name}様 の生活保護登録")
-            if is_from_service:
-                url = reverse('dashboard:user_service', args=user_id)
-                return redirect(f'{url}?year={y}&month={m}')
-            else:
-                return redirect('dashboard:user_list')
+                pa.end_date = pa.start_date + relativedelta(months=1, days=-1)
+                pa.is_active = True
+
+                #前回の生活保護があればis_activeをFalse
+                if zen:
+                    logger.info(f'以前の生活保護あり')
+                    zen.is_active = False
+                    zen.save()
+                pa.save()
+                messages.success(request, f"{user.name}様 の生活保護登録")
+                if is_from_service:
+                    url = reverse('dashboard:service', args=[user_id])
+                    return redirect(f'{url}?year={y}&month={m}')
+                else:
+                    return redirect('dashboard:user_list')
     else:
         # 初期値
         today = date.today()

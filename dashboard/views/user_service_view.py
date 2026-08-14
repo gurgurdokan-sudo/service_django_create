@@ -1,4 +1,4 @@
-from datetime import datetime, date
+from datetime import date
 from django.shortcuts import render,redirect, get_object_or_404
 from django.utils import timezone
 from django.contrib import messages
@@ -51,10 +51,10 @@ def build_user_service_context(user_id, year, month):
     # for add in addon_service:
     #     if add.rete:
     #         add.rate100 = int(add.rate*100) if add.rate else ''
-    date = datetime.date(year, month, 1)
+    recode_date = date(year, month, 1)
     logger.info(f'{year}-{month}のサービス提供票の確認状態を取得')
     try:
-        record = ServiceMonthlyRecord.objects.filter(user=target, date=date).first()
+        record = ServiceMonthlyRecord.objects.filter(user=target, date=recode_date).first()
         confirmed = record.confirmed if record else False
     except Exception as e:
         logger.error(f"確認状態の取得中にエラーが発生しました: {e}")
@@ -93,7 +93,7 @@ def user_service(request,user_id):
     dis_month = int(request.GET.get('month', now.month))
     user = User.objects.get(id=user_id)
     if not user.care_manager or user.care_level == '認定情報更新が必要':
-        '''利用者画面にリダイレクトする'''
+        '''利用者一覧画面にリダイレクトする'''
         logger.error(f'{user.name}')
         messages.error(request,'認定情報またはケアマネジャーが設定されてません')
         return redirect('dashboard:user_list')
@@ -102,13 +102,12 @@ def user_service(request,user_id):
     target_date = date(dis_year, dis_month, 1)
     if not user.get_public_assistance(target_date):
         if user.was_public_assistance_last_month(dis_year, dis_month):
-            messages.warning(request, f'前月が生活保護受給のため、{dis_month}月分の情報を先に登録してください')
+            messages.error(request, f'前月が生活保護受給のため、{dis_month}月分の情報を先に登録してください')
             url = reverse('dashboard:public_assistance_create', kwargs={'user_id': user.id})
             return redirect(f'{url}?year={dis_year}&month={dis_month}')
         
     if _is_future_month_not_plan(user_id,dis_year, dis_month):
         '''プラン作成画面にリダイレクトする'''
-        messages.error(request, '生活保護情報を入力してください')
         url = reverse('dashboard:createPlan',kwargs= {'user_id':user_id})
         return redirect(f'{url}?year={dis_year}&month={dis_month}')
 
