@@ -13,10 +13,12 @@ LEVEL_CHOICES = [
     ('要介護5', '要介護5'),
 ]
 class CareManager(models.Model):
+    class Meta:
+        verbose_name_plural= "ケアマネジャー"
     name = models.CharField(max_length=100, verbose_name='担当者名')
-    care_manager_number = models.CharField(max_length=20,verbose_name="居宅介護支援専門員番号", blank=True, null=True) #todo
+    care_manager_number = models.CharField(max_length=13,verbose_name="居宅介護支援専門員番号", blank=True, null=True) #todo
     office_name = models.CharField(max_length=200, verbose_name='居宅介護支援事業所名')  # 居宅介護支援事業所名
-    care_management_office_number = models.CharField(max_length=20,verbose_name="居宅介護支援事業所番号")
+    care_management_office_number = models.CharField(max_length=10,verbose_name="居宅介護支援事業所番号")
     tel = models.CharField(max_length=20, blank=True, null=True)
     fax = models.CharField(max_length=20, blank=True, null=True)
 
@@ -25,6 +27,8 @@ class CareManager(models.Model):
 
 class User(models.Model): 
     '''被保険者の情報を管理するモデル'''
+    class Meta:
+        verbose_name_plural= "利用者"
     care_manager = models.ForeignKey(CareManager,on_delete=models.SET_NULL,null=True)
     name = models.CharField(max_length=100,verbose_name='被保険者氏名')
     name_kana = models.CharField(max_length=100,verbose_name='フリガナ')
@@ -78,6 +82,8 @@ class User(models.Model):
 
 class ServiceMaster(models.Model):
     '''提供されるサービスのマスターデータを管理するモデル'''
+    class Meta:
+        verbose_name_plural= "利用サービス マスタ"
     care_level = models.CharField(max_length=10, choices=LEVEL_CHOICES)
     STAY_TIME_CHOICES = [('<3','3時間以下'),('3-4','3以上-4未満'),('4-5','4以上-5未満'),\
                         ('5-6','5以上-6未満'),('6-7','6以上-7未満'),('7-8','7以上-8未満'),('8-9','8以上-9未満')]
@@ -99,6 +105,7 @@ class ServiceMaster(models.Model):
 class ServiceMonthlyRecord(models.Model): 
     '''実際に提供されたサービスの記録を管理するモデル'''
     class Meta:
+        verbose_name_plural= "月間提供表"
         unique_together = ('user', 'date') #その月のサービス提供票は1件のみ
 
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -127,6 +134,8 @@ class ServiceMonthlyRecord(models.Model):
     def __str__(self):
         return f'{self.user} - {self.date.strftime("%Y-%m")}'
 class ServicePlan(models.Model):
+    class Meta:
+        verbose_name_plural= "サービス利用計画"
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     this_year = datetime.now().year
     year = models.IntegerField(choices=[(i, f"{i}年") for i in range(this_year-1, this_year+1)], default=this_year)
@@ -247,6 +256,8 @@ class ServicePlan(models.Model):
     def __str__(self):
         return f"{self.user.name} - {self.year}年{self.month}月"
 class AddOnService(models.Model):
+    class Meta:
+        verbose_name_plural= "加算マスタ"
     code = models.CharField(max_length=20)
     type = models.CharField(choices=[("unit", "単位"), ("rate", "率")])
     unit = models.IntegerField( null=True, blank=True) 
@@ -268,6 +279,8 @@ class AddOnService(models.Model):
     def __str__(self):
         return self.service_name+' ('+self.type+')'
 class Municipality(models.Model):
+    class Meta:
+        verbose_name_plural= "保険者（地域）マスタ"
     municipality_code = models.CharField(max_length=6, unique=True, verbose_name='保険者番号')  # 112300
     prefecture = models.CharField(max_length=50, blank=True, null=True, verbose_name = '都道府県')
     name = models.CharField(max_length=50, verbose_name = '市区町村')  # 新座市
@@ -276,6 +289,8 @@ class Municipality(models.Model):
     def __str__(self):
         return f"{self.name}（{self.municipality_code}）"
 class Office(models.Model):
+    class Meta:
+        verbose_name_plural = "事務所マスタ"
     UNIT_PRICE_TABLE = {7: 11.40,6: 10.90,5: 10.45,4: 10.25,3: 10.15,2: 10.10,1: 10.00}
 
     name = models.CharField(max_length=100)
@@ -303,6 +318,8 @@ class Office(models.Model):
 
 class Certificate(models.Model):
     """被保険者証の情報を管理するモデル"""
+    class Meta:
+        verbose_name_plural= "介護認定情報"
     BENEFIT_RATE_CHOICES = [(0.9, "給付率90%（1割負担）"),(0.8, "給付率80%（2割負担）"),(0.7, "給付率70%（3割負担）"),]
     user = models.ForeignKey(User,on_delete=models.CASCADE,related_name="certificate",verbose_name="利用者")
     insured_number = models.CharField(max_length=10,verbose_name="被保険者番号（10桁）")
@@ -328,6 +345,8 @@ class Certificate(models.Model):
     
 class PublicAssistance(models.Model):
     """生活保護情報を管理するモデル"""
+    class Meta:
+        verbose_name_plural= "生活保護情報"
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="public_assistance")
     hogo_number = models.CharField(max_length=8, verbose_name="保護番号", help_text="地区番号 + 世帯番号") # 法別番号25など
     recipient_number = models.CharField(max_length=10, verbose_name="受給者番号")

@@ -4,14 +4,10 @@
 {% load get_item %}
 <link rel="stylesheet" href="{% static 'dashboard/css/temp.css' %}">
 <style>
-  .cm{
-    display: flex;
-  }
   .cm-value{
     text-align: center;
-    padding-left: 20%;
+    padding-left: 20px;
     color: #313131;
-    font-size: 1.5%rem;
     font-weight: bold;
   }
 </style>
@@ -22,30 +18,34 @@
 <div id="bread" data-items="{{breadcrumbs}}"></div>
   <form method="post" id="cmForm" novalidate>
     {% csrf_token %}
-    <p class="cm">
+    <p>
       <label>担当ケアマネジャー</label>
       <span class="cm-value">{{ cm_name }}</span>
     </p>
 
     {% comment %} 名前 {% endcomment %}
     <div class="label-input-err">
-      {{ form.name.label_tag }}
-      {{ form.name }}
+      <div class="label-input">
+        {{ form.name.label_tag }}
+        {{ form.name }}
+      </div>
       <div class="post-err">
-          {% for error in form.name.errors %}
-              {{ error }}
-          {% endfor %}
+        {% for error in form.name.errors %}
+          {{ error }}
+        {% endfor %}
       </div>
     </div>
 
     {% comment %} かな {% endcomment %}
     <div class="label-input-err">
-      {{ form.name_kana.label_tag }}
-      {{ form.name_kana }}
+      <div class="label-input">
+        {{ form.name_kana.label_tag }}
+        {{ form.name_kana }}
+      </div>
       <div class="post-err">
-          {% for error in form.name_kana.errors %}
-              {{ error }}
-          {% endfor %}
+        {% for error in form.name_kana.errors %}
+          {{ error }}
+        {% endfor %}
       </div>
     </div>
 
@@ -53,19 +53,23 @@
 
     {% comment %} 要介護状態区分 {% endcomment %}
     <div class="label-input-err">
-      {{ form.benefit_rate.label_tag }}
-      {{ form.benefit_rate }}
+      <div class="label-input">
+        {{ form.benefit_rate.label_tag }}
+        {{ form.benefit_rate }}
+      </div>
       <div class="post-err">
-          {% for error in form.benefit_rate.errors %}
-              {{ error }}
-          {% endfor %}
+        {% for error in form.benefit_rate.errors %}
+          {{ error }}
+        {% endfor %}
       </div>
     </div>
 
     {% comment %} 被保険者番号 {% endcomment %}
     <div class="label-input-err">
-      {{ form.insured_number.label_tag }}
-      {{ form.insured_number }}
+      <div class="label-input">
+        {{ form.insured_number.label_tag }}
+        {{ form.insured_number }}
+      </div>
       <div class="post-err">
           {% for error in form.insured_number.errors %}
               {{ error }}
@@ -75,8 +79,10 @@
 
     {% comment %} 生年月日 {% endcomment %}
     <div class="label-input-err">
-      {{ form.date_of_birth.label_tag }}
-      {{ form.date_of_birth }}
+      <div class="label-input">
+        {{ form.date_of_birth.label_tag }}
+        {{ form.date_of_birth }}
+      </div>
       <div class="post-err">
           {% for error in form.date_of_birth.errors %}
               {{ error }}
@@ -86,8 +92,10 @@
 
     {% comment %} 性別 {% endcomment %}
     <div class="label-input-err">
-      {{ form.gender.label_tag }}
-      {{ form.gender }}
+      <div class="label-input">
+        {{ form.gender.label_tag }}
+        {{ form.gender }}
+      </div>
       <div class="post-err">
           {% for error in form.gender.errors %}
               {{ error }}
@@ -97,8 +105,10 @@
 
     {% comment %} メモ {% endcomment %}
     <div class="label-input-err">
-      {{ form.notes.label_tag }}
-      {{ form.notes }}
+      <div class="label-input">
+        {{ form.notes.label_tag }}
+        {{ form.notes }}
+      </div>
       <div class="post-err">
           {% for error in form.notes.errors %}
               {{ error }}
