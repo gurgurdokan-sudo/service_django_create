@@ -80,7 +80,7 @@ def public_assistance_create(request,user_id):
     zen = PublicAssistance.objects.filter(user= user,is_active = True).first()
     crumbs =[
         # ("利用者一覧", "dashboard:user_list"),
-        (f"{user.name} 様", "dashboard:detele", [user_id]), #詳細へ
+        (f"{user.name} 様", "dashboard:detail", [user_id]), #詳細へ
         ("生活保護情報の登録", None)
     ]
     if request.method == 'POST':

@@ -12,12 +12,20 @@ class BreadcrumbUtil:
         items = [
             {"label": "利用者一覧", "url": reverse('dashboard:user_list')}
         ]
-        
-        # 渡されたリストを順番に追加していく
-        for label, url_name, args in crumbs_list:
-            if url_name:
-                url = reverse(url_name,args=args or [])
-            else : url =''
-            items.append({"label": label, "url": url})
+        for crumb in crumbs_list:
+            url_name = None
+            args = None
+            match crumb:
+                case (label, u_name, u_args):
+                    url_name = u_name
+                    args = u_args
+                case (label, u_name):
+                    url_name = u_name
+                case (label, ):
+                    pass
+                case _:
+                    raise ValueError(f'パンくずの形式が不正です: {crumb}')
+            url = reverse(url_name,args=args or []) if url_name else ''
+            items.append({"label":label,"url":url})
             
         return json.dumps(items, ensure_ascii=False)
