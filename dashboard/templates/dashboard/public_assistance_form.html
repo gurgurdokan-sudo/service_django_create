@@ -1,30 +1,50 @@
-{% extends "dashboard/base/base.html" %}
+{% extends 'dashboard/base/base.html' %}
 {% block css %}
-{% load static %}
-{% load get_item %}
-<link rel="stylesheet" href="{% static 'dashboard/css/temp.css' %}">
+  {% load static %}
+  {% load get_item %}
+  <link rel="stylesheet" href="{% static 'dashboard/css/temp.css' %}" />
 {% endblock %}
 {% block body %}
-<h2>{{ title }}</h2> 
-<div class="detail-card">
-<div id="bread" data-items="{{breadcrumbs}}"></div>
-  <form method="post" id="cmForm" novalidate>
-    {% csrf_token %}
-    {{ form.as_p }}
-testtest=================================================
-    {% comment %} メモ
-    <div class="label-input-err">
-      {{ form.notes.label_tag }}
-      {{ form.notes }}
-      <div class="post-err">
-          {% for error in form.notes.errors %}
-              {{ error }}
+  <h2>{{ title }}</h2>
+  <div class="detail-card">
+    <div id="bread" data-items="{{ breadcrumbs }}"></div>
+    <form method="post" id="cmForm" novalidate>
+      {% csrf_token %}
+
+      {# 保護番号 #}
+      <div class="label-input-err">
+        <div class="label-input">
+          {# ← この囲いが必要 #}
+          {{ form.hogo_number.label_tag }}
+          {{ form.hogo_number }}
+        </div>
+        <div class="post-err">
+          {% for error in form.hogo_number.errors %}
+            {{ error }}
           {% endfor %}
+        </div>
       </div>
-    </div> {% endcomment %}
 
-    <button class="btn btn-primary" type="submit">保存</button>
-  </form>
-</div>
+      {# 受給者番号 #}
+      <div class="label-input-err">
+        <div class="label-input">{{ form.recipient_number.label_tag }}
+          {{ form.recipient_number }}</div>
+        <div class="post-err">
+          {% for error in form.recipient_number.errors %}
+            {{ error }}
+          {% endfor %}
+        </div>
+      </div>
+
+      <p>
+        <label>適用開始年月</label>
+        {# 開始年 #}
+        {{ form.start_year }}
+        {# 開始月 #}
+        {{ form.start_month }}
+      </p>
+
+      <button class="btn btn-primary" type="submit">保存</button>
+    </form>
+  </div>
 {% endblock %}
-

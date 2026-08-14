@@ -41,7 +41,7 @@ class UserForm(forms.ModelForm):
             if len(parts) != 2:
                 self._errors['name_kana'] = ErrorList(['フリガナは「セイ 半角スペース メイ」で入力してください'])
 
-        insured_number = cleaned.get('insured_number')
+        insured_number = str(cleaned.get('insured_number'))
         if not insured_number or len(insured_number) != 10 or not insured_number.isdigit():
             self._errors['insured_number'] = ErrorList(['被保険者番号は10桁の数字で入力してください'])
 
@@ -150,11 +150,14 @@ class PublicAssistanceForm(forms.ModelForm):
             field.widget.attrs['class'] = f'form-control {field_name}'
             if field.required:
                 field.widget.attrs['required'] = True
-
     def clean(self):
-        self.cleaned = super().clean()
-
-        
+        cleaned = super().clean()
+        hogo_num =str(cleaned.get('hogo_number'))
+        if len(hogo_num) != 8 or not hogo_num.isdigit:
+            self.add_error('hogo_number','保護番号は8桁の数字で入力してください')
+        rec_num = str(cleaned.get('recipient_number'))
+        if len(rec_num) != 10 or not rec_num.isdigit:
+            self.add_error('recipient_number', '受給者番号は10桁の数字で入力してください')
         
 class CertificateUpdateForm(forms.ModelForm):
     required_css_class = 'required'

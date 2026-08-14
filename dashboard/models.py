@@ -353,7 +353,6 @@ class PublicAssistance(models.Model):
     start_date = models.DateField(verbose_name="適用開始日")
     end_date = models.DateField(verbose_name="適用終了日")
     is_active = models.BooleanField(default=True, verbose_name="有効フラグ")
-
     def __str__(self):
         return f"{self.user.name} - 生保 ({self.hogo_number})"
     
