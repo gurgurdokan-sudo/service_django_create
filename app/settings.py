@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'dashboard',
     'diary',
     'employees',
+    'admin_reorder',    
 ]
 CSRF_TRUSTED_ORIGINS = [
     "http://taminoie.com",
@@ -66,8 +67,37 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     # 全ページをログイン必須にする（ログイン画面・admin等は自動で除外される）
     'django.contrib.auth.middleware.LoginRequiredMiddleware',
+    'admin_reorder.middleware.ModelAdminReorder',
 ]
+ADMIN_REORDER = (
+    {
+    'app': 'dashboard',
+        'label': '利用者・運用管理',
+        'models': (
+            'dashboard.User',
+            'dashboard.CareManager',
+            'dashboard.Certificate',
+            'dashboard.PublicAssistance',
+            'dashboard.ServicePlan',
+            'dashboard.ServiceMonthlyRecord',
+        )
+    },
+    #マスタデータ
+    {
+        'app': 'dashboard',
+        'label': 'マスタ設定',
+        'models': (
+            'dashboard.Municipality',
+            'dashboard.Office',
+            'dashboard.ServiceMaster',
+            'dashboard.AddOnService',
+        )
+    },    
+    'diary',       # 「DIARY」を表示
+    'employees',   # 「従業員管理」を表示
+    'auth',        # 「認証と認可」を表示
 
+)
 # ログイン設定
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/users/'
