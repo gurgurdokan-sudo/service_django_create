@@ -52,7 +52,7 @@
           {{ form.limit_amount_value.label_tag }}
           {{ form.limit_amount_value }}
           <ul class="error-msg">
-            <li>現在、任意限度額に対応してない</li>
+            <li class="none" id="itan">現在、任意限度額に対応してない</li>
             {% for error in form.limit_amount_value.errors %}
               <li>{{ error }}</li>
             {% endfor %}
@@ -84,13 +84,15 @@
   document.addEventListener('DOMContentLoaded',() =>{
       const amountTypeSlect = document.getElementById('id_limit_amount_type');
       const amountContainer = document.getElementById('limit-amount-value');
-
+      const itan = document.getElementById('itan');
       const toggleAmountDisplay = () => {
           console.log(`${amountTypeSlect.value}`)
           if (amountTypeSlect.value == '任意'){
               amountContainer.classList.remove('none');
+              itan.classList.remove('none');
           } else {
               amountContainer.classList.add('none');
+              itan.classList.add('none');
           }
       }
       toggleAmountDisplay();

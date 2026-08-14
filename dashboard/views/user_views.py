@@ -92,7 +92,7 @@ def public_assistance_create(request,user_id):
             m = int(form.cleaned_data.get('start_month'))
             pa.start_date = date(y, m, 1) # 自動的に1日をセット
 
-            pa.end_date = pa.start_date + relativedelta(month=1, day=-1)
+            pa.end_date = pa.start_date + relativedelta(months=1, days=-1)
             pa.is_active = True
 
             #前回の生活保護があればis_activeをFalse
@@ -100,7 +100,7 @@ def public_assistance_create(request,user_id):
                 logger.info(f'以前の生活保護あり')
                 zen.is_active = False
                 zen.save()
-            messages.info(request, f"{user.name}様 の生活保護登録")
+            messages.success(request, f"{user.name}様 の生活保護登録")
             return redirect('dashboard:user_list')
     else:
         initial_data = {}

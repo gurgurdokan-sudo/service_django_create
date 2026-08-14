@@ -192,13 +192,20 @@ class CareManagerForm(forms.ModelForm):
             else: self.fields[field_name].widget.attrs['class']= f'form-control {field_name}'
     def clean(self):
         cleaned = super().clean()
-        cm_num = str(cleaned.get('care_manager_number'))
-        if len(cm_num) != 13 or not cm_num.isdigit():
-            self.add_error('care_manager_number', '居宅介護支援専門員番号は13桁の数字で入力してください')
-        office_num = str(cleaned.get('care_management_office_number'))
-        if len(office_num) != 10 or not office_num.isdigit():
-            self.add_error('care_management_office_number', '居宅介護支援事業所番号は10桁の数字で入力してください')
+        if cm_num is not None:  # None のときはチェックしない
+            cm_num = str(cm_num)
+            if len(cm_num) != 13 or not cm_num.isdigit():
+                self._errors['care_manager_number'] = ErrorList(
+                    ['居宅介護支援専門員番号は13桁の数字で入力してください']
+                )
 
+        office_num = cleaned.get('care_management_office_number')
+        if office_num is not None:
+            office_num = str(office_num)
+            if len(office_num) != 10 or not office_num.isdigit():
+                self._errors['care_management_office_number'] = ErrorList(
+                    ['居宅介護支援事業所番号は10桁の数字で入力してください']
+                )
 
 class officeSettigForm(forms.ModelForm):
     required_css_class = 'required'
