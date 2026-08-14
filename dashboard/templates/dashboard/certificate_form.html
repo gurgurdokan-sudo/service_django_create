@@ -7,8 +7,7 @@
   <h2>{{ title }}</h2>
   <div class="detail-card">
     <div id="bread" data-items="{{ breadcrumbs }}"></div>
-    {# 同じフォームでケアマネジャーのプロフィール/利用者プロフィール/認定情報 #}
-    <form method="post" id="cmForm" novalidate>
+    <form method="post" id="publicAssistanceForm" novalidate>
       {% csrf_token %}
       <div>
         {% comment %}要介護状態区分{% endcomment %}
@@ -77,7 +76,7 @@
           </div>
         </div>
       </div>
-      <button class="btn btn-primary" type="submit">保存</button>
+      <button class="btn btn-primary" onclick="this.disabled=true; this.form.submit();" type="submit">保存</button>
     </form>
   </div>
   <script>

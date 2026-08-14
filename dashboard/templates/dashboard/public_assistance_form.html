@@ -46,7 +46,9 @@
 
       
       <div class="d-flex gap-2 mt-4">
-          <button class="btn btn-primary" type="submit" name="action" value="save">保存して進む</button>
+          <button class="btn btn-primary" type="submit" name="action" value="save" onclick="this.disabled=true; this.form.submit();">
+            保存して進む
+          </button>
 
           {% if is_from_service %}
             <button form="releaseForm" class="btn btn-outline-danger" type="submit" 

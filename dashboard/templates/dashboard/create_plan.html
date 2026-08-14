@@ -7,7 +7,7 @@
 <!---- home>>Planがないユーザー ---->
 <h2>{{ user.name }} さんのサービス提供計画作成</h2>
 <div class=detail-card>
-<form method="post" class="plan-form">
+<form method="post" class="plan-form" novalidate>
   {% csrf_token %}
  
   <p>
@@ -36,7 +36,7 @@
     <label>{{ form.weekdays.label }}</label>
     <span class="weekday-inputs">{{ form.weekdays }}</span>
   </p>
-  <button type="submit">保存</button>
+  <button type="submit" onclick="this.disabled=true; this.form.submit();">保存</button>
 </form>
 </div>
 {{ all_plans|json_script:"all-plans" }}
