@@ -47,7 +47,7 @@ def create_plan(request,user_id):
             except Exception as e:
                 logger.error(f"サービス提供票の更新中にエラーが発生しました: {e}")
                 raise
-            url = reverse('dashboard:service',kwargs={'user_id':user_id})
+            url = reverse('dashboard:service', args=[user_id] )
             return redirect(f'{url}?year={year}&month={month}')
     else:
         user = get_object_or_404(User, id=user_id)

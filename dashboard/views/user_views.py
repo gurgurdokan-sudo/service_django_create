@@ -88,6 +88,15 @@ def public_assistance_create(request,user_id):
     q_month = request.GET.get('month')
     is_from_service = True if q_year else False
 
+    target_y = int(q_year) if q_year else date.today().year
+    target_m = int(q_month) if q_month else date.today().month
+    target_start_date = date(target_y, target_m, 1)
+
+    existing_pa = PublicAssistance.objects.filter(
+        user=user, 
+        start_date=target_start_date
+    ).first()
+
     crumbs =[
         # ("利用者一覧", "dashboard:user_list"),
         (f"{user.name} 様", "dashboard:detail", [user_id]), #詳細へ
@@ -112,14 +121,16 @@ def public_assistance_create(request,user_id):
                 y = int(form.cleaned_data.get('start_year'))
                 m = int(form.cleaned_data.get('start_month'))
                 pa.start_date = date(y, m, 1) # 自動的に1日をセット
-
+                # その月の月末にendをセット
                 pa.end_date = pa.start_date + relativedelta(months=1, days=-1)
-
                 #前回の生活保護があればis_activeをFalse
                 if zen:
                     logger.info(f'以前の生活保護あり')
                     zen.is_active = False
                     zen.save()
+                #同じ月のレコードがあれば消去
+                if existing_pa:
+                    existing_pa.delete()
                 pa.is_active = True
                 pa.save()
                 messages.success(request, f"{user.name}様 の生活保護登録")
@@ -130,19 +141,12 @@ def public_assistance_create(request,user_id):
                     return redirect('dashboard:user_list')
     else:
         # 初期値
-        today = date.today()
-        start_year = q_year or today.year
-        start_month = q_month or today.month
         initial_data = {
-            'start_year': int(start_year),
-            'start_month': int(start_month),
+            'start_year': target_y,
+            'start_month': target_m,
+            'hogo_number': zen.hogo_number if zen else '',
+            'recipient_number': zen.recipient_number if zen else '',
         }
-        if zen:
-            logger.info(f'以前の生活保護あり')
-            initial_data.update({
-                'hogo_number': zen.hogo_number,
-                'recipient_number': zen.recipient_number,
-            })
         form = PublicAssistanceForm( initial = initial_data )
     return render(request, 'dashboard/public_assistance_form.html',{
         'form': form,

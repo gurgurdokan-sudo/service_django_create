@@ -387,5 +387,6 @@ class PublicAssistance(models.Model):
     end_date = models.DateField(verbose_name="適用終了日")
     is_active = models.BooleanField(default=True, verbose_name="有効フラグ")
     def __str__(self):
-        return f"{self.user.name} - 生保 ({self.hogo_number})"
+        start_month = str(self.start_date).split('-')[1]
+        return f"{self.user.name}({self.hogo_number})-{start_month}月分"
     

@@ -99,12 +99,12 @@ def user_service(request,user_id):
     if not user.get_public_assistance(dis_year, dis_month):
         if user.is_active_pa_user:
             messages.error(request, f'前月が生活保護受給のため、{dis_month}月分の情報を先に登録してください')
-            url = reverse('dashboard:public_assistance_create', kwargs={'user_id': user.id})
+            url = reverse('dashboard:public_assistance_create', args=[user.id] )
             return redirect(f'{url}?year={dis_year}&month={dis_month}')
         
     if _is_future_month_not_plan(user_id,dis_year, dis_month):
         '''プラン作成画面にリダイレクトする'''
-        url = reverse('dashboard:createPlan',kwargs= {'user_id':user_id})
+        url = reverse('dashboard:createPlan', args=[user_id] )
         return redirect(f'{url}?year={dis_year}&month={dis_month}')
 
     logger.info(f'{dis_year}-{dis_month}のサービス提供票に遷移')
@@ -121,7 +121,7 @@ def prev_month_plan(request, user_id):
     prev_month = now.month - 1 if now.month > 1 else 12
     year = now.year if prev_month != 12 else now.year - 1
     if _is_future_month_not_plan(user_id,year,prev_month,prev=True):
-        url = reverse('dashboard:createPlan',kwargs= {'user_id':user_id})
+        url = reverse('dashboard:createPlan', args=[user_id] )
         return redirect(
             f'{url}?year={year}&month={prev_month}'
             )
@@ -158,4 +158,4 @@ def service_act(request, user_id):
         plan.save()
 
     messages.success(request, '予定で実績を作成しました')
-    return redirect(f"{reverse('dashboard:service', kwargs={'user_id': user_id})}?year={year}&month={month}")
+    return redirect(f"{reverse('dashboard:service', args=[user_id])}?year={year}&month={month}")
