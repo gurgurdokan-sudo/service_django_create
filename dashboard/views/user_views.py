@@ -47,6 +47,11 @@ def user_create(request, cm_id):
 #認定情報3
 def certificate_create(request,user_id):
     user = get_object_or_404(User,id = user_id)
+    latest_cert = user.certificate.order_by('-limit_end').first()
+    if latest_cert:
+        update = True
+    else :
+        update = False
     crumbs = [
         # ("利用者一覧", "dashboard:user_list"),
         (f"{user.name} 様", None),
@@ -91,7 +96,6 @@ def public_assistance_create(request,user_id):
 
     if request.method == 'POST':
         action = request.POST.get('action')
-
         if action == 'release':
             # 「解除」リクエストの処理
             user.public_assistance.filter(is_active=True).update(is_active=False)
@@ -100,7 +104,7 @@ def public_assistance_create(request,user_id):
             y = q_year or date.today().year
             m = q_month or date.today().month
             return redirect(f'{url}?year={y}&month={m}')
-        if action == 'save':
+        else:
             form = PublicAssistanceForm(request.POST)
             if form.is_valid():
                 pa = form.save(commit=False)
@@ -110,13 +114,13 @@ def public_assistance_create(request,user_id):
                 pa.start_date = date(y, m, 1) # 自動的に1日をセット
 
                 pa.end_date = pa.start_date + relativedelta(months=1, days=-1)
-                pa.is_active = True
 
                 #前回の生活保護があればis_activeをFalse
                 if zen:
                     logger.info(f'以前の生活保護あり')
                     zen.is_active = False
                     zen.save()
+                pa.is_active = True
                 pa.save()
                 messages.success(request, f"{user.name}様 の生活保護登録")
                 if is_from_service:

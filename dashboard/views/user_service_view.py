@@ -96,9 +96,8 @@ def user_service(request,user_id):
         return redirect('dashboard:user_list')
 
     # 「今月の生保データ」が未登録なのに、「前月は生保だった」場合、先に生保登録へ誘導
-    target_date = date(dis_year, dis_month, 1)
-    if not user.get_public_assistance(target_date):
-        if user.was_public_assistance_last_month(dis_year, dis_month):
+    if not user.get_public_assistance(dis_year, dis_month):
+        if user.is_active_pa_user:
             messages.error(request, f'前月が生活保護受給のため、{dis_month}月分の情報を先に登録してください')
             url = reverse('dashboard:public_assistance_create', kwargs={'user_id': user.id})
             return redirect(f'{url}?year={dis_year}&month={dis_month}')

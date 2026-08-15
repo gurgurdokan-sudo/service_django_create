@@ -42,19 +42,19 @@ class User(models.Model):
     notes = models.TextField(blank=True,default="",verbose_name='メモ')
     def __str__(self):
         return self.name
-    def get_public_assistance(self, target_date):
+    def get_public_assistance(self, year, month):
         """ 指定した日付時点で有効な生保データを1件返す """
+        target_date = date(year, month, 1)
         return self.public_assistance.filter(
             is_active=True,
             start_date__lte=target_date,
             end_date__gte=target_date
         ).first()
-    
-    def was_public_assistance_last_month(self, year, month):
-        """ 前月の1日時点で生保だったか判定する """
-        current_month_first_day = date(year, month, 1)
-        last_month_first_day = current_month_first_day - relativedelta(months=1)
-        return self.get_public_assistance(last_month_first_day)
+
+    @property
+    def is_active_pa_user(self):
+        """ 前月で生保だったか判定する """
+        return self.public_assistance.filter(is_active=True).exists()
 
     @property
     def current_certificate(self):
@@ -87,10 +87,7 @@ class User(models.Model):
             case _: return None
     @property
     def care_level(self): #certificateとlimit_endは存在する前提
-        today = timezone.now().date()
-        cert = (
-            self.certificate.filter(limit_end__gte=today).order_by("-limit_end").first()
-        )
+        cert = self.current_certificate
         return cert.care_level if cert else '認定情報更新が必要'
     @property
     def old_certificate(self): #最後の適用介護認定
