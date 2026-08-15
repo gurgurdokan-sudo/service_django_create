@@ -15,8 +15,8 @@
 {% block body %}
 <h2>新規作成</h2> 
 <div class="detail-card">
-<div id="bread" data-items="{{breadcrumbs}}"></div>
-  <form method="post" id="cmForm" novalidate>
+<div id="bread" data-items="{{ breadcrumbs }}"></div>
+  <form method="post" id="userForm" novalidate>
     {% csrf_token %}
     <p>
       <label>担当ケアマネジャー</label>
@@ -104,15 +104,40 @@
       </div>
     </div>
 
-    <button class="btn btn-primary" type="submit" onclick="this.disabled=true; this.form.submit();">保存</button>
+    <button class="btn btn-primary" type="submit" name="action" value="save">保存</button>
   </form>
 </div>
 {% endblock %}
 {% block script %}
 <script>
-  window.addEventListener('beforeinput', function (e) {
-    e.preventDefault();
-    e.returnValue = '';
-  })
+  document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('userForm');
+    if (!form) return; // フォームがなければ何もしない
+
+    let isDirty = false;
+
+    // 入力を検知
+    form.addEventListener('input', () => {
+      console.log("変更を検知しました");
+      isDirty = true;
+    });
+
+    // 離脱警告
+    window.addEventListener('beforeunload', (e) => {
+      if (!isDirty) return;
+      e.preventDefault();
+      e.returnValue = ''; 
+    });
+
+    // 送信時の処理（二重送信防止＋フラグ解除）
+    form.addEventListener('submit', (e) => {
+      const btn = form.querySelector('button[value="save"]');
+      if (btn) {
+          // ボタンを無効化するが、actionの値が送られるよう一瞬だけ待機
+          setTimeout(() => { btn.disabled = true; }, 1);
+      }
+      isDirty = false; // 送信なので警告は出さない
+    });
+  });
 </script>
 {% endblock script %}

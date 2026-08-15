@@ -7,7 +7,7 @@
   <h2>{{ title }}</h2>
   <div class="detail-card">
     <div id="bread" data-items="{{ breadcrumbs }}"></div>
-    <form method="post" id="publicAssistanceForm" novalidate>
+    <form method="post" id="certificateForm" novalidate>
       {% csrf_token %}
       <div>
         {% comment %}要介護状態区分{% endcomment %}
@@ -89,20 +89,26 @@
           </div>
         </div>
       </div>
-      <button class="btn btn-primary" onclick="this.disabled=true; this.form.submit();" type="submit">保存</button>
+      <button class="btn btn-primary" name="action" value="save" type="submit">保存</button>
     </form>
   </div>
 {% endblock body %}
 
 {% block script %}
-  <script>
-  document.addEventListener('DOMContentLoaded',() =>{
+<script>
+let isDirty = false;
+
+  document.addEventListener('DOMContentLoaded', () => {
+      const form = document.getElementById('certificateForm');
+      if (!form) return;
+
       const amountTypeSlect = document.getElementById('id_limit_amount_type');
       const amountContainer = document.getElementById('limit-amount-value');
       const itan = document.getElementById('itan');
+
+      // 表示切り替えロジック
       const toggleAmountDisplay = () => {
-          console.log(`${amountTypeSlect.value}`)
-          if (amountTypeSlect.value == '任意'){
+          if (amountTypeSlect.value === '任意') {
               amountContainer.classList.remove('none');
               itan.classList.remove('none');
           } else {
@@ -110,9 +116,31 @@
               itan.classList.add('none');
           }
       }
+      
       toggleAmountDisplay();
       amountTypeSlect.addEventListener('change', toggleAmountDisplay);
-  })
+
+      
+      form.addEventListener('input', () => {
+          isDirty = true;
+          console.log("変更を検知しました");
+      });
+
+      form.addEventListener('submit', (e) => {
+          const btn = form.querySelector('button[value="save"]');
+          if (btn) {
+              setTimeout(() => { btn.disabled = true; }, 1);
+          }
+          isDirty = false; 
+      });
+  });
+
+  window.addEventListener('beforeunload', (e) => {
+      if (!isDirty) return;
+      e.preventDefault();
+      e.returnValue = ''; 
+  });
+
   function addYears(years) {
       const startInput = document.getElementById("id_limit_start");
       const endInput = document.getElementById("id_limit_end");
@@ -125,17 +153,16 @@
 
       const endDate = new Date(startDate);
       endDate.setFullYear(endDate.getFullYear() + years);
+      endDate.setDate(endDate.getDate() - 1);
 
-      endDate.setDate(endDate.getDate() - 1); // 1日前に設定
       const yyyy = endDate.getFullYear();
       const mm = String(endDate.getMonth() + 1).padStart(2, '0');
       const dd = String(endDate.getDate()).padStart(2, '0');
 
       endInput.value = `${yyyy}-${mm}-${dd}`;
+
+      isDirty = true;
+      console.log("自動計算による変更を記録しました");
   }
-  window.addEventListener('beforeinput', function (e) {
-    e.preventDefault();
-    e.returnValue = '';
-  })
 </script>
 {% endblock script %}

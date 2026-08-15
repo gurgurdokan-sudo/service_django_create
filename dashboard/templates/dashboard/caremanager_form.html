@@ -7,7 +7,7 @@
 {% block body %}
 <h2>{{ title }}</h2>
 <div class="detail-card">
-  <div id="bread" data-items="{{breadcrumbs}}"></div>
+  <div id="bread" data-items="{{ breadcrumbs }}"></div>
   {# 同じフォームでケアマネジャーのプロフィール/利用者プロフィール/認定情報 #}
   <form method="post" id="cmForm" novalidate>
     {% csrf_token %}
@@ -91,7 +91,7 @@
         {% endfor %}
       </div>
     </div>
-    <button class="btn btn-primary" type="submit" onclick="this.disabled=true; this.form.submit();">保存</button>
+    <button class="btn btn-primary" type="submit" name="action" value="save">保存</button>
     <hr class="text-secondary opacity-25" />
 
     <br />
@@ -105,9 +105,12 @@
         {% endfor %}
       </select>
       <button class="btn btn-primary" type="button" onClick="skipCM()">skip</button>
+    </div>
   </form>
 </div>
 <script>
+  let isDirty = false;
+  const form = document.getElementById('cmForm');
   function skipCM() {
     const cm = document.getElementById("existingCM").value;
     if (cm === "") {
@@ -115,18 +118,41 @@
       return;
     }
     
-    const form = document.getElementById("cmForm");
     const hidden = document.createElement("input");
     hidden.type = "hidden";
     hidden.name = "skip";
     hidden.value = "1";
     form.appendChild(hidden);
 
+    isDirty = false;
     form.submit();
   }
-  window.addEventListener('beforeinput', function (e) {
+
+  form.addEventListener('input', () => {
+    console.log("変更を検知しました");
+    isDirty = true;
+  });
+
+  // ブラウザを閉じようとしたり、戻ろうとした時に警告を出す
+  window.addEventListener('beforeunload', (e) => {
+    // 送信中なら何もしない
+    if (!isDirty) return;
+
     e.preventDefault();
-    e.returnValue = '';
-  })
+    e.returnValue = ''; 
+  });
+
+  form.addEventListener('submit', () => {
+    isDirty = false; 
+  });
+
+  form.addEventListener('submit', (e) => {
+    const btn = form.querySelector('button[value="save"]');
+    if (btn) {
+        // 二重送信防止のために少し遅らせて無効化する
+        setTimeout(() => { btn.disabled = true; }, 1);
+    }
+    isDirty = false; 
+  });
 </script>
 {% endblock %}

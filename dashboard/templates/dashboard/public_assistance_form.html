@@ -46,7 +46,7 @@
 
       
       <div class="d-flex gap-2 mt-4">
-          <button class="btn btn-primary" type="submit" name="action" value="save" onclick="this.disabled=true; this.form.submit();">
+          <button class="btn btn-primary" type="submit" name="action" value="save">
             保存して進む
           </button>
 
@@ -68,9 +68,36 @@
 {% endblock body%}
 {% block script %}
 <script>
-  window.addEventListener('beforeinput', function (e) {
+  let isDirty = false;
+
+  const form = document.getElementById('public_assistance_Form');
+  form.addEventListener('input', () => {
+    isDirty = true;
+  });
+
+  // ブラウザを閉じようとしたり、戻ろうとした時に警告を出す
+  window.addEventListener('beforeunload', (e) => {
+    // 送信中なら何もしない
+    if (!isDirty) return;
+
     e.preventDefault();
-    e.returnValue = '';
-  })
+    e.returnValue = ''; 
+  });
+
+  form.addEventListener('submit', () => {
+    isDirty = false; 
+  });
+
+  document.getElementById('releaseForm').addEventListener('submit', () => {
+    isDirty = false;
+  });
+  form.addEventListener('submit', (e) => {
+    const btn = form.querySelector('button[value="save"]');
+    if (btn) {
+        // 二重送信防止のために少し遅らせて無効化する
+        setTimeout(() => { btn.disabled = true; }, 1);
+    }
+    isDirty = false; 
+  });
 </script>
 {% endblock script %}
