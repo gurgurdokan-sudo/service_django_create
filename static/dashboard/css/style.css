@@ -122,6 +122,7 @@ body {
     height: 40px; /* 高さを40pxに固定 */
     margin: 0;
     padding: 0;
+    background-color: rgba(var(--bs-light-rgb),var(--bs-bg-opacity))!important;
 }
 
 .calendar-row div {
@@ -131,6 +132,9 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+}
+th .calendar-row .day-cell{
+    background-color: #2c3e50;
 }
 
 /* 合計列の右端は不要 */
@@ -173,8 +177,9 @@ body {
     background-color: #455a64 !important;
     color: #8ad4ff !important; /* 薄い青 */
 }
-.total-cell div{
-    border: 1px solid #000
+th .calendar-row .total-cell{
+    border: 1px solid #000;
+    background-color: #2c3e50;
 }
 /* 祝日アイコン（曜日部分の丸枠） */
 .holiday {
