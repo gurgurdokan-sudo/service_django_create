@@ -269,10 +269,11 @@ class ServicePlan(models.Model):
     def __str__(self):
         return f"{self.user.name} - {self.year}年{self.month}月"
 class AddOnService(models.Model):
+    TYPE_CHOICES = [("unit", "単位"), ("rate", "率")]
     class Meta:
         verbose_name_plural= "加算マスタ"
     code = models.CharField(max_length=20)
-    type = models.CharField(choices=[("unit", "単位"), ("rate", "率")])
+    type = models.CharField(choices=TYPE_CHOICES)
     unit = models.IntegerField( null=True, blank=True) 
     rate = models.DecimalField(max_digits=5, decimal_places=3, null=True, blank=True)
     service_name = models.CharField(max_length=100)
@@ -289,6 +290,10 @@ class AddOnService(models.Model):
         ("per_service","サービスごと")
     ],null=True, blank=True)
     medical_deduction = models.BooleanField(default=False,null=True, blank=True, verbose_name='医療費控除対象') # 医療費控除対象
+    @property
+    def rate100(self):
+        if self.rate:
+            return (self.rate * 100).normalize()
     def __str__(self):
         return self.service_name+' ('+self.type+')'
 class Municipality(models.Model):
