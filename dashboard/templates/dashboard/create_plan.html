@@ -4,10 +4,11 @@
     <link rel="stylesheet" href="{% static 'dashboard/css/temp.css' %}">
 {% endblock %}
 {% block body %}
+<div id="bread" data-items="{{ breadcrumbs }}"></div>
 <!---- home>>Planがないユーザー ---->
 <h2>{{ user.name }} さんのサービス提供計画作成</h2>
 <div class=detail-card>
-<form method="post" class="plan-form" novalidate>
+<form method="post" id="planForm" class="plan-form" novalidate>
   {% csrf_token %}
  
   <p>
@@ -36,63 +37,81 @@
     <label>{{ form.weekdays.label }}</label>
     <span class="weekday-inputs">{{ form.weekdays }}</span>
   </p>
-  <button type="submit" onclick="this.disabled=true; this.form.submit();">保存</button>
+  <button type="submit" name="action" value="save" onclick="">保存</button>
 </form>
 </div>
+{% endblock body %}
+{% block script %}
 {{ all_plans|json_script:"all-plans" }}
 <script>
-const allPlans = JSON.parse(document.getElementById("all-plans").textContent);
-const thisPlan = document.getElementById('this-plan');
-const startTime = document.getElementById('id_start_time');
-const endTime = document.getElementById('id_end_time');
+let isDirty = false;
 
-console.log("thisPlan:", thisPlan);
-console.log("allPlans:", allPlans);
+  document.addEventListener('DOMContentLoaded', () => {
+    const allPlansJson = document.getElementById("all-plans").textContent;
+    const allPlans = JSON.parse(allPlansJson || '[]');
+    const thisPlanLabel = document.getElementById('this-plan');
+    const startTimeInput = document.getElementById('id_start_time');
+    const endTimeInput = document.getElementById('id_end_time');
+    const form = document.getElementById('planForm');
 
-function calcHours(start, end) {
-    const [sh, sm] = start.split(':').map(Number);
-    const [eh, em] = end.split(':').map(Number);
-    return (new Date(0,0,0,eh,em) - new Date(0,0,0,sh,sm)) / 3600000;
-}
+    if (!form || !startTimeInput || !endTimeInput) return;
 
-function getCategory(hours) {
-    if (hours < 3) return '<3';
-    if (hours < 4) return '3-4';
-    if (hours < 5) return '4-5';
-    if (hours < 6) return '5-6';
-    if (hours < 7) return '6-7';
-    if (hours < 8) return '7-8';
-    if (hours < 9) return '8-9';
-    return '9-10';
-}
-
-function findService(category) {
-    return allPlans.find(p => p.stay_time_category === category);
-}
-
-function updatePlan() {
-    const start = startTime.value;
-    const end = endTime.value;
-    if (!start || !end) return;
-
-    const hours = calcHours(start, end);
-    if (hours <= 0) return;
-
-    const category = getCategory(hours);
-    const service = findService(category);
-
-    if (service==null){
-      thisPlan.textContent = "該当サービスなし";
-      thisPlan.style.backgroundColor = "red";
-    }else{
-      thisPlan.textContent = service.service_name ;
-      thisPlan.style.backgroundColor = "";
+    function calcHours(start, end) {
+      if (!start || !end) return 0;
+      const [sh, sm] = start.split(':').map(Number);
+      const [eh, em] = end.split(':').map(Number);
+      const diffMinutes = (eh * 60 + em) - (sh * 60 + sm);
+      return diffMinutes / 60;
     }
-}
 
-startTime.addEventListener('change', updatePlan);
-endTime.addEventListener('change', updatePlan);
+    function getCategory(hours) {
+      if (hours <= 0) return null;
+      if (hours < 3) return '<3';
+      if (hours < 4) return '3-4';
+      if (hours < 5) return '4-5';
+      if (hours < 6) return '5-6';
+      if (hours < 7) return '6-7';
+      if (hours < 8) return '7-8';
+      if (hours < 9) return '8-9';
+      return '9-10'; 
+    }
 
-updatePlan();
+    function updatePlan() {
+      const hours = calcHours(startTimeInput.value, endTimeInput.value);
+      const category = getCategory(hours);
+      const service = allPlans.find(p => p.stay_time_category === category);
+
+      if (service) {
+        thisPlanLabel.textContent = `${service.service_name} (${service.unit}単位)`;
+        thisPlanLabel.style.color = "blue";
+        thisPlanLabel.style.fontWeight = "bold";
+      } else {
+        thisPlanLabel.textContent = hours > 0 ? "該当マスタなし" : "時間入力なし";
+        thisPlanLabel.style.color = "red";
+      }
+    }
+
+    form.addEventListener('input', () => {
+      isDirty = true;
+      updatePlan(); 
+    });
+
+    form.addEventListener('submit', (e) => {
+      const btn = form.querySelector('button[value="save"]');
+      if (btn) {
+        setTimeout(() => { btn.disabled = true; }, 1);
+      }
+      isDirty = false; 
+    });
+
+    updatePlan();
+  });
+
+  window.addEventListener('beforeunload', (e) => {
+    if (isDirty) {
+      e.preventDefault();
+      e.returnValue = '';
+    }
+  });  
 </script>
-{% endblock %}
+{% endblock script %}

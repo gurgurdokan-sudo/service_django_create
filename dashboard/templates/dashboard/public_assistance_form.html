@@ -5,11 +5,11 @@
   <link rel="stylesheet" href="{% static 'dashboard/css/temp.css' %}" />
 {% endblock %}
 {% block body %}
-{% include "dashboard/components/messages.html" %}
+  {% include 'dashboard/components/messages.html' %}
   <h2>{{ title }}</h2>
   <div class="detail-card">
     <div id="bread" data-items="{{ breadcrumbs }}"></div>
-    <form method="post" id="public_assistance_Form"  novalidate>
+    <form method="post" id="public_assistance_Form" novalidate>
       {% csrf_token %}
       {# 保護番号 #}
       <div class="label-input-err">
@@ -44,60 +44,58 @@
         {{ form.start_month }}
       </p>
 
-      
       <div class="d-flex gap-2 mt-4">
-          <button class="btn btn-primary" type="submit" name="action" value="save">
-            保存して進む
-          </button>
+        <button class="btn btn-primary" type="submit" name="action" value="save">保存して進む</button>
 
-          {% if is_from_service %}
-            <button form="releaseForm" class="btn btn-outline-danger" type="submit" 
-                    onclick="return confirm('設定を解除して提供表に戻りますか？')">
-                生活保護を解除して戻る
-            </button>
-          {% endif %}
+        {% if is_from_service %}
+          <button form="releaseForm" class="btn btn-outline-danger" type="submit" name="action" value="save" onclick="return confirm('設定を解除して提供表に戻りますか？')">生活保護を解除して戻る</button>
+        {% endif %}
       </div>
     </form>
 
-    {% comment %} 解除用の隠しフォーム クエリパラメータを維持 {% endcomment %}
+    {% comment %}解除用の隠しフォーム クエリパラメータを維持{% endcomment %}
     <form id="releaseForm" method="post" action="?{{ request.GET.urlencode }}">
-        {% csrf_token %}
-        <input type="hidden" name="action" value="release">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="release" />
     </form>
   </div>
-{% endblock body%}
+{% endblock %}
 {% block script %}
-<script>
+  <script>
   let isDirty = false;
+  const targetUrl = "{% url 'dashboard:user_list'%}"
+  document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('public_assistance_Form');
+    const releaseForm = document.getElementById('releaseForm');
 
-  const form = document.getElementById('public_assistance_Form');
-  form.addEventListener('input', () => {
-    isDirty = true;
-  });
+    form.addEventListener('input', () => {
+      isDirty = true;
+    });
 
-  // ブラウザを閉じようとしたり、戻ろうとした時に警告を出す
-  window.addEventListener('beforeunload', (e) => {
-    // 送信中なら何もしない
-    if (!isDirty) return;
+    window.addEventListener('beforeunload', (e) => {
+      if (!isDirty) return;
 
-    e.preventDefault();
-    e.returnValue = ''; 
-  });
+      e.preventDefault();
+      e.returnValue = ''; 
+    });
 
-  form.addEventListener('submit', () => {
-    isDirty = false; 
-  });
+    const handleHistoryOnSubmit =() => {
+      isDirty = false; 
+      history.replaceState(null, null, targetUrl);
+    };
 
-  document.getElementById('releaseForm').addEventListener('submit', () => {
-    isDirty = false;
-  });
-  form.addEventListener('submit', (e) => {
-    const btn = form.querySelector('button[value="save"]');
-    if (btn) {
-        // 二重送信防止のために少し遅らせて無効化する
-        setTimeout(() => { btn.disabled = true; }, 1);
+    form.addEventListener('submit', (e) => {
+      const btn = form.querySelector('button[value="save"]');
+      if (btn) {
+          setTimeout(() => { btn.disabled = true; }, 1);
+      }
+      handleHistoryOnSubmit();
+    });
+    if(releaseForm){
+      releaseForm.addEventListener('submit',() => {
+        handleHistoryOnSubmit(targetUrl);
+      });
     }
-    isDirty = false; 
   });
 </script>
-{% endblock script %}
+{% endblock %}

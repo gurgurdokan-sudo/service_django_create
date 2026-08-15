@@ -8,7 +8,6 @@ class BreadcrumbUtil:
         """
         crumbs_list: [('ラベル', 'URL名' or None, [args]), ...] のリスト
         """
-        # 常に「タイトル（ホーム）」を最初に入れる
         items = [
             {"label": "利用者一覧", "url": reverse('dashboard:user_list')}
         ]

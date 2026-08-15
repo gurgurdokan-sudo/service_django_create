@@ -13,11 +13,14 @@ from dashboard.models import (
     )
 from dashboard.forms import PlanForm
 from dashboard.calendar_table import get_month_days
+from dashboard.utils import BreadcrumbUtil
 
 import logging
 logger = logging.getLogger(__name__)
 
 def create_plan(request,user_id):
+    user = User.objects.get(id=user_id)
+
     if request.method == 'POST':
         form = PlanForm(request.POST,user_id=user_id)
         if form.is_valid():
@@ -71,8 +74,12 @@ def create_plan(request,user_id):
             .values()
         )
         logger.info(f'{year}-{month}を作成する為のフォームを表示')
+        crumbs = [
+            (f"{user.name}様 サービス提供表作成{year}-{int(month)-1}", ),
+            (f"{user.name}様 サービス提供表計画作成", None)
+        ]
         
-        context={'year':year,'month':month,'user':user,'form': form,'all_plans':all_plans}
+        context={'year':year,'month':month,'user':user,'form': form,'all_plans':all_plans, 'breadcrumbs': BreadcrumbUtil.create(crumbs)}
         return render(request,'dashboard/create_plan.html', context )
   
     messages.error(request,f'error')
