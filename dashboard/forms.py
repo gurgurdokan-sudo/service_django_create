@@ -9,7 +9,7 @@ class UserForm(forms.ModelForm):
     required_css_class = 'required'
     class Meta:
         model = User
-        fields = ['name','name_kana','insured_number','date_of_birth','gender','benefit_rate','notes']
+        fields = ['name','name_kana','insured_number','date_of_birth','gender','notes']
         labels = {
             'name': '氏名',
             'name_kana': 'フリガナ',
@@ -100,7 +100,7 @@ class CertificateForm(forms.ModelForm):
     required_css_class = 'required'
     class Meta:
         model = Certificate
-        fields = ['care_level', 'limit_amount_type', 'public_assistance_flag', 'benefit_limit_flag', 'limit_amount_value', 'limit_start', 'limit_end']
+        fields = ['care_level', 'limit_amount_type', 'public_assistance_flag', 'benefit_limit_flag', 'limit_amount_value', 'benefit_rate', 'limit_start', 'limit_end']
         widgets = {
             'limit_start': forms.DateInput(attrs={'type': 'date'}),
             'limit_end': forms.DateInput(attrs={'type': 'date'}),

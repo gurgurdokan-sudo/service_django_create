@@ -20,6 +20,19 @@
             {% endfor %}
           </div>
         </div>
+                
+        {% comment %} 要介護状態区分 {% endcomment %}
+        <div class="label-input-err">
+          <div class="label-input">
+            {{ form.benefit_rate.label_tag }}
+            {{ form.benefit_rate }}
+          </div>
+          <div class="post-err">
+            {% for error in form.benefit_rate.errors %}
+              {{ error }}
+            {% endfor %}
+          </div>
+        </div>
 
         <p>
           {% comment %}生活保護受給{% endcomment %}

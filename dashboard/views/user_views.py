@@ -58,7 +58,7 @@ def certificate_create(request,user_id):
         if form.is_valid():
             cert = form.save(commit=False)
             cert.user = user
-            cert.benefit_rate = user.benefit_rate
+            # cert.benefit_rate = user.benefit_rate #負担割合をコピーする
             cert.insured_number =user.insured_number
             cert.save()
             messages.success(request,f'{user.name}様 新規登録完了しました')

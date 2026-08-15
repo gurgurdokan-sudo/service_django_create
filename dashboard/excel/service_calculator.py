@@ -1,5 +1,6 @@
 import textwrap
 from django.utils import timezone
+from dashboard.models import User
 
 # --- ユーティリティ関数 ---
 
@@ -36,7 +37,11 @@ class ServiceSheetCalculator:
         self.add_codes = context.get('add_codes', {})
         
         self.unit_price = float(self.office.unit_price)
-        self.benefit_rate = float(self.user.benefit_rate)
+        year = context['dis_year']
+        month = context['dis_month']
+        cert = self.user.get_certificate_for_month(year, month)
+        if not cert: raise ValueError(f"{self.user.name}様の{year}年{month}月の認定情報が見つかりません。")
+        self.benefit_rate = float(self.office.unit_price)
         self.max_payment = int(self.user.max_separate_payment)
         
         # 集計用変数

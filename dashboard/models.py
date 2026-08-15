@@ -37,8 +37,8 @@ class User(models.Model):
     GENDER_CHOICES = [('male', '男性'),('female', '女性'),]
     gender = models.CharField(max_length=10, choices=GENDER_CHOICES,verbose_name='性別')
 
-    BENEFIT_RATE_CHOICES = [(0.9, "給付率90%（1割負担）"),(0.8, "給付率80%（2割負担）"),(0.7, "給付率70%（3割負担）")]
-    benefit_rate = models.FloatField(choices=BENEFIT_RATE_CHOICES, verbose_name = '給付率')
+    # BENEFIT_RATE_CHOICES = [(0.9, "給付率90%（1割負担）"),(0.8, "給付率80%（2割負担）"),(0.7, "給付率70%（3割負担）")]
+    # benefit_rate = models.FloatField(choices=BENEFIT_RATE_CHOICES, verbose_name = '給付率')
     notes = models.TextField(blank=True,default="",verbose_name='メモ')
     def __str__(self):
         return self.name
@@ -57,7 +57,25 @@ class User(models.Model):
         return self.get_public_assistance(last_month_first_day)
 
     @property
+    def current_certificate(self):
+        """今日時点で有効な認定情報を返す"""
+        today = timezone.now().date()
+        return self.certificate.filter(
+            limit_start__lte=today, 
+            limit_end__gte=today
+        ).first()
+
+    def get_certificate_for_month(self, year, month):
+        """サービス提供月に有効な認定情報を返す"""
+        target_date = date(year, month, 1)
+        return self.certificate.filter(
+            limit_start__lte=target_date,
+            limit_end__gte=target_date
+        ).first()
+    
+    @property
     def max_separate_payment(self):
+        """ 利用者の区分支給限度基準額を返す。認定情報がない場合はNoneを返す """
         match self.care_level:
             case '要支援1': return 5003
             case '要支援2': return 10473
