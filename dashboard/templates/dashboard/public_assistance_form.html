@@ -65,4 +65,12 @@
         <input type="hidden" name="action" value="release">
     </form>
   </div>
-{% endblock %}
+{% endblock body%}
+{% block script %}
+<script>
+  window.addEventListener('beforeinput', function (e) {
+    e.preventDefault();
+    e.returnValue = '';
+  })
+</script>
+{% endblock script %}

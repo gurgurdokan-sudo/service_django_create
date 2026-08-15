@@ -136,8 +136,8 @@ class PublicAssistanceForm(forms.ModelForm):
     this_year = date.today().year
     YEAR_CHOICES = [(y, f"{y}年") for y in range(this_year - 1, this_year + 1)]
     MONTH_CHOICES = [(m, f"{m}月") for m in range(1, 13)]
-    start_year = forms.ChoiceField(choices=YEAR_CHOICES, label="開始年", initial=this_year)
-    start_month = forms.ChoiceField(choices=MONTH_CHOICES, label="開始月", initial=date.today().month)
+    start_year = forms.ChoiceField(choices=YEAR_CHOICES, label="開始年")
+    start_month = forms.ChoiceField(choices=MONTH_CHOICES, label="開始月")
     class Meta:
         model = PublicAssistance
         fields = [
@@ -192,6 +192,7 @@ class CareManagerForm(forms.ModelForm):
             else: self.fields[field_name].widget.attrs['class']= f'form-control {field_name}'
     def clean(self):
         cleaned = super().clean()
+        cm_num = cleaned.get('care_manager_number')
         if cm_num is not None:  # None のときはチェックしない
             cm_num = str(cm_num)
             if len(cm_num) != 13 or not cm_num.isdigit():

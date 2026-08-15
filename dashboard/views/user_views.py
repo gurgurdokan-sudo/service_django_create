@@ -131,16 +131,18 @@ def public_assistance_create(request,user_id):
     else:
         # 初期値
         today = date.today()
+        start_year = q_year or today.year
+        start_month = q_month or today.month
         initial_data = {
-            'start_year': q_year or today.year,
-            'start_month': q_month or today.month,
+            'start_year': int(start_year),
+            'start_month': int(start_month),
         }
         if zen:
             logger.info(f'以前の生活保護あり')
-            initial_data = {
-                'hogo_number' : zen.hogo_number,
-                'recipient_number' : zen.recipient_number,
-            }
+            initial_data.update({
+                'hogo_number': zen.hogo_number,
+                'recipient_number': zen.recipient_number,
+            })
         form = PublicAssistanceForm( initial = initial_data )
     return render(request, 'dashboard/public_assistance_form.html',{
         'form': form,

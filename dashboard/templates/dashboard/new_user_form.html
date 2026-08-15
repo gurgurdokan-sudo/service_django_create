@@ -108,4 +108,11 @@
   </form>
 </div>
 {% endblock %}
-
+{% block script %}
+<script>
+  window.addEventListener('beforeinput', function (e) {
+    e.preventDefault();
+    e.returnValue = '';
+  })
+</script>
+{% endblock script %}

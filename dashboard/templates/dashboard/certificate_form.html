@@ -92,6 +92,9 @@
       <button class="btn btn-primary" onclick="this.disabled=true; this.form.submit();" type="submit">保存</button>
     </form>
   </div>
+{% endblock body %}
+
+{% block script %}
   <script>
   document.addEventListener('DOMContentLoaded',() =>{
       const amountTypeSlect = document.getElementById('id_limit_amount_type');
@@ -130,6 +133,9 @@
 
       endInput.value = `${yyyy}-${mm}-${dd}`;
   }
-
-  </script>
-{% endblock %}
+  window.addEventListener('beforeinput', function (e) {
+    e.preventDefault();
+    e.returnValue = '';
+  })
+</script>
+{% endblock script %}
