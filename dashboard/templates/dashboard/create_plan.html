@@ -8,7 +8,7 @@
 <!---- home>>Planがないユーザー ---->
 <h2>{{ user.name }} さんのサービス提供計画作成</h2>
 <div class=detail-card>
-<form method="post" id="planForm" class="plan-form" novalidate>
+<form method="post" id="planForm" class="plan-form" action="{{ request.get_full_path }}"  novalidate>
   {% csrf_token %}
  
   <p>
@@ -45,6 +45,7 @@
 {{ all_plans|json_script:"all-plans" }}
 <script>
 let isDirty = false;
+const backDestination = "{% url 'dashboard:user_list' %}";
 
   document.addEventListener('DOMContentLoaded', () => {
     const allPlansJson = document.getElementById("all-plans").textContent;
@@ -56,7 +57,14 @@ let isDirty = false;
 
     if (!form || !startTimeInput || !endTimeInput) return;
 
-    function calcHours(start, end) {
+    const replaceHistoryBeforeSubmit = () => {
+      isDirty = false; 
+      setTimeout(() => {
+          history.replaceState(null, null, backDestination);
+      }, 0);
+    };
+
+    const calcHours = (start, end) => {
       if (!start || !end) return 0;
       const [sh, sm] = start.split(':').map(Number);
       const [eh, em] = end.split(':').map(Number);
@@ -64,7 +72,7 @@ let isDirty = false;
       return diffMinutes / 60;
     }
 
-    function getCategory(hours) {
+    const getCategory = (hours) => {
       if (hours <= 0) return null;
       if (hours < 3) return '<3';
       if (hours < 4) return '3-4';
@@ -76,7 +84,7 @@ let isDirty = false;
       return '9-10'; 
     }
 
-    function updatePlan() {
+    const updatePlan = () => {
       const hours = calcHours(startTimeInput.value, endTimeInput.value);
       const category = getCategory(hours);
       const service = allPlans.find(p => p.stay_time_category === category);
@@ -101,7 +109,7 @@ let isDirty = false;
       if (btn) {
         setTimeout(() => { btn.disabled = true; }, 1);
       }
-      isDirty = false; 
+      replaceHistoryBeforeSubmit();
     });
 
     updatePlan();

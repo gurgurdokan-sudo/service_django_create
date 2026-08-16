@@ -9,7 +9,7 @@
   <h2>{{ title }}</h2>
   <div class="detail-card">
     <div id="bread" data-items="{{ breadcrumbs }}"></div>
-    <form method="post" id="public_assistance_Form" novalidate>
+    <form method="post" id="public_assistance_Form" action="{{ request.get_full_path }}" novalidate>
       {% csrf_token %}
       {# 保護番号 #}
       <div class="label-input-err">
@@ -54,7 +54,7 @@
     </form>
 
     {% comment %}解除用の隠しフォーム クエリパラメータを維持{% endcomment %}
-    <form id="releaseForm" method="post" action="?{{ request.GET.urlencode }}">
+    <form id="releaseForm" method="post" action="{{ request.get_full_path }}?{{ request.GET.urlencode }}">
       {% csrf_token %}
       <input type="hidden" name="action" value="release" />
     </form>
@@ -81,7 +81,9 @@
 
     const replaceHistoryBeforeSubmit = () => {
       isDirty = false; 
-      history.replaceState(null, null, backDestination);
+      setTimeout(() => {
+          history.replaceState(null, null, backDestination);
+      }, 0);
     };
 
     // 保存
