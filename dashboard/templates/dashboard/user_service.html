@@ -230,11 +230,11 @@
     {% endif %}
     {% endfor %}
   </ul>
-  <input type="button" id="btn-excel" class="btn btn-success
-  {% if confirmed %}
-  not-disabled
-  {% endif %}"
-  " value="Excelを作成" onclick="toExcel({{user.id}})">
+  {% if plans %}
+    <input type="button" id="btn-excel" class="btn btn-success
+    {% if confirmed %} not-disabled {% endif %}
+    " value="Excelを作成" onclick="toExcel({{user.id}})">
+  {% endif %}
   <input type="button" id="btn-export" class="btn btn-primary
   {% if not confirmed %}
   not-disabled

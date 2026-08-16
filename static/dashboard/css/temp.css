@@ -1,3 +1,4 @@
+@charset "UTF-8";
 /* --- フラッシュメッセージ（通知） --- */
 .messages {
     position: fixed;            /* 画面に対して固定位置 */

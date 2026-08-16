@@ -85,11 +85,26 @@ def _is_future_month_not_plan(user_id, year, month, prev=False):
         return not ServicePlan.objects.filter(user_id=user_id, year=year, month=month).exists()
     return False
 
+
+def _is_future_month_not_pa(user, year, month, prev=False):
+    '''指定された年月が「今月以降」で、生保ユーザーなのにデータがない場合にTrue'''
+    if not user.is_active_pa_user: return False
+        
+    if user.get_public_assistance(year, month): return False
+
+    if prev: return True
+
+    today = date.today()
+    this_month_first = date(today.year, today.month, 1)
+    target_month_first = date(int(year), int(month), 1)    
+    return target_month_first >= this_month_first
+
 #main
 def user_service(request,user_id):
     dis_year = int(request.GET.get('year', now.year))
     dis_month = int(request.GET.get('month', now.month))
     user = User.objects.get(id=user_id)
+    check_flag = request.GET.get('check_flag',False)
     if not user.care_manager or user.care_level == '認定情報更新が必要':
         '''利用者一覧画面にリダイレクトする'''
         logger.error(f'{user.name}')
@@ -97,14 +112,14 @@ def user_service(request,user_id):
         return redirect('dashboard:user_list')
 
     # 「今月の生保データ」が未登録なのに、「前月は生保だった」場合、先に生保登録へ誘導
-    if not user.get_public_assistance(dis_year, dis_month):
-        if user.is_active_pa_user:
-            messages.error(request, f'前月が生活保護受給のため、{dis_month}月分の情報を先に登録してください')
-            url = reverse('dashboard:public_assistance_create', args=[user.id] )
-            return redirect(f'{url}?year={dis_year}&month={dis_month}')
+    if _is_future_month_not_pa(user, dis_year, dis_month):
+        messages.error(request, f'前月が生活保護受給のため、{dis_month}月分の情報を先に登録してください')
+        url = reverse('dashboard:public_assistance_create', args=[user.id] )
+        return redirect(f'{url}?year={dis_year}&month={dis_month}')
         
     if _is_future_month_not_plan(user_id,dis_year, dis_month):
         '''プラン作成画面にリダイレクトする'''
+        request.check_flag = True
         messages.success(request, f'{dis_month}月分の適用曜日と時間を登録してください')
         url = reverse('dashboard:createPlan', args=[user_id] )
         return redirect(f'{url}?year={dis_year}&month={dis_month}')
@@ -127,6 +142,11 @@ def prev_month_plan(request, user_id):
     year = now.year if prev_month != 12 else now.year - 1
     if _is_future_month_not_plan(user_id,year,prev_month,prev=True):
         url = reverse('dashboard:createPlan', args=[user_id] )
+        return redirect(
+            f'{url}?year={year}&month={prev_month}'
+            )
+    if _is_future_month_not_pa(User.objects.get(id=user_id),year,prev_month,prev=True):
+        url = reverse('dashboard:public_assistance_create', args=[user_id] )
         return redirect(
             f'{url}?year={year}&month={prev_month}'
             )
