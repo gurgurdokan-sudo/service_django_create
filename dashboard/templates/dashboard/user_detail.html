@@ -148,10 +148,10 @@
                     <td><strong>{{ record.date|date:"Y年m月" }}</strong></td>
                     <td>{{ record.user_share_amount|default:"0" }} 円</td>
                     <td>{{ record.benefit_amount|default:"0" }} 円</td>
-                    <td>{{ record.user.user_share_amount }}</td>
+                    <td>{{ record.user_share_amount|default:"0" }} 円</td>
                     <td>
                         {% if record.confirmed %}
-                            <span class="status-active">✅ 確定済み</span>
+                            <span class="status-active">確定済み</span>
                         {% else %}
                             <span class="text-muted">未確定（編集中）</span>
                         {% endif %}

@@ -161,6 +161,7 @@ class ServiceMonthlyRecord(models.Model):
     total_cost = models.IntegerField(verbose_name='総費用',default=0)         # （給付対象＋超過分）
     benefit_amount = models.IntegerField(verbose_name='給付費請求額',default=0)     # （国保連に請求する額）
     user_share_amount = models.IntegerField(verbose_name='利用者負担額',default=0)  # （生活保護０,1〜3割＋超過分自己負担）
+    public_amount = models.IntegerField(verbose_name='公費請求額',default=0) #公費請求額
 
     # 超過分の内訳
     over_cost = models.IntegerField(verbose_name='限度超過分の総額',default=0)
