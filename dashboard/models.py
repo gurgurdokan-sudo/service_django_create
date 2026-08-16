@@ -99,7 +99,7 @@ class User(models.Model):
         )
     def get_certificate(self, year, month):
         """ 指定した日付時点で有効な認定データを1件返す """
-        target_date = date(year, month, 1)
+        target_date = date(int(year), int(month), 1)
         return self.certificate.filter(
             limit_start__lte=target_date,
             limit_end__gte=target_date
@@ -143,7 +143,7 @@ class ServiceMonthlyRecord(models.Model):
         verbose_name_plural= "月間提供表"
         unique_together = ('user', 'date') #その月のサービス提供票は1件のみ
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE , related_name="monthly_records" )
     confirmed = models.BooleanField(default=False) # 確定フラグ
     confirmed_at = models.DateField(verbose_name='確定日',blank=True,null=True)
     date = models.DateField(help_text="月初の日付（例: 2026-07-01）")

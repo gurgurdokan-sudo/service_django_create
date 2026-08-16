@@ -25,8 +25,8 @@ def create_plan(request,user_id):
     if request.method == 'POST':
         form = PlanForm(request.POST,user_id=user_id)
         if form.is_valid():
-            year = request.POST.get('year')
-            month = request.POST.get('month')
+            year = int(request.POST.get('year'))
+            month = int(request.POST.get('month'))
             weekdays = form.cleaned_data['weekdays']
 
             # その月の「区分変更日」があるかチェック

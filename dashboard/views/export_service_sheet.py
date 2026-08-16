@@ -57,18 +57,18 @@ def export_excel(request,user_id):
     month = int(request.GET.get('dis_month', now.month))
     logger.info(f'{year}-{month}をExcel出力')
     context = build_user_service_context(user_id=user_id,year=year,month=month)
-    if context['plan'] is None:
-        messages.error(request,'プランが作成されていません')
-        return redirect('dashboard:user_list')
-    if context['user'].care_level == '認定情報更新が必要':
-        messages.error(request,'認定情報が更新されていません')
-        return redirect('dashboard:user_list')
-    if context['user'].care_manager is None:
-        messages.error(request,'ケアマネジャーが設定されていません')
-        return redirect('dashboard:user_list')
-    if context['office'] is None:
-        messages.error(request,'事業所が設定されていません')
-        return redirect('dashboard:user_list')
+    # if context['plan'] is None:
+    #     messages.error(request,'プランが作成されていません')
+    #     return redirect('dashboard:user_list')
+    # if context['user'].care_level == '認定情報更新が必要':
+    #     messages.error(request,'認定情報が更新されていません')
+    #     return redirect('dashboard:user_list')
+    # if context['user'].care_manager is None:
+    #     messages.error(request,'ケアマネジャーが設定されていません')
+    #     return redirect('dashboard:user_list')
+    # if context['office'] is None:
+    #     messages.error(request,'事業所が設定されていません')
+    #     return redirect('dashboard:user_list')
     
     create_service_sheet(context)
     messages.success(request,'Excelを作成しました')

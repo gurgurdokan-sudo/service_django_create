@@ -163,19 +163,26 @@ def user_update(request, user_id):
 
 
 #詳細（JSのbutton遷移で消去
-@delete_permission_required
 def user_detail(request, user_id):
-    user = get_object_or_404(User, id=user_id)
+    # 履歴もまとめて取得
+    user = get_object_or_404(
+        User.objects.prefetch_related('certificate', 'public_assistance'), 
+        id=user_id
+    )
+
     labels = {f.name: f.verbose_name for f in user._meta.fields}
-    prev_cert = user.certificate.order_by('-limit_end').first() #現在適用中
-    initial = {}
-    if prev_cert:
-        initial = {
-            'care_level': prev_cert.care_level,
-            'limit_amount_type': prev_cert.limit_amount_type,
-            'limit_start': prev_cert.limit_start,
-            'limit_end': prev_cert.limit_end,
-        }
+    crumbs = [
+        ("利用者一覧", "dashboard:user_list"),
+        (f"{user.name} 様 詳細", None)
+    ]
+
+    context = {
+        'user': user,
+        'labels': labels,
+        'breadcrumbs': BreadcrumbUtil.create(crumbs),
+    }
+
+    return render(request, 'dashboard/user_detail.html', context)
 #介護認定変更 
     if request.method == 'POST':
         form = CertificateUpdateForm(request.POST)
