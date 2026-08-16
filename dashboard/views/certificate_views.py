@@ -3,10 +3,7 @@ from django.contrib import messages
 
 from dashboard.utils import BreadcrumbUtil
 from dashboard.forms import CertificateForm
-from dashboard.models import(
-    User,
-    Certificate,
-)
+from dashboard.models import User
 
 import logging
 logger = logging.getLogger(__name__)
@@ -25,7 +22,7 @@ def certificate_update(request, user_id):
             cert.pk = None
             cert.user = user
 
-            # 前回の認定情報を無効化&変更日を設定
+            # 前回の認定情報を無効化
             user.certificate.filter(is_active=True).update(is_active=False)
             
             cert.care_level_changed_at = form.cleaned_data['limit_start']
