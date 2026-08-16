@@ -89,6 +89,7 @@ def user_service(request,user_id):
     dis_year = int(request.GET.get('year', now.year))
     dis_month = int(request.GET.get('month', now.month))
     user = User.objects.get(id=user_id)
+    logger.info(f'================================のサービス提供票に遷移')
     if not user.care_manager or user.care_level == '認定情報更新が必要':
         '''利用者一覧画面にリダイレクトする'''
         logger.error(f'{user.name}')

@@ -105,6 +105,7 @@ def public_assistance_create(request,user_id):
 
     if request.method == 'POST':
         action = request.POST.get('action')
+        logger.info(f'{action} ==========================================')
         if action == 'release':
             # 「解除」リクエストの処理
             user.public_assistance.filter(is_active=True).update(is_active=False)
@@ -139,7 +140,7 @@ def public_assistance_create(request,user_id):
                     return redirect(f'{url}?year={y}&month={m}')
                 else:
                     return redirect('dashboard:user_list')
-    else:
+    else: #GETリクエスト
         # 初期値
         initial_data = {
             'start_year': target_y,

@@ -61,9 +61,10 @@
   </div>
 {% endblock %}
 {% block script %}
-  <script>
+<script>
   let isDirty = false;
-  const targetUrl = "{% url 'dashboard:user_list'%}"
+  const backDestination = "{% url 'dashboard:user_list' %}";
+
   document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('public_assistance_Form');
     const releaseForm = document.getElementById('releaseForm');
@@ -74,26 +75,28 @@
 
     window.addEventListener('beforeunload', (e) => {
       if (!isDirty) return;
-
       e.preventDefault();
       e.returnValue = ''; 
     });
 
-    const handleHistoryOnSubmit =() => {
+    const replaceHistoryBeforeSubmit = () => {
       isDirty = false; 
-      history.replaceState(null, null, targetUrl);
+      history.replaceState(null, null, backDestination);
     };
 
+    // 保存
     form.addEventListener('submit', (e) => {
       const btn = form.querySelector('button[value="save"]');
       if (btn) {
           setTimeout(() => { btn.disabled = true; }, 1);
       }
-      handleHistoryOnSubmit();
+      replaceHistoryBeforeSubmit();
     });
-    if(releaseForm){
-      releaseForm.addEventListener('submit',() => {
-        handleHistoryOnSubmit(targetUrl);
+
+    // 解除
+    if (releaseForm) {
+      releaseForm.addEventListener('submit', () => {
+        replaceHistoryBeforeSubmit();
       });
     }
   });
