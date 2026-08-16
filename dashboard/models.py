@@ -97,6 +97,13 @@ class User(models.Model):
             .order_by("-limit_end")
             .first()
         )
+    def get_certificate(self, year, month):
+        """ 指定した日付時点で有効な認定データを1件返す """
+        target_date = date(year, month, 1)
+        return self.certificate.filter(
+            limit_start__lte=target_date,
+            limit_end__gte=target_date
+        ).first()
     @property
     def latest_changed_date(self): #紐づく介護の変更日
         today = timezone.now().date()
@@ -353,6 +360,7 @@ class Certificate(models.Model):
     """被保険者証の情報を管理するモデル"""
     class Meta:
         verbose_name_plural= "介護認定情報"
+        ordering = ['-limit_start', '-created_at']
     BENEFIT_RATE_CHOICES = [(0.9, "給付率90%（1割負担）"),(0.8, "給付率80%（2割負担）"),(0.7, "給付率70%（3割負担）"),]
     user = models.ForeignKey(User,on_delete=models.CASCADE,related_name="certificate",verbose_name="利用者")
     insured_number = models.CharField(max_length=10,verbose_name="被保険者番号（10桁）")
@@ -365,6 +373,8 @@ class Certificate(models.Model):
     limit_amount_value = models.IntegerField(null=True,blank=True,verbose_name="任意設定の限度額") 
     limit_start = models.DateField(verbose_name="限度額適用開始日")
     limit_end = models.DateField(verbose_name="限度額適用終了日")
+    is_active = models.BooleanField(default=True, verbose_name="有効フラグ")
+    created_at = models.DateTimeField(auto_now_add=True ,verbose_name="作成日時")
     @property
     def status(self):
         today = timezone.now().date()
