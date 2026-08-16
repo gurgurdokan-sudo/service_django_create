@@ -1,4 +1,5 @@
 from datetime import date
+import calendar as calendar_module
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
@@ -24,33 +25,67 @@ def create_plan(request,user_id):
     if request.method == 'POST':
         form = PlanForm(request.POST,user_id=user_id)
         if form.is_valid():
-            plan = form.save(commit=False)
-            plan.user_id = user_id
-            plan.build_schedule(form.cleaned_data['weekdays'])
-            plan.apply_service_master() #コピー項目
-            plan.save()
             year = request.POST.get('year')
             month = request.POST.get('month')
-            messages.success(request,'プランを作成しました')
-            date_obj = date(int(year), int(month), 1)
-            try:
-                record = ServiceMonthlyRecord.objects.filter(user=plan.user, date=date_obj).first()
-                if not record:
-                    week_list = form.cleaned_data['weekdays']
-                    logger.info(f'{week_list}でServiceMonthlyRecordを作成します')
-                    record = ServiceMonthlyRecord(
-                        user=plan.user,
-                        date=date_obj,
-                        weekday_pattern=[int(i) for i in week_list],
-                        confirmed=False,
-                        start_time=form.cleaned_data['start_time'],
-                        end_time=form.cleaned_data['end_time']
-                    )
-                    record.save()
-            except Exception as e:
-                logger.error(f"サービス提供票の更新中にエラーが発生しました: {e}")
-                raise
-            url = reverse('dashboard:service', args=[user_id] )
+            weekdays = form.cleaned_data['weekdays']
+
+            # その月の「区分変更日」があるかチェック
+            change_cert = user.certificate.filter(
+                limit_start__year=year, 
+                limit_start__month=month,
+                is_active=True
+            ).first()
+
+
+            # 保存する認定情報のリストを作成
+            if change_cert:
+                old_cert = user.get_certificate(year, month) # 1日時点の認定
+                certs_to_save = [
+                    {'cert': old_cert, 'end_day': change_cert.limit_start.day - 1},
+                    {'cert': change_cert, 'start_day': change_cert.limit_start.day}
+                ]
+                logger.info(f"区分変更を検知: {change_cert.limit_start.day}日から変更")
+            else:
+                current_cert = user.get_certificate(year, month)
+                certs_to_save = [{'cert': current_cert}]
+
+            # 認定情報ごとに ServicePlan を作成（1行 or 2行）
+            for item in certs_to_save:
+                cert = item['cert']
+                if not cert: continue
+
+                plan = form.save(commit=False)
+                plan.pk = None # ループ内で新規登録
+                plan.user = user
+                plan.care_level = cert.care_level # どの介護度用の行か保存
+                
+                # スケジュール生成
+                start_day = item.get('start_day', 1)
+                # その月の末日を取得
+                _, last_day = calendar_module.monthrange(year, month)
+                end_day = item.get('end_day', last_day)
+                
+                plan.build_schedule(weekdays, start_day=start_day, end_day=end_day)
+
+                plan.apply_service_master(target_care_level=cert.care_level)
+                plan.save()
+
+            # ServiceMonthlyRecord の作成
+            date_obj = date(year, month, 1)
+            ServiceMonthlyRecord.objects.get_or_create(
+                user=user, 
+                date=date_obj,
+                defaults={
+                    'weekday_pattern': [int(i) for i in weekdays],
+                    'start_time': form.cleaned_data['start_time'],
+                    'end_time': form.cleaned_data['end_time']
+                }
+            )
+            if len(certs_to_save) > 1:
+                messages.success(request, f'サービス提供表の計画を作成しました。\n{change_cert.limit_start.day}日から介護度が変更されます。')
+            else:
+                messages.success(request, 'サービス提供表の計画を作成しました')
+            url = reverse('dashboard:service', args=[user_id])
             return redirect(f'{url}?year={year}&month={month}')
     else: #GETリクエスト
         user = get_object_or_404(User, id=user_id)

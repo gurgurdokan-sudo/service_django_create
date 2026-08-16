@@ -272,14 +272,33 @@ class ServicePlan(models.Model):
             if key.get("addon", []):
                 return True
         return False
-    def build_schedule(self, weekdays):
+    def build_schedule(self, weekdays, start_day=1, end_day=None):
+        """
+        指定された期間内で、該当する曜日に '1' を立てる
+        start_day: 開始日 (デフォルト1)
+        end_day: 終了日 (Noneなら月末まで)
+        """
+        import calendar as calendar_module
+        
+        # 終了日が指定されていない場合は月末日を取得
+        if end_day is None:
+            _, end_day = calendar_module.monthrange(self.year, self.month)
+            
         col = get_month_days(self.year, self.month)
-        json = {}
-        for day in col:
-            if str(day['weekday']) in weekdays:
-                json[str(day['day'])] = '1'
-        self.schedule_json = json
-
+        schedule = {}
+        
+        for day_info in col:
+            d = day_info['day']
+            # filler（空データ）は飛ばす
+            if not d:
+                continue
+                
+            # 指定された期間内（start_day ～ end_day）かつ、曜日が一致する場合のみ '1'
+            if start_day <= int(d) <= end_day:
+                if str(day_info['weekday']) in weekdays:
+                    schedule[str(d)] = '1'
+                    
+        self.schedule_json = schedule
     def apply_service_master(self, target_care_level=None):
         level = target_care_level or self.user.care_level
         service = ServiceMaster.objects.filter(
