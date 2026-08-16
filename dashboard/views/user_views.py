@@ -5,7 +5,7 @@ from django.contrib import messages
 from django.urls import reverse
 from django.shortcuts import render, redirect, get_object_or_404
 
-from dashboard.forms import UserForm, CertificateForm, CertificateUpdateForm, PublicAssistanceForm
+from dashboard.forms import UserForm, CertificateUpdateForm, PublicAssistanceForm
 from dashboard.models import User, CareManager, PublicAssistance
 from dashboard.utils import BreadcrumbUtil
 
@@ -44,42 +44,7 @@ def user_create(request, cm_id):
         'breadcrumbs': BreadcrumbUtil.create(crumbs),
         })
 
-#認定情報3
-def certificate_create(request,user_id):
-    user = get_object_or_404(User,id = user_id)
-    latest_cert = user.certificate.order_by('-limit_end').first()
-    if latest_cert:
-        update = True
-    else :
-        update = False
-    crumbs = [
-        # ("利用者一覧", "dashboard:user_list"),
-        (f"{user.name} 様", None),
-        ("被保険者証情報の登録", None)
-    ]
 
-    if request.method == 'POST':
-        form = CertificateForm(request.POST)
-        if form.is_valid():
-            cert = form.save(commit=False)
-            cert.user = user
-            # cert.benefit_rate = user.benefit_rate #負担割合をコピーする
-            cert.insured_number =user.insured_number
-            cert.save()
-            messages.success(request,f'{user.name}様 新規登録完了しました')
-            flag =form.cleaned_data.get('public_assistance_flag')
-            if flag:
-                logger.info(f'生活保護 : {flag}')
-                return redirect('dashboard:public_assistance_create',user_id=user.id)
-            return redirect('dashboard:user_list')
-    else: form = CertificateForm()
-    return render(request, 'dashboard/certificate_form.html',{
-        'form': form,
-        'user': user,
-        'title': '利用者の介護保険被保険者証登録',
-        'cetrificate': '1',
-        'breadcrumbs': BreadcrumbUtil.create(crumbs),
-        })
 #生活保護情報4
 def public_assistance_create(request,user_id):
     user = get_object_or_404(User,id = user_id)

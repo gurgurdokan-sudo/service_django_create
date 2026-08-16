@@ -2,14 +2,13 @@ from django.urls import path
 from .views.office_setting import office_setting
 from .views.user_views import (
     user_create,
-    certificate_create,
     public_assistance_create,
     user_list,
     user_detail,
     user_update,
     user_delete,
     )
-from .views.certificate_views import certificate_update
+from .views.certificate_views import certificate_update, certificate_create
 from .views.export_service_sheet import download_service_sheet, export_excel
 from .views.user_service_view import user_service, prev_month_plan, service_act
 from .views.create_plan import create_plan
