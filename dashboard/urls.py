@@ -9,6 +9,7 @@ from .views.user_views import (
     user_update,
     user_delete,
     )
+from .views.certificate_views import certificate_update
 from .views.export_service_sheet import download_service_sheet, export_excel
 from .views.user_service_view import user_service, prev_month_plan, service_act
 from .views.create_plan import create_plan
@@ -25,6 +26,7 @@ urlpatterns = [
     path('users/caremana_create', caremana_create, name='caremana_create'),
     path('users/user_create/<int:cm_id>/', user_create, name='create'),
     path('user/<int:user_id>/user_create/', certificate_create, name='certificate_create'),
+    path('user/<int:user_id>/certificate_update/', certificate_update, name='certificate_update'),
     path('user/<int:user_id>/ps_create/', public_assistance_create, name='public_assistance_create'),
     path('user/<int:user_id>/create_sheet/', export_excel, name='create_sheet'),
     path('user/<int:user_id>/export/', download_service_sheet, name='download_service_sheet'),

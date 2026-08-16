@@ -4,9 +4,9 @@
   <link rel="stylesheet" href="{% static 'dashboard/css/temp.css' %}" />
 {% endblock %}
 {% block body %}
-  <h2>{{ title }}</h2>
+  <h2>{{ title|default:"認定情報" }}</h2>
   <div class="detail-card">
-    <div id="bread" data-items="{{ breadcrumbs }}"></div>
+    <div id="bread" data-items='{{ breadcrumbs|safe }}'></div>
     <form method="post" id="certificateForm" novalidate>
       {% csrf_token %}
       <div>
@@ -34,7 +34,7 @@
           </div>
         </div>
 
-        <p>
+        <p class="{% if update %}none{% endif %}">
           {% comment %}生活保護受給{% endcomment %}
           {% comment %} todo 更新時class=none {% endcomment %}
           {{ form.public_assistance_flag.label_tag }}
