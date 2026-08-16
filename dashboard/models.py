@@ -183,6 +183,7 @@ class ServicePlan(models.Model):
     service_name = models.CharField(max_length=50,null=True, blank=True)
     service_code = models.CharField(max_length=20,null=True, blank=True)
     unit = models.IntegerField(default=0)
+    care_level = models.CharField(max_length=10, choices=LEVEL_CHOICES, null=True, blank=True)
     @property
     def stay_time_category(self):
         delta = datetime.combine(date.min, self.end_time) - datetime.combine(date.min, self.start_time)
@@ -279,12 +280,14 @@ class ServicePlan(models.Model):
                 json[str(day['day'])] = '1'
         self.schedule_json = json
 
-    def apply_service_master(self):
+    def apply_service_master(self, target_care_level=None):
+        level = target_care_level or self.user.care_level
         service = ServiceMaster.objects.filter(
-            care_level=self.user.care_level,
+            care_level=level,
             stay_time_category=self.stay_time_category
         ).first()
         if service: #値をコピー
+            self.care_level = level
             self.service_name = service.service_name
             self.service_code = service.service_code
             self.unit = service.unit
