@@ -21,6 +21,9 @@
       {% else %}
         <span class="badge bg-secondary">未確定</span>
       {% endif %}
+      {% if public_assistance %}
+        <span class="badge bg-danger">生活保護_適用</span>
+      {% endif %}
     </div>
 
     <a href="{% url 'employees:calendar' %}" class="btn-outline green-text">

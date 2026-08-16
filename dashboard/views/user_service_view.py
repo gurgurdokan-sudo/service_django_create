@@ -11,7 +11,8 @@ from dashboard.models import(
     ServiceMaster,
     AddOnService,
     Office,
-    ServiceMonthlyRecord
+    ServiceMonthlyRecord,
+    PublicAssistance
 )
 from dashboard.calendar_table import get_month_days
 now = timezone.now()
@@ -89,7 +90,6 @@ def user_service(request,user_id):
     dis_year = int(request.GET.get('year', now.year))
     dis_month = int(request.GET.get('month', now.month))
     user = User.objects.get(id=user_id)
-    logger.info(f'================================のサービス提供票に遷移')
     if not user.care_manager or user.care_level == '認定情報更新が必要':
         '''利用者一覧画面にリダイレクトする'''
         logger.error(f'{user.name}')
@@ -105,6 +105,7 @@ def user_service(request,user_id):
         
     if _is_future_month_not_plan(user_id,dis_year, dis_month):
         '''プラン作成画面にリダイレクトする'''
+        messages.success(request, f'{dis_month}月分の適用曜日と時間を登録してください')
         url = reverse('dashboard:createPlan', args=[user_id] )
         return redirect(f'{url}?year={dis_year}&month={dis_month}')
 
@@ -113,6 +114,9 @@ def user_service(request,user_id):
     crumbs = [
         (f"{user.name}様 サービス提供表作成", None)
     ]
+    start_date = date(dis_year, dis_month, 1)
+    context['public_assistance'] = PublicAssistance.objects.filter(
+        user = user , start_date= start_date ).first()
     context['breadcrumbs'] = BreadcrumbUtil.create(crumbs)
     logger.info(f'======{user.name} 様 提供表確定 {context["confirmed"]}======')
     return render(request,'dashboard/user_service.html',context)

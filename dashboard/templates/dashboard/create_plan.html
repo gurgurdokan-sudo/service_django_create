@@ -4,6 +4,7 @@
     <link rel="stylesheet" href="{% static 'dashboard/css/temp.css' %}">
 {% endblock %}
 {% block body %}
+  {% include 'dashboard/components/messages.html' %}
 <div id="bread" data-items="{{ breadcrumbs }}"></div>
 <!---- home>>Planがないユーザー ---->
 <h2>{{ user.name }} さんのサービス提供計画作成</h2>
@@ -37,7 +38,7 @@
     <label>{{ form.weekdays.label }}</label>
     <span class="weekday-inputs">{{ form.weekdays }}</span>
   </p>
-  <button type="submit" name="action" value="save" onclick="">保存</button>
+  <button class="btn btn-primary" type="submit" name="action" value="save" onclick="">保存</button>
 </form>
 </div>
 {% endblock body %}
@@ -56,13 +57,6 @@ const backDestination = "{% url 'dashboard:user_list' %}";
     const form = document.getElementById('planForm');
 
     if (!form || !startTimeInput || !endTimeInput) return;
-
-    const replaceHistoryBeforeSubmit = () => {
-      isDirty = false; 
-      setTimeout(() => {
-          history.replaceState(null, null, backDestination);
-      }, 0);
-    };
 
     const calcHours = (start, end) => {
       if (!start || !end) return 0;
@@ -109,7 +103,6 @@ const backDestination = "{% url 'dashboard:user_list' %}";
       if (btn) {
         setTimeout(() => { btn.disabled = true; }, 1);
       }
-      replaceHistoryBeforeSubmit();
     });
 
     updatePlan();

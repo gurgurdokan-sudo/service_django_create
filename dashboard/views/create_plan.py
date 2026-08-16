@@ -52,11 +52,12 @@ def create_plan(request,user_id):
                 raise
             url = reverse('dashboard:service', args=[user_id] )
             return redirect(f'{url}?year={year}&month={month}')
-    else:
+    else: #GETリクエスト
         user = get_object_or_404(User, id=user_id)
         now = timezone.now()
         year = int(request.GET.get('year',now.year))
         month = int(request.GET.get('month',now.month))
+        messages.success(request, f'{month}月分の適用曜日と時間を登録してください')
         prev = _previous_record(user)
         form = PlanForm({
             'year':year,
