@@ -23,6 +23,7 @@ def create_service_sheet(context):
     """    
     try:
         wb = load_workbook('templatesExcel/service_template.xlsx')
+        logger.info('サービス提供表ユーティリティクラス')
         calc = ServiceSheetCalculator(context)
         res = calc.get_results()
         

@@ -89,6 +89,9 @@ def _is_future_month_not_plan(user_id, year, month, prev=False):
 def _is_future_month_not_pa(user, year, month, prev=False):
     '''指定された年月が「今月以降」で、生保利用者データがない場合にTrue'''
     if not user.is_active_pa_user: return False
+    target_date = date(year, month, 1)
+    if ServiceMonthlyRecord.objects.filter(user=user,date=target_date).first():
+        return False
         
     if user.get_public_assistance(year, month): return False
 

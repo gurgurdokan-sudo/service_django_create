@@ -9,6 +9,6 @@ def get_item(dictionary, key):
 def total_count(plan, row_type):
     return plan.get_total_count(str(row_type))
 
-@register.filter
+@register.filter(name='format_comma')
 def format_comma_temp(value):
     return format_comma(value)
