@@ -36,7 +36,7 @@ env/
 # --- Excel ---
 .xlsx#
 .xlsx
-
+/service_sheets_export/
 # React build output
 frontend/dist/
 

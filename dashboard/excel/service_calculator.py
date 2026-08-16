@@ -1,6 +1,3 @@
-import textwrap
-from django.utils import timezone
-from dashboard.models import User
 
 # --- ユーティリティ関数 ---
 
