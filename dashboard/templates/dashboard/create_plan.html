@@ -99,7 +99,8 @@ const backDestination = "{% url 'dashboard:user_list' %}";
     });
 
     form.addEventListener('submit', (e) => {
-      const btn = form.querySelector('button[value="save"]');
+　　　　　isDirty = fales;
+        const btn = form.querySelector('button[value="save"]');
       if (btn) {
         setTimeout(() => { btn.disabled = true; }, 1);
       }
