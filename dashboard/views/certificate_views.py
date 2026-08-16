@@ -22,10 +22,12 @@ def certificate_update(request, user_id):
         form = CertificateForm(request.POST)
         if form.is_valid():
             cert = form.save(commit=False)
+            cert.pk = None
             cert.user = user
+
             # 前回の認定情報を無効化&変更日を設定
-            if Certificate.objects.filter(user=user).first():
-                user.certificate.update(is_active=False, change_date=form.cleaned_data['start_date'])
+            user.certificate.filter(is_active=True).update(is_active=False)
+            
             cert.care_level_changed_at = form.cleaned_data['limit_start']
             cert.is_active = True
             
@@ -33,7 +35,7 @@ def certificate_update(request, user_id):
         messages.success(request, '認定情報を更新しました。')
         return redirect('dashboard:detail', user_id=user.id)
     else:
-        instance = user.certificate.first(is_active=True).first() if user.certificate.exists() else None
+        instance = user.certificate.filter(is_active=True).first()
         form = CertificateForm(instance=instance)  # 初期値として最初の認定情報を使用
         context = {
             'user': user,
