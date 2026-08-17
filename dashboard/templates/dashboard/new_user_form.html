@@ -1,142 +1,141 @@
 {% extends "dashboard/base/base.html" %}
-{% block css %}
 {% load static %}
-{% load get_item %}
+{% block css %}
 <link rel="stylesheet" href="{% static 'dashboard/css/temp.css' %}">
 <style>
-  .cm-value{
-    text-align: center;
+  .cm-value {
+    display: inline-block;
     padding-left: 20px;
     color: #313131;
     font-weight: bold;
+    font-size: 1.1rem;
   }
 </style>
 {% endblock %}
+
 {% block body %}
-<h2>新規作成</h2> 
+<h2>{{ title|default:"新規作成" }}</h2> 
 <div class="detail-card">
-<div id="bread" data-items="{{ breadcrumbs }}"></div>
+  <div id="bread" data-items='{{ breadcrumbs|safe }}'></div>
+
   <form method="post" id="userForm" novalidate>
     {% csrf_token %}
-    <p>
-      <label>担当ケアマネジャー</label>
-      <span class="cm-value">{{ cm_name }}</span>
-    </p>
 
-    {% comment %} 名前 {% endcomment %}
+    {# --- ケアマネジャー項目 --- #}
     <div class="label-input-err">
       <div class="label-input">
-        {{ form.name.label_tag }}
-        {{ form.name }}
+        <label>担当ケアマネジャー</label>
+        {% if cm_name %}
+          {# 設定済みの場合は名前だけ表示 #}
+          <span class="cm-value">{{ cm_name }} 様</span>
+          {# 保存時に値が消えないよう、Formにケアマネフィールドがある場合は隠しで持つ #}
+          {% if form.care_manager %}
+            <div style="display:none;">{{ form.care_manager }}</div>
+          {% endif %}
+        {% else %}
+          {# プルダウンを表示 #}
+          {{ form.care_manager }}
+        {% endif %}
       </div>
       <div class="post-err">
-        {% for error in form.name.errors %}
-          {{ error }}
-        {% endfor %}
+        {% for error in form.care_manager.errors %}{{ error }}{% endfor %}
       </div>
     </div>
 
-    {% comment %} かな {% endcomment %}
+    <hr class="my-3">
+
+    {# --- 名前 --- #}
     <div class="label-input-err">
       <div class="label-input">
-        {{ form.name_kana.label_tag }}
-        {{ form.name_kana }}
+        {{ form.name.label_tag }}{{ form.name }}
       </div>
       <div class="post-err">
-        {% for error in form.name_kana.errors %}
-          {{ error }}
-        {% endfor %}
+        {% for error in form.name.errors %}{{ error }}{% endfor %}
       </div>
     </div>
 
-    <hr class="my-2">
-
-
-    {% comment %} 被保険者番号 {% endcomment %}
+    {# --- かな --- #}
     <div class="label-input-err">
       <div class="label-input">
-        {{ form.insured_number.label_tag }}
-        {{ form.insured_number }}
+        {{ form.name_kana.label_tag }}{{ form.name_kana }}
       </div>
       <div class="post-err">
-          {% for error in form.insured_number.errors %}
-              {{ error }}
-          {% endfor %}
+        {% for error in form.name_kana.errors %}{{ error }}{% endfor %}
       </div>
     </div>
 
-    {% comment %} 生年月日 {% endcomment %}
+    {# --- 被保険者番号 --- #}
     <div class="label-input-err">
       <div class="label-input">
-        {{ form.date_of_birth.label_tag }}
-        {{ form.date_of_birth }}
+        {{ form.insured_number.label_tag }}{{ form.insured_number }}
       </div>
       <div class="post-err">
-          {% for error in form.date_of_birth.errors %}
-              {{ error }}
-          {% endfor %}
+          {% for error in form.insured_number.errors %}{{ error }}{% endfor %}
       </div>
     </div>
 
-    {% comment %} 性別 {% endcomment %}
+    {# --- 生年月日 --- #}
     <div class="label-input-err">
       <div class="label-input">
-        {{ form.gender.label_tag }}
-        {{ form.gender }}
+        {{ form.date_of_birth.label_tag }}{{ form.date_of_birth }}
       </div>
       <div class="post-err">
-          {% for error in form.gender.errors %}
-              {{ error }}
-          {% endfor %}
+          {% for error in form.date_of_birth.errors %}{{ error }}{% endfor %}
       </div>
     </div>
 
-    {% comment %} メモ {% endcomment %}
+    {# --- 性別 --- #}
     <div class="label-input-err">
       <div class="label-input">
-        {{ form.notes.label_tag }}
-        {{ form.notes }}
+        {{ form.gender.label_tag }}{{ form.gender }}
       </div>
       <div class="post-err">
-          {% for error in form.notes.errors %}
-              {{ error }}
-          {% endfor %}
+          {% for error in form.gender.errors %}{{ error }}{% endfor %}
       </div>
     </div>
 
-    <button class="btn btn-primary" type="submit" name="action" value="save">保存</button>
+    {# --- メモ --- #}
+    <div class="label-input-err">
+      <div class="label-input">
+        {{ form.notes.label_tag }}{{ form.notes }}
+      </div>
+      <div class="post-err">
+          {% for error in form.notes.errors %}{{ error }}{% endfor %}
+      </div>
+    </div>
+
+    <div class="mt-4">
+      <button class="btn btn-primary" type="submit" name="action" value="save">保存</button>
+    </div>
   </form>
 </div>
 {% endblock %}
+
 {% block script %}
 <script>
   document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('userForm');
-    if (!form) return; // フォームがなければ何もしない
+    if (!form) return;
 
     let isDirty = false;
 
-    // 入力を検知
     form.addEventListener('input', () => {
-      console.log("変更を検知しました");
       isDirty = true;
     });
 
-    // 離脱警告
     window.addEventListener('beforeunload', (e) => {
       if (!isDirty) return;
       e.preventDefault();
       e.returnValue = ''; 
     });
 
-    // 送信時の処理（二重送信防止＋フラグ解除）
     form.addEventListener('submit', (e) => {
       const btn = form.querySelector('button[value="save"]');
       if (btn) {
-          // ボタンを無効化するが、actionの値が送られるよう一瞬だけ待機
+          // 二重送信防止
           setTimeout(() => { btn.disabled = true; }, 1);
       }
-      isDirty = false; // 送信なので警告は出さない
+      isDirty = false; 
     });
   });
 </script>

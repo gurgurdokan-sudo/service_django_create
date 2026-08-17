@@ -122,44 +122,53 @@ def public_assistance_create(request,user_id):
         'is_from_service' : is_from_service,
         })
 #消去
-def user_delete(request,user_id):
-    target = get_object_or_404(User,id=user_id)
+@delete_permission_required
+def user_delete(request, user_id):
+    target = get_object_or_404(User, id=user_id)
+    
     crumbs = [
-        # ("利用者一覧", reverse("dashboard:user_list")),
+        # ("利用者一覧", "dashboard:user_list"),
         (f"{target.name} 様 詳細", "dashboard:user_detail", [target.id]),
-        ("削除確認", None)
+        ("削除の確認", None)
     ]
 
-    if request.method=='POST':
-        messages.error(request,f'{target.name}さんを消去しました')
+    if request.method == 'POST':
+        messages.error(request, f'{target.name} 様のデータを削除しました。') 
         target.delete()
         return redirect('dashboard:user_list')
-    return render(request,'dashboard/user_delete.html',{
-        'user':target,
+        
+    # GET
+    return render(request, 'dashboard/user_delete.html', {
+        'user': target,
         'breadcrumbs': BreadcrumbUtil.create(crumbs),
-        })
+    })
 
-#更新
+# 更新
 def user_update(request, user_id):
-    user = get_object_or_404(User,id=user_id)
-    title ='error' #titleの初期値を設定
+    user = get_object_or_404(User, id=user_id)
     crumbs = [
-        (f"{user.name}様 更新画面",None),
+        # ("利用者一覧", "dashboard:user_list"),
+        (f"{user.name} 様 詳細", "dashboard:detail", [user.id]),
+        ("基本情報更新", None),
     ]
+    
     if request.method == 'POST':
         form = UserForm(request.POST, instance=user)
         if form.is_valid():
             form.save()
-            messages.success(request,f'{user.name}さんを更新されました')
-            return redirect('dashboard:user_list')
+            messages.success(request, f'{user.name} さんの情報を更新しました')
+            return redirect('dashboard:detail', user_id=user.id)
     else:
         form = UserForm(instance=user)
-        title = f'{user.name} 基本情報 更新'
-    return render(request, 'dashboard/new_user_form.html', { #いったん
-        'title':title,
+
+    # ケアマネが紐付いていれば名前を取得、いなければ None
+    cm_name = user.care_manager.name if user.care_manager else None
+    return render(request, 'dashboard/new_user_form.html', {
+        'title': f'{user.name} 基本情報 更新',
         'form': form,
+        'cm_name': cm_name,
         'breadcrumbs': BreadcrumbUtil.create(crumbs),
-        })
+    })
 
 
 #詳細（JSのbutton遷移で消去
@@ -172,7 +181,7 @@ def user_detail(request, user_id):
 
     labels = {f.name: f.verbose_name for f in user._meta.fields}
     crumbs = [
-        ("利用者一覧", "dashboard:user_list"),
+        # ("利用者一覧", "dashboard:user_list"),
         (f"{user.name} 様 詳細", None)
     ]
 
@@ -183,26 +192,5 @@ def user_detail(request, user_id):
     }
 
     return render(request, 'dashboard/user_detail.html', context)
-#介護認定変更 
-    if request.method == 'POST':
-        form = CertificateUpdateForm(request.POST)
 
-        if form.is_valid():
-            cert = form.save(commit=False)
-            cert.user = user
-            cert.benefit_rate = user.benefit_rate
-            cert.insured_number = user.insured_number
-            if prev_cert: cert.care_level_changed_at = cert.limit_start
-            cert.save()
-
-            messages.success(request, '介護認定の更新が完了しました')
-            return redirect('dashboard:user_list')
-    else: form = CertificateUpdateForm(initial=initial)
-
-    return render(request, 'dashboard/user_detail.html', {
-        'user': user,
-        'form': form,
-        'labels':labels,
-        # 'breadcrumbs': BreadcrumbUtil.create(crumbs),
-    })
 

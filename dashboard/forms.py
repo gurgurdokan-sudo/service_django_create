@@ -9,7 +9,7 @@ class UserForm(forms.ModelForm):
     required_css_class = 'required'
     class Meta:
         model = User
-        fields = ['name','name_kana','insured_number','date_of_birth','gender','notes']
+        fields = ['care_manager','name','name_kana','insured_number','date_of_birth','gender','notes']
         labels = {
             'name': '氏名',
             'name_kana': 'フリガナ',
@@ -21,6 +21,13 @@ class UserForm(forms.ModelForm):
         widgets = {
         'date_of_birth': forms.DateInput(attrs={'type': 'date'}),
         }
+    care_manager = forms.ModelChoiceField(
+        queryset=CareManager.objects.all(),
+        label="担当ケアマネジャー",
+        empty_label="------ 選択してください ------",
+        required=False 
+    )
+
     def clean(self):
         cleaned = super().clean()
         dob = cleaned.get('date_of_birth')
