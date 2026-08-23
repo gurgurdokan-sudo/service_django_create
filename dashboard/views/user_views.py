@@ -5,7 +5,7 @@ from django.contrib import messages
 from django.urls import reverse
 from django.shortcuts import render, redirect, get_object_or_404
 
-from dashboard.forms import UserForm, CertificateUpdateForm, PublicAssistanceForm
+from dashboard.forms import UserForm, PublicAssistanceForm
 from dashboard.models import User, CareManager, PublicAssistance
 from dashboard.utils import BreadcrumbUtil
 
@@ -32,8 +32,6 @@ def user_create(request, cm_id):
         form = UserForm(request.POST)
         if form.is_valid():
             user = form.save(commit=False)
-            user.name = user.name.replace('　',' ')
-            user.name_kana = user.name_kana.replace('　',' ')
             user.care_manager_id = cm_id
             user.save()
             return redirect('dashboard:certificate_create',user_id=user.id) # 認定情報作成画面へ遷移

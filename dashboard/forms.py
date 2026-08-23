@@ -27,6 +27,14 @@ class UserForm(forms.ModelForm):
         empty_label="------ 選択してください ------",
         required=False 
     )
+    def save(self,commit = True):
+        instance = super().save(commit=False)
+        if instance.name:
+            instance.name = instance.name.replace('　',' ')
+        if instance.name_kana:
+            instance.name_kana = instance.name_kana.replace('　',' ')
+        if commit: instance.save()
+        return instance
 
     def clean(self):
         cleaned = super().clean()
@@ -36,14 +44,16 @@ class UserForm(forms.ModelForm):
             
         name = cleaned.get('name')
         name = name.replace('　',' ') if name else ''
-        if not name:
+        if not name: self._errors['name'] = ErrorList(['氏名は必須です'])
+        else:
             parts = [p for p in name.split() if p]
             if len(parts) != 2:
                 self._errors['name'] = ErrorList(['氏名は「姓 半角スペース 名」で入力してください'])
 
         kana = cleaned.get('name_kana')
         kana = kana.replace('　',' ') if kana else ''
-        if not kana:
+        if kana: self._errors['name_kana'] = ErrorList(['フリガナは必須です'])
+        else:
             parts = [p for p in kana.split() if p]
             if len(parts) != 2:
                 self._errors['name_kana'] = ErrorList(['フリガナは「セイ 半角スペース メイ」で入力してください'])
@@ -91,8 +101,8 @@ class PlanForm(forms.ModelForm):
         }
 
         widgets = {
-        'start_time': forms.TimeInput(attrs={'type': 'time'}),
-        'end_time': forms.TimeInput(attrs={'type': 'time'}),
+            'start_time': forms.TimeInput(attrs={'type': 'time'}),
+            'end_time': forms.TimeInput(attrs={'type': 'time'}),
         }
     def __init__(self, *args, **kwargs):
         user_id = kwargs.pop('user_id', None)
@@ -100,7 +110,7 @@ class PlanForm(forms.ModelForm):
         if user_id:
             self.user_id = user_id
         for field_name in self.fields:
-            if not field_name.startswith('weekdays'):
+            if field_name != 'weekdays':
                 self.fields[field_name].widget.attrs['class']= f'form-control {field_name}'
 class CertificateForm(forms.ModelForm):
     "  認定情報from "
