@@ -143,6 +143,7 @@ class ServiceMonthlyRecord(models.Model):
         verbose_name_plural= "月間提供表"
         unique_together = ('user', 'date') #その月のサービス提供票は1件のみ
 
+    office = models.ForeignKey('Office', on_delete=models.PROTECT, verbose_name='サービス提供の事業所')
     user = models.ForeignKey(User, on_delete=models.CASCADE , related_name="monthly_records" )
     confirmed = models.BooleanField(default=False) # 確定フラグ
     confirmed_at = models.DateField(verbose_name='確定日',blank=True,null=True)

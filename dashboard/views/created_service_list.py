@@ -42,6 +42,16 @@ def created_service_list_api(request):
             "public_flag": r.public_amount > 0
         })
 
+    items = [
+                { "label": "請求対象者", "status": "ok", "value": f"{target_users} / {target_users}人" },
+                { "label": "サービス提供表", "status": "warning" if unconfirmed_count else "ok",
+                  "value": f"{confirmed_count} / {target_users}人 確定" },
+                { "label": "介護認定情報", "status": "ok", "value": "OK" },
+                { "label": "被保険者番号", "status": "ok", "value": "OK" },
+                { "label": "保険者番号", "status": "ok", "value": "OK" },
+                { "label": "請求金額計算", "status": "ok", "value": "OK" }
+            ]
+
     return JsonResponse({
         "year": year,
         "month": month,
@@ -62,16 +72,8 @@ def created_service_list_api(request):
 
         "checks": {
             "total_items": 6,
-            "ok_items": 5,
-            "items": [
-                { "label": "請求対象者", "status": "ok", "value": f"{target_users} / {target_users}人" },
-                { "label": "サービス提供表", "status": "warning" if unconfirmed_count else "ok",
-                  "value": f"{confirmed_count} / {target_users}人 確定" },
-                { "label": "介護認定情報", "status": "ok", "value": "OK" },
-                { "label": "被保険者番号", "status": "ok", "value": "OK" },
-                { "label": "保険者番号", "status": "ok", "value": "OK" },
-                { "label": "請求金額計算", "status": "ok", "value": "OK" }
-            ]
+            "ok_items": len([item for item in items if item["status"] == "ok"]),
+            "items": items
         },
 
         "records": record_list,

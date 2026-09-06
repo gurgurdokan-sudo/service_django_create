@@ -11,7 +11,7 @@ class ClaimBuilder:
         rows = []
         for r in records:
             rows.append({
-                "事業所番号": r.office.number,
+                "事業所番号": r.office.officenumber,
                 "サービス提供年月": f"{year}{month:02d}",
                 "保険者番号": r.user.insurer_number,
                 "被保険者番号": r.user.insured_number,
