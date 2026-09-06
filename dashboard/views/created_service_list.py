@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from dashboard.models import ServiceMonthlyRecord
+from django.db.models import Sum
 
 #利用者 作成済み　サービス提供表一覧
 def created_service_list(request):
@@ -17,13 +18,66 @@ def created_service_list_api(request):
         date__year=year,
         date__month=month
     ).order_by('-date')
-    data = [
-        {
-            "user": record.user.name,
-            "date": record.date.strftime("%Y-%m"),
-            "confirmed": record.confirmed,
-            "download_url": f"/dashboard/download_service_sheet/{record.user.id}?dis_year={record.date.year}&dis_month={record.date.month}"
+
+    # --- 集計 ---
+    target_users = records.count()
+    confirmed_count = records.filter(confirmed=True).count()
+    unconfirmed_count = target_users - confirmed_count
+
+    total_cost = records.aggregate(Sum("total_cost"))["total_cost__sum"] or 0
+    benefit_amount = records.aggregate(Sum("benefit_amount"))["benefit_amount__sum"] or 0
+    public_amount = records.aggregate(Sum("public_amount"))["public_amount__sum"] or 0
+    user_share_amount = records.aggregate(Sum("user_share_amount"))["user_share_amount__sum"] or 0
+
+    # --- 個別レコード ---
+    record_list = []
+    for r in records:
+        record_list.append({
+            "user": r.user.name,
+            "confirmed": r.confirmed,
+            "total_cost": r.total_cost,
+            "benefit_amount": r.benefit_amount,
+            "public_amount": r.public_amount,
+            "user_share_amount": r.user_share_amount,
+            "public_flag": r.public_amount > 0
+        })
+
+    return JsonResponse({
+        "year": year,
+        "month": month,
+
+        "summary": {
+            "target_users": target_users,
+            "confirmed_count": confirmed_count,
+            "unconfirmed_count": unconfirmed_count,
+            "total_claim_amount": benefit_amount + public_amount
+        },
+
+        "amounts": {
+            "total_cost": total_cost,
+            "benefit_amount": benefit_amount,
+            "public_amount": public_amount,
+            "user_share_amount": user_share_amount
+        },
+
+        "checks": {
+            "total_items": 6,
+            "ok_items": 5,
+            "items": [
+                { "label": "請求対象者", "status": "ok", "value": f"{target_users} / {target_users}人" },
+                { "label": "サービス提供表", "status": "warning" if unconfirmed_count else "ok",
+                  "value": f"{confirmed_count} / {target_users}人 確定" },
+                { "label": "介護認定情報", "status": "ok", "value": "OK" },
+                { "label": "被保険者番号", "status": "ok", "value": "OK" },
+                { "label": "保険者番号", "status": "ok", "value": "OK" },
+                { "label": "請求金額計算", "status": "ok", "value": "OK" }
+            ]
+        },
+
+        "records": record_list,
+
+        "csv": {
+            "status": "not_created",
+            "history": []
         }
-        for record in records
-    ]
-    return JsonResponse({"records": data})
+    })

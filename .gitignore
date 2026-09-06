@@ -42,3 +42,5 @@ frontend/dist/
 
 # Copied static assets
 # static/frontend/assets/
+
+settings.json
