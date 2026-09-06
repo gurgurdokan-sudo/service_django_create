@@ -10,7 +10,8 @@ from dashboard.models import (
     User, 
     ServicePlan,
     ServiceMaster,
-    ServiceMonthlyRecord
+    ServiceMonthlyRecord,
+    Office,
     )
 from dashboard.forms import PlanForm
 from dashboard.calendar_table import get_month_days
@@ -49,6 +50,19 @@ def create_plan(request,user_id):
                 current_cert = user.get_certificate(year, month)
                 certs_to_save = [{'cert': current_cert}]
 
+            # ServiceMonthlyRecord の作成
+            date_obj = date(year, month, 1)
+            record = ServiceMonthlyRecord.objects.get_or_create(
+                user=user, 
+                office=Office.objects.get(id=1), #todo: 事業所を選択できるようにする
+                date=date_obj,
+                defaults={
+                    'weekday_pattern': [int(i) for i in weekdays],
+                    'start_time': form.cleaned_data['start_time'],
+                    'end_time': form.cleaned_data['end_time']
+                }
+            )
+
             # 認定情報ごとに ServicePlan を作成（1行 or 2行）
             for item in certs_to_save:
                 cert = item['cert']
@@ -68,19 +82,10 @@ def create_plan(request,user_id):
                 plan.build_schedule(weekdays, start_day=start_day, end_day=end_day)
 
                 plan.apply_service_master(target_care_level=cert.care_level)
+                plan.monthly_record = record[0]  # ServiceMonthlyRecord を関連付け
                 plan.save()
 
-            # ServiceMonthlyRecord の作成
-            date_obj = date(year, month, 1)
-            ServiceMonthlyRecord.objects.get_or_create(
-                user=user, 
-                date=date_obj,
-                defaults={
-                    'weekday_pattern': [int(i) for i in weekdays],
-                    'start_time': form.cleaned_data['start_time'],
-                    'end_time': form.cleaned_data['end_time']
-                }
-            )
+
             if len(certs_to_save) > 1:
                 messages.success(request, f'サービス提供表の計画を作成しました。\n{change_cert.limit_start.day}日から介護度が変更されます。')
             else:

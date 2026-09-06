@@ -4,6 +4,8 @@ from django import forms
 from django.forms.utils import ErrorList
 from .models import User, ServicePlan, Certificate, CareManager, Office, PublicAssistance
 
+import logging
+logger = logging.getLogger(__name__)
 
 class UserForm(forms.ModelForm):
     required_css_class = 'required'
@@ -138,8 +140,23 @@ class CertificateForm(forms.ModelForm):
             self._errors['limit_amount_type'] = ErrorList(['限度額区分は必須です'])
         if limit_amount_value and 1000000> limit_amount_value >0 : #todo　とりあえず可笑しな値をはじく
             self._errors['limit_amount_value'] = ErrorList(['正式な限度額を設定してください'])
+        cert_obj = Certificate.objects.filter(
+                insured_number=self.instance.insured_number,
+                care_level=cleaned.get('care_level'),
+                limit_amount_type=cleaned.get('limit_amount_type'),
+                limit_amount_value=cleaned.get('limit_amount_value'),
+                benefit_rate=cleaned.get('benefit_rate'),
+                limit_start=cleaned.get('limit_start'),
+                limit_end=cleaned.get('limit_end'),
+            )
+        if self.instance.pk:
+            cert_obj = cert_obj.exclude(pk=self.instance.pk)
+        logger.info(f'cleaned: {cert_obj}')
+        if cert_obj.exists():
+            self.add_error('care_level', '同じ内容の認定情報が既に登録されています')
         return cleaned
     def __init__(self, *args, **kwargs):
+        self.request = kwargs.pop('request', None)
         super().__init__(*args, **kwargs)
         for field_name,field in self.fields.items():
             if isinstance(field.widget, forms.CheckboxInput):
