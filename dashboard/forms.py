@@ -52,7 +52,7 @@ class UserForm(forms.ModelForm):
 
         kana = cleaned.get('name_kana')
         kana = kana.replace('　',' ') if kana else ''
-        if kana: self._errors['name_kana'] = ErrorList(['フリガナは必須です'])
+        if not kana: self._errors['name_kana'] = ErrorList(['フリガナは必須です'])
         else:
             parts = [p for p in kana.split() if p]
             if len(parts) != 2:

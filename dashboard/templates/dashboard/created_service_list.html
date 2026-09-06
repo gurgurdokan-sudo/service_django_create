@@ -6,9 +6,12 @@
 {% endblock css %}
 
 {% block body %}
-<body>
-  <div id="root"></div>
-</body>
+<div class="container">
+  <div id="bread" data-items='{{ breadcrumbs|safe }}'></div>
+  <body>
+    <div id="root"></div>
+  </body>
+</div>
 {% endblock %}
 
 {% block script %}

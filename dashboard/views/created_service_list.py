@@ -1,11 +1,23 @@
 from django.shortcuts import render
-from dashboard.models import ServiceMonthlyRecord
 from django.db.models import Sum
+
+from dashboard.models import ServiceMonthlyRecord
+from dashboard.utils import BreadcrumbUtil  
+
 
 #利用者 作成済み　サービス提供表一覧
 def created_service_list(request):
+    crumbs = [
+        # ("利用者一覧", "dashboard:user_list"),
+        ("サービス提供 作成状況",None)
+    ]
     records = ServiceMonthlyRecord.objects.all().filter(confirmed=True).order_by('-date')
-    return render(request, 'dashboard/created_service_list.html', {'records': records})
+    return render(
+        request, 
+        'dashboard/created_service_list.html', {
+        'records': records,
+        'breadcrumbs': BreadcrumbUtil.create(crumbs)
+        })
 
 from django.http import JsonResponse
 

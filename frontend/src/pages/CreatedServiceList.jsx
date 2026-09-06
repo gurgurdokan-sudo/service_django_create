@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useEffect, useState } from "react";
 import React from "react";
 
@@ -9,9 +10,23 @@ export default function ClaimMonthly() {
   const [selectedYearMonth, setSelectedYearMonth] = useState(`${initialYear}-${initialMonth}`);
   const [monthlyData, setMonthlyData] = useState(null);
 
+  const handleYearMonthChange = (offset) => {
+    const [year, month] = selectedYearMonth.split("-").map(Number);
+    if (today.getFullYear() === year && today.getMonth() + 1 === month && offset > 0) {
+      return;
+    }
+    const newDate = new Date(year, month - 1 , 1);
+    const nextYear = newDate.getFullYear();
+    const nextMonth = newDate.getMonth() + 1 + offset;
+    if (nextMonth === 0) {
+      setSelectedYearMonth(`${nextYear}-${12}`);
+    } else {
+      setSelectedYearMonth(`${nextYear}-${nextMonth}`);
+    }
+  };
   const generateYearMonthOptions = () => {
     const options = [];
-    const startYear = 2024;
+    const startYear = today.getFullYear() - 1;
     const endYear = today.getFullYear() + 1;
 
     for (let y = startYear; y <= endYear; y++) {
@@ -61,16 +76,18 @@ export default function ClaimMonthly() {
           1. ページヘッダー
       ========================= */}
       <div className="page-header">
-        <div >
+        <div>
           <h2>国保連請求（月次）</h2>
           <p className="page-description">
             月単位で請求対象者・確定状況・請求金額を確認し、国保連CSVを作成します。
           </p>
         </div>
 
-        <div className="month-selector">
+        <div className="month-selector" style={{display:"flex", alignItems:"center",gap:"8px"}}>
+          <button className="btn btn-outline" onClick={() => handleYearMonthChange(-1)}>&lt;</button>
           <select
             value={selectedYearMonth}
+            disabled={today.getFullYear() === parseInt(selectedYearMonth.split("-")[0]) && today.getMonth() + 1 === parseInt(selectedYearMonth.split("-")[1])}
             onChange={(e) => setSelectedYearMonth(e.target.value)}
           >
             {generateYearMonthOptions().map((opt) => (
@@ -79,6 +96,7 @@ export default function ClaimMonthly() {
               </option>
             ))}
           </select>
+          <button className="btn btn-outline" onClick={() => handleYearMonthChange(1)}>&gt;</button>
         </div>
       </div>
 

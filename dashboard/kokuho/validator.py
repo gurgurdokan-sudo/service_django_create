@@ -6,7 +6,9 @@ class ValidationError(Exception):
 
 
 class ClaimValidator:
-
+    """
+    国保連請求データの検証を行うクラス
+    """
     def validate(self, rows):
         errors = []
 

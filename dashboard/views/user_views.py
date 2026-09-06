@@ -126,7 +126,7 @@ def user_delete(request, user_id):
     
     crumbs = [
         # ("利用者一覧", "dashboard:user_list"),
-        (f"{target.name} 様 詳細", "dashboard:user_detail", [target.id]),
+        (f"{target.name} 様 詳細", "dashboard:detail", [target.id]),
         ("削除の確認", None)
     ]
 

@@ -23,7 +23,7 @@ def caremana_list(request):
 
 def caremana_update(request, caremanager_id):
     crumbs = [
-        ("ケアマネジャー一覧", reverse("dashboard:caremana_list")),
+        ("ケアマネジャー一覧", "dashboard:caremana_list"),
         (f"{caremanager.name} 様 更新", None)
     ]
     caremanager = get_object_or_404(CareManager, id=caremanager_id)

@@ -174,6 +174,7 @@ class ServicePlan(models.Model):
     class Meta:
         verbose_name_plural= "サービス利用計画"
     user = models.ForeignKey(User, on_delete=models.CASCADE)
+    monthly_record = models.ForeignKey(ServiceMonthlyRecord, on_delete=models.CASCADE, related_name="plans",)
     this_year = datetime.now().year
     year = models.IntegerField(choices=[(i, f"{i}年") for i in range(this_year-1, this_year+1)], default=this_year)
     month = models.IntegerField(choices=[(i, f"{i}月") for i in range(1, 13)], default = datetime.now().month)
@@ -423,4 +424,3 @@ class PublicAssistance(models.Model):
     def __str__(self):
         start_month = str(self.start_date).split('-')[1]
         return f"{self.user.name}({self.hogo_number})-{start_month}月分"
-    
