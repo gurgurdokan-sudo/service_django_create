@@ -38,6 +38,12 @@ export default function ClaimMonthly() {
     }
   };
 
+  const handleCreateCsv = () => {
+    const [year, month] = selectedYearMonth.split("-");
+    window.location.href = `/dashboard/create_kokuho_csv/?year=${year}&month=${month}`;
+  };
+
+
   useEffect(() => {
     fetchMonthlyData();
   }, [selectedYearMonth]);
@@ -227,7 +233,12 @@ export default function ClaimMonthly() {
             <strong>{csv.status === "not_created" ? "未作成" : "作成済み"}</strong>
           </div>
 
-          <button type="button" className="csv-button" disabled={summary.unconfirmed_count > 0}>
+          <button 
+            type="button" 
+            className="csv-button" 
+            disabled={summary.unconfirmed_count > 0}
+            onClick={handleCreateCsv}
+          >
             国保連CSVを作成
           </button>
         </div>

@@ -15,6 +15,7 @@ from .views.create_plan import create_plan
 from .views.init_plan import init_plan
 from .views.caremana import caremana_list,caremana_update,caremana_delete, caremana_create
 from .views.created_service_list import created_service_list, created_service_list_api
+from .views.create_kokuho_csv import create_kokuho_csv
 
 from . import api
 
@@ -42,7 +43,8 @@ urlpatterns = [
     path('caremanagers/<int:caremanager_id>/update/', caremana_update, name='caremana_update'),
     path('caremanagers/<int:caremanager_id>/delete/', caremana_delete, name='caremana_delete'),
     path('user/init', init_plan, name='plan'),
-    
+    path('dashboard/create_kokuho_csv/', create_kokuho_csv, name='create_kokuho_csv'),
+
 # API
     path("api/plan/<int:planId>/update/", api.update_schedule, name="update_schedule"),
     path("api/plan/<int:user_id>/create/", api.create_plan, name="api_create_plan"),
