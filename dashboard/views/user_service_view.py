@@ -49,10 +49,10 @@ def build_user_service_context(user_id, year, month):
             if addon.unit:
                 monthly_addon_totals[addon_name] = monthly_addon_totals.get(addon_name,0) + addon.unit * len(days)
     addon_service = AddOnService.objects.all()
-    recode_date = date(year, month, 1)
+    record_date = date(year, month, 1)
     logger.info(f'{year}-{month}のサービス提供票の確認状態を取得')
     try:
-        record = ServiceMonthlyRecord.objects.filter(user=target, date=recode_date).first()
+        record = ServiceMonthlyRecord.objects.filter(user=target, date=record_date).first()
         confirmed = record.confirmed if record else False
     except Exception as e:
         logger.error(f"確認状態の取得中にエラーが発生しました: {e}")
