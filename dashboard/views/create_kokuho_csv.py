@@ -3,6 +3,8 @@ from django.http import FileResponse, HttpResponse
 from dashboard.kokuho.exporter import CsvExporter
 from dashboard.kokuho.builder import ClaimBuilder
 from dashboard.kokuho.validator import ClaimValidator
+import logging
+logger = logging.getLogger(__name__)
 
 def create_kokuho_csv(request):
     year = int(request.GET.get("year"))
@@ -14,8 +16,10 @@ def create_kokuho_csv(request):
 
     validator = ClaimValidator()
     try:
+        logger.info("CSV export started")
         validator.validate(rows)
     except ValueError as e:
+        logger.error("Validation failed: %s", e)
         return HttpResponse(str(e), status=400)
 
     headers = [
