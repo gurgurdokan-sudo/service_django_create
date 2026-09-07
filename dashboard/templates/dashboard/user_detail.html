@@ -28,6 +28,7 @@
 {% endblock %}
 
 {% block body %}
+  {% include 'dashboard/components/messages.html' %}
 <div id="bread" data-items='{{ breadcrumbs|safe }}'></div>
 
 <div class="container">

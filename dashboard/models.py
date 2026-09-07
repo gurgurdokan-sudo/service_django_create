@@ -170,6 +170,37 @@ class ServiceMonthlyRecord(models.Model):
 
     def __str__(self):
         return f'{self.user} - {self.date.strftime("%Y-%m")}'
+    
+class Certificate(models.Model):
+    """被保険者証の情報を管理するモデル"""
+    class Meta:
+        verbose_name_plural= "介護認定情報"
+        ordering = ['-limit_start', '-created_at']
+    BENEFIT_RATE_CHOICES = [(0.9, "給付率90%（1割負担）"),(0.8, "給付率80%（2割負担）"),(0.7, "給付率70%（3割負担）"),]
+    user = models.ForeignKey(User,on_delete=models.CASCADE,related_name="certificate",verbose_name="利用者")
+    insured_number = models.CharField(max_length=10,verbose_name="被保険者番号（10桁）")
+    care_level = models.CharField(max_length=10,choices=LEVEL_CHOICES,verbose_name="要介護状態区分")
+    care_level_changed_at = models.DateField(verbose_name="要介護状態区分変更日",null=True,blank=True)
+    # todo↑操作Userは選択できない様にする
+    benefit_rate = models.FloatField(choices=BENEFIT_RATE_CHOICES,verbose_name="給付率")
+    limit_amount_type = models.CharField(default="規定",max_length=10,choices=[("規定", "規定通り"), ("任意", "任意設定")],verbose_name="区分支給限度基準額区分")
+    benefit_limit_flag = models.BooleanField(default=False,verbose_name="給付制限")
+    limit_amount_value = models.IntegerField(null=True,blank=True,verbose_name="任意設定の限度額") 
+    limit_start = models.DateField(verbose_name="限度額適用開始日")
+    limit_end = models.DateField(verbose_name="限度額適用終了日")
+    is_active = models.BooleanField(default=True, verbose_name="有効フラグ")
+    created_at = models.DateTimeField(auto_now_add=True ,verbose_name="作成日時")
+    @property
+    def status(self):
+        today = timezone.now().date()
+        if today < self.limit_start:
+            return "申請中"
+        if self.limit_end and today <= self.limit_end:
+            return "認定済み"
+        return "消去"
+    def __str__(self):
+        return self.user.name + f'({self.limit_end})'
+    
 class ServicePlan(models.Model):
     class Meta:
         verbose_name_plural= "サービス利用計画"
@@ -187,6 +218,9 @@ class ServicePlan(models.Model):
     service_code = models.CharField(max_length=20,null=True, blank=True)
     unit = models.IntegerField(default=0)
     care_level = models.CharField(max_length=10, choices=LEVEL_CHOICES, null=True, blank=True)
+
+    end_day = models.IntegerField(null=True, blank=True)
+    cert = models.ForeignKey(Certificate, null=True, blank=True, on_delete=models.PROTECT)
     @property
     def stay_time_category(self):
         delta = datetime.combine(date.min, self.end_time) - datetime.combine(date.min, self.start_time)
@@ -381,36 +415,6 @@ class Office(models.Model):
     def __str__(self):
         return self.name
 
-class Certificate(models.Model):
-    """被保険者証の情報を管理するモデル"""
-    class Meta:
-        verbose_name_plural= "介護認定情報"
-        ordering = ['-limit_start', '-created_at']
-    BENEFIT_RATE_CHOICES = [(0.9, "給付率90%（1割負担）"),(0.8, "給付率80%（2割負担）"),(0.7, "給付率70%（3割負担）"),]
-    user = models.ForeignKey(User,on_delete=models.CASCADE,related_name="certificate",verbose_name="利用者")
-    insured_number = models.CharField(max_length=10,verbose_name="被保険者番号（10桁）")
-    care_level = models.CharField(max_length=10,choices=LEVEL_CHOICES,verbose_name="要介護状態区分")
-    care_level_changed_at = models.DateField(verbose_name="要介護状態区分変更日",null=True,blank=True)
-    # todo↑操作Userは選択できない様にする
-    benefit_rate = models.FloatField(choices=BENEFIT_RATE_CHOICES,verbose_name="給付率")
-    limit_amount_type = models.CharField(default="規定",max_length=10,choices=[("規定", "規定通り"), ("任意", "任意設定")],verbose_name="区分支給限度基準額区分")
-    benefit_limit_flag = models.BooleanField(default=False,verbose_name="給付制限")
-    limit_amount_value = models.IntegerField(null=True,blank=True,verbose_name="任意設定の限度額") 
-    limit_start = models.DateField(verbose_name="限度額適用開始日")
-    limit_end = models.DateField(verbose_name="限度額適用終了日")
-    is_active = models.BooleanField(default=True, verbose_name="有効フラグ")
-    created_at = models.DateTimeField(auto_now_add=True ,verbose_name="作成日時")
-    @property
-    def status(self):
-        today = timezone.now().date()
-        if today < self.limit_start:
-            return "申請中"
-        if self.limit_end and today <= self.limit_end:
-            return "認定済み"
-        return "消去"
-    def __str__(self):
-        return self.user.name + f'({self.limit_end})'
-    
 class PublicAssistance(models.Model):
     """生活保護情報を管理するモデル"""
     class Meta:
