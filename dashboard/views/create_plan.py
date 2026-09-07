@@ -42,7 +42,7 @@ def create_plan(request,user_id):
                 logger.info(f"区分変更を検知: {change_cert.limit_start.day}日から変更")
             else:
                 current_cert = user.get_certificate(year, month)
-                certs_to_save = [{'cert': current_cert}]
+                certs_to_save = [{'cert': current_cert, 'start_day':1}]
 
             # ServiceMonthlyRecord の作成
             date_obj = date(year, month, 1)
@@ -72,13 +72,14 @@ def create_plan(request,user_id):
                 # その月の末日を取得
                 _, last_day = calendar_module.monthrange(year, month)
                 end_day = item.get('end_day', last_day)
-                
+                plan.start_day = start_day
+                plan.end_day = end_day
+
+                # 初期のスケジュールを前回データの週で作成
                 plan.build_schedule(weekdays, start_day=start_day, end_day=end_day)
 
-                cert_obj = item.get('cert')
-                plan.end_day = end_day
+                cert_obj = item.get('cert', certs_to_save[0])
                 plan.cert = cert_obj
-                plan.cert = change_cert
                 plan.apply_service_master(target_care_level=cert.care_level)
                 plan.monthly_record = record[0]  # ServiceMonthlyRecord を関連付け
                 plan.save()

@@ -201,21 +201,26 @@ class Certificate(models.Model):
 class ServicePlan(models.Model):
     class Meta:
         verbose_name_plural= "サービス利用計画"
+    
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     monthly_record = models.ForeignKey(ServiceMonthlyRecord, on_delete=models.CASCADE, related_name="plans",)
+
     this_year = datetime.now().year
     year = models.IntegerField(choices=[(i, f"{i}年") for i in range(this_year-1, this_year+1)], default=this_year)
     month = models.IntegerField(choices=[(i, f"{i}月") for i in range(1, 13)], default = datetime.now().month)
+
     start_time = models.TimeField(default="09:00")
     end_time = models.TimeField(default="15:00")
 
     schedule_json = models.JSONField(default=dict, blank=True)
     actual_json = models.JSONField(default=dict, blank=True)
+
     service_name = models.CharField(max_length=50,null=True, blank=True)
     service_code = models.CharField(max_length=20,null=True, blank=True)
     unit = models.IntegerField(default=0)
     care_level = models.CharField(max_length=10, choices=LEVEL_CHOICES, null=True, blank=True)
 
+    start_day = models.IntegerField(null=True, blank=True, default=1)
     end_day = models.IntegerField(verbose_name="介護認定情報が月の中で変わる時に代わる日を記録",null=True, blank=True)
     cert = models.ForeignKey(Certificate, null=True, blank=True, on_delete=models.PROTECT)
     @property
@@ -239,7 +244,14 @@ class ServicePlan(models.Model):
         return {
             str(i): date.get(str(i), {'main':"",'addon':{}}) for i in range(1, 32)
         }
-    def get_total_count(self,row_type)->int: #scheduleなら予定の回数、actualなら実績の回数、addonなら全ての加算回数
+    def can_edit_day(self, day: int) -> bool:
+        """この plan が編集可能な日付かどうか"""
+        if self.start_day and day < self.start_day:
+            return False
+        if self.end_day and day > self.end_day:
+            return False
+        return True
+    def get_total_count(self, row_type)->int: #scheduleなら予定の回数、actualなら実績の回数、addonなら全ての加算回数
         if row_type == "schedule":
             date = self.schedule_dict
             return sum(1 for v in date.values() if v=='1')

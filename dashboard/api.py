@@ -11,9 +11,15 @@ def update_schedule(request, planId):
     plan = get_object_or_404(ServicePlan, id=planId)
     value = request.data.get("value", "")
 
-    day = request.data.get("day")
+    day = int(request.data.get("day", 1))
+
     row_type = request.data.get("row_type")  # "schedule" or "actual"
     try:
+        if not plan.can_edit_day(day):
+            logger.error('認定情報切り替え後の日付を編集')
+            return Response(
+                {"status": "error", "message": "認定情報切り替え後のため編集できません"},status=400
+            )
         # 予定を変更
         total = 0
         if row_type == "schedule":
