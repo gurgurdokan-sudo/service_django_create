@@ -30,12 +30,7 @@ def create_plan(request,user_id):
             weekdays = form.cleaned_data['weekdays']
 
             # その月の「区分変更日」があるかチェック
-            change_cert = user.certificate.filter(
-                limit_start__year=year, 
-                limit_start__month=month,
-                is_active=True
-            ).first()
-
+            change_cert = user.latest_changed_cert(year, month)
 
             # 保存する認定情報のリストを作成
             if change_cert:
@@ -63,7 +58,7 @@ def create_plan(request,user_id):
             )
 
             # 認定情報ごとに ServicePlan を作成（1行 or 2行）
-            for i, item in enumerate(certs_to_save):
+            for item in certs_to_save:
                 cert = item['cert']
                 if not cert: continue
 
@@ -79,11 +74,11 @@ def create_plan(request,user_id):
                 end_day = item.get('end_day', last_day)
                 
                 plan.build_schedule(weekdays, start_day=start_day, end_day=end_day)
-                if len(certs_to_save)>1 and i ==1:
-                    plan.end_day = end_day
-                    plan.cert = old_cert
-                elif len(certs_to_save)==2:
-                    plan.cert = change_cert
+
+                cert_obj = item.get('cert')
+                plan.end_day = end_day
+                plan.cert = cert_obj
+                plan.cert = change_cert
                 plan.apply_service_master(target_care_level=cert.care_level)
                 plan.monthly_record = record[0]  # ServiceMonthlyRecord を関連付け
                 plan.save()

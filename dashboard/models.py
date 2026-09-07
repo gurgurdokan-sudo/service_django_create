@@ -97,23 +97,20 @@ class User(models.Model):
             .order_by("-limit_end")
             .first()
         )
-    def get_certificate(self, year, month):
+    def get_certificate(self, year, month) -> Certificate:
         """ 指定した日付時点で有効な認定データを1件返す """
         target_date = date(int(year), int(month), 1)
         return self.certificate.filter(
             limit_start__lte=target_date,
             limit_end__gte=target_date
         ).first()
-    @property
-    def latest_changed_date(self): #紐づく介護の変更日
-        today = timezone.now().date()
-        cert = (
-            self.certificate
-            .filter(limit_end__gte=today)
-            .order_by("-limit_end")
-            .first()
-        )
-        return cert.care_level_changed_at
+
+    def latest_changed_cert(self, year, month) -> Certificate: #紐づく介護認定情報
+        return Certificate.objects.filter(
+            limit_start__year=year, 
+            limit_start__month=month,
+            is_active=True
+        ).first() #前提1件
 
 class ServiceMaster(models.Model):
     '''提供されるサービスのマスターデータを管理するモデル'''
@@ -219,7 +216,7 @@ class ServicePlan(models.Model):
     unit = models.IntegerField(default=0)
     care_level = models.CharField(max_length=10, choices=LEVEL_CHOICES, null=True, blank=True)
 
-    end_day = models.IntegerField(null=True, blank=True)
+    end_day = models.IntegerField(verbose_name="介護認定情報が月の中で変わる時に代わる日を記録",null=True, blank=True)
     cert = models.ForeignKey(Certificate, null=True, blank=True, on_delete=models.PROTECT)
     @property
     def stay_time_category(self):
