@@ -1,7 +1,7 @@
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
-from .models import ServicePlan, AddOnService, User, ServiceMaster
+from dashboard.models import ServicePlan, AddOnService, UseUser, ServiceMaster
 
 import logging
 logger = logging.getLogger(__name__)
@@ -164,7 +164,7 @@ def update_schedule(request, planId):
 @api_view(["POST"])
 def create_plan(request, user_id):
     logger.info(f"{user_id} POSTの呼び出し")
-    target_user = get_object_or_404(User, id=user_id)
+    target_user = get_object_or_404(UseUser, id=user_id)
     messages = f"{target_user.name} のサービスプランを作成します"
     master_id = request.data.get("selected_service", "")  # "1"
     if master_id:

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import User, ServiceMaster, ServicePlan, ServiceMonthlyRecord, \
+from dashboard.models import UseUser, ServiceMaster, ServicePlan, ServiceMonthlyRecord, \
     AddOnService, Office, Municipality, CareManager, Certificate, PublicAssistance
 
 admin.site.register(ServiceMaster)
@@ -15,6 +15,6 @@ admin.site.register(PublicAssistance)
 @admin.register(Office)
 class OfficeAdmin(admin.ModelAdmin):
     readonly_fields = ("id",)
-@admin.register(User)
+@admin.register(UseUser)
 class UserAdmin(admin.ModelAdmin):
     readonly_fields = ("id",)

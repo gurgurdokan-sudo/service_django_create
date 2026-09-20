@@ -2,15 +2,14 @@ from datetime import date
 
 from django import forms
 from django.forms.utils import ErrorList
-from .models import User, ServicePlan, Certificate, CareManager, Office, PublicAssistance
-
+from dashboard.models import UseUser, ServicePlan, Certificate, CareManager, Office, PublicAssistance
 import logging
 logger = logging.getLogger(__name__)
 
 class UserForm(forms.ModelForm):
     required_css_class = 'required'
     class Meta:
-        model = User
+        model = UseUser
         fields = ['care_manager','name','name_kana','insured_number','date_of_birth','gender','notes']
         labels = {
             'name': '氏名',
@@ -64,7 +63,7 @@ class UserForm(forms.ModelForm):
         if not insured_number or len(insured_number) != 10 or not insured_number.isdigit():
             self._errors['insured_number'] = ErrorList(['被保険者番号は10桁の数字で入力してください'])
 
-        queryset = User.objects.filter(insured_number=insured_number)
+        queryset = UseUser.objects.filter(insured_number=insured_number)
         if self.instance and self.instance.pk:
             queryset = queryset.exclude(pk=self.instance.pk)
 

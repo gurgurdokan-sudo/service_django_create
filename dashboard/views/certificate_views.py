@@ -3,13 +3,13 @@ from django.contrib import messages
 
 from dashboard.utils import BreadcrumbUtil
 from dashboard.forms import CertificateForm
-from dashboard.models import User
+from dashboard.models import UseUser
 
 import logging
 logger = logging.getLogger(__name__)
 
 def certificate_update(request, user_id):
-    user = get_object_or_404(User, id=user_id)
+    user = get_object_or_404(UseUser, id=user_id)
     crumbs = [
         # ("利用者一覧", "dashboard:user_list"),
         (f"{user.name} 様 詳細", "dashboard:detail", [user.id]),
@@ -45,7 +45,7 @@ def certificate_update(request, user_id):
 
 #認定情報3
 def certificate_create(request,user_id):
-    user = get_object_or_404(User,id = user_id)
+    user = get_object_or_404(UseUser,id = user_id)
     latest_cert = user.certificate.order_by('-limit_end').first()
     if latest_cert:
         update = True

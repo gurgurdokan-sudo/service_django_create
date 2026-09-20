@@ -6,7 +6,7 @@ from django.urls import reverse
 
 from dashboard.utils import BreadcrumbUtil
 from dashboard.models import(
-    User,
+    UseUser,
     ServicePlan, 
     ServiceMaster,
     AddOnService,

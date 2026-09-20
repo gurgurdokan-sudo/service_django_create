@@ -6,7 +6,7 @@ from django.urls import reverse
 from django.shortcuts import render, redirect, get_object_or_404
 
 from dashboard.forms import UserForm, PublicAssistanceForm
-from dashboard.models import User, CareManager, PublicAssistance
+from dashboard.models import UseUser, CareManager, PublicAssistance
 from dashboard.utils import BreadcrumbUtil
 
 from employees.permissions import delete_permission_required
@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 #利用者一覧
 def user_list(request):
-    users = User.objects.all()
+    users = UseUser.objects.all()
     return render(request, 'dashboard/user_list.html', {'users': users})
 
 #新規作成2
@@ -45,7 +45,7 @@ def user_create(request, cm_id):
 
 #生活保護情報4
 def public_assistance_create(request,user_id):
-    user = get_object_or_404(User,id = user_id)
+    user = get_object_or_404(UseUser,id = user_id)
     zen = PublicAssistance.objects.filter(user= user,is_active = True).first()
     q_year = request.GET.get('year')
     q_month = request.GET.get('month')
@@ -122,7 +122,7 @@ def public_assistance_create(request,user_id):
 #消去
 @delete_permission_required
 def user_delete(request, user_id):
-    target = get_object_or_404(User, id=user_id)
+    target = get_object_or_404(UseUser, id=user_id)
     
     crumbs = [
         # ("利用者一覧", "dashboard:user_list"),
@@ -143,7 +143,7 @@ def user_delete(request, user_id):
 
 # 更新
 def user_update(request, user_id):
-    user = get_object_or_404(User, id=user_id)
+    user = get_object_or_404(UseUser, id=user_id)
     crumbs = [
         # ("利用者一覧", "dashboard:user_list"),
         (f"{user.name} 様 詳細", "dashboard:detail", [user.id]),
@@ -173,7 +173,7 @@ def user_update(request, user_id):
 def user_detail(request, user_id):
     # 履歴もまとめて取得
     user = get_object_or_404(
-        User.objects.prefetch_related('certificate', 'public_assistance'), 
+        UseUser.objects.prefetch_related('certificate', 'public_assistance'),
         id=user_id
     )
 

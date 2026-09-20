@@ -8,7 +8,7 @@ from django.contrib import messages
 from django.shortcuts import get_object_or_404, redirect
 from django.utils import timezone
 
-from dashboard.models import User
+from dashboard.models import UseUser
 from dashboard.excel.excel_writer import get_service_sheet_path, create_service_sheet
 from dashboard.views.user_service_view import build_user_service_context
 
@@ -20,7 +20,7 @@ def download_service_sheet(request, user_id):
         Excelファイルをダウンロードするビュー関数。ユーザーIDと年月を指定して、既に作成済みのサービス提供表を返す。
         ローカル環境ではファイルシステムから、S3環境ではS3バケットからファイルを取得する。
     """    
-    user = get_object_or_404(User, id=user_id)
+    user = get_object_or_404(UseUser, id=user_id)
     year = int(request.GET.get('dis_year',2000))
     month = int(request.GET.get('dis_month',1))
 # ローカルの場合

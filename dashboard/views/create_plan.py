@@ -7,7 +7,7 @@ from django.utils import timezone
 from django.urls import reverse
 
 from dashboard.models import (
-    User, 
+    UseUser,
     ServicePlan,
     ServiceMaster,
     ServiceMonthlyRecord,
@@ -20,7 +20,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 def create_plan(request,user_id):
-    user = User.objects.get(id=user_id)
+    user = UseUser.objects.get(id=user_id)
 
     if request.method == 'POST':
         form = PlanForm(request.POST,user_id=user_id)
@@ -92,7 +92,7 @@ def create_plan(request,user_id):
             url = reverse('dashboard:service', args=[user_id])
             return redirect(f'{url}?year={year}&month={month}')
     else: #GETリクエスト
-        user = get_object_or_404(User, id=user_id)
+        user = get_object_or_404(UseUser, id=user_id)
         now = timezone.now()
         year = int(request.GET.get('year',now.year))
         month = int(request.GET.get('month',now.month))

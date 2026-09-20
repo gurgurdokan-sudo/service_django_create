@@ -1,6 +1,5 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render,redirect,get_object_or_404
-from django.urls import reverse
 from django.contrib import messages
 
 from dashboard.models import CareManager
@@ -22,11 +21,11 @@ def caremana_list(request):
     })
 
 def caremana_update(request, caremanager_id):
+    caremanager = get_object_or_404(CareManager, id=caremanager_id)
     crumbs = [
         ("ケアマネジャー一覧", "dashboard:caremana_list"),
         (f"{caremanager.name} 様 更新", None)
     ]
-    caremanager = get_object_or_404(CareManager, id=caremanager_id)
     if request.method == 'POST':
         form = CareManagerForm(request.POST, instance=caremanager)
         if form.is_valid():
