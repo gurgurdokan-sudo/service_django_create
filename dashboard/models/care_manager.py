@@ -13,6 +13,8 @@ class CareManager(models.Model):
     care_manager_number = models.CharField(
                             max_length=13,
                             verbose_name="居宅介護支援専門員番号",
+                            blank=True,
+                            null=True
                         )
 
     office_name = models.CharField(

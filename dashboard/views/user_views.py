@@ -173,7 +173,7 @@ def user_update(request, user_id):
 def user_detail(request, user_id):
     # 履歴もまとめて取得
     user = get_object_or_404(
-        UseUser.objects.prefetch_related('certificate', 'public_assistance'),
+            UseUser.objects.prefetch_related('certificates', 'public_assistance'),
         id=user_id
     )
 

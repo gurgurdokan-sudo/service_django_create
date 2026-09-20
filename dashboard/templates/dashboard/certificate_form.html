@@ -73,9 +73,9 @@
         </p>
         <p>
           <label id="required">認定有効期間:</label>
-          {{ form.limit_start }}
-          〜
-          {{ form.limit_end }}
+            <div class="d-flex align-items-center">
+             {{ form.limit_start }}〜{{ form.limit_end }}
+            </div>
         </p>
         <div id="act-row" class="act-row">
           <ul class="error-msg">

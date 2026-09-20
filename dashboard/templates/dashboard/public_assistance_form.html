@@ -37,10 +37,12 @@
 
       <p>
         <label>適用開始年月</label>
-        {# 開始年 #}
-        {{ form.start_year }}
-        {# 開始月 #}
-        {{ form.start_month }}
+        <div class="d-flex align-items-center">
+            {# 開始年 #}
+            {{ form.start_year }}
+            {# 開始月 #}
+            {{ form.start_month }}
+        </div>
       </p>
 
       <div class="d-flex gap-2 mt-4">
@@ -48,6 +50,8 @@
 
         {% if is_from_service %}
           <button form="releaseForm" class="btn btn-outline-danger" type="submit" name="action" value="save" onclick="return confirm('設定を解除して提供表に戻りますか？')">生活保護を解除して戻る</button>
+        {% else %}
+          <button form="releaseForm"  class="btn btn-outline-danger" type="submit" name="reset" value="save" onclick="return confirm('設定を解除して提供表に戻りますか？')">生活保護を設定しない</button>
         {% endif %}
       </div>
     </form>

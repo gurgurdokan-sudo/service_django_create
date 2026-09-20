@@ -21,7 +21,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 def build_user_service_context(user_id, year, month):
-    target = get_object_or_404(User,id=user_id)
+    target = get_object_or_404(UseUser,id=user_id)
     office = Office.objects.filter(id=1).first() #todoログインユーザー事務所
     default = AddOnService.objects.get(pk=office.default_service.pk)
     plans = ServicePlan.objects.filter(
@@ -106,7 +106,7 @@ def _is_future_month_not_pa(user, year, month, prev=False):
 def user_service(request,user_id):
     dis_year = int(request.GET.get('year', now.year))
     dis_month = int(request.GET.get('month', now.month))
-    user = User.objects.get(id=user_id)
+    user = UseUser.objects.get(id=user_id)
     check_flag = request.GET.get('check_flag',False)
     if not user.care_manager or user.care_level == '認定情報更新が必要':
         '''利用者一覧画面にリダイレクトする'''
@@ -148,7 +148,7 @@ def prev_month_plan(request, user_id):
         return redirect(
             f'{url}?year={year}&month={prev_month}'
             )
-    if _is_future_month_not_pa(User.objects.get(id=user_id),year,prev_month,prev=True):
+    if _is_future_month_not_pa(UseUser.objects.get(id=user_id),year,prev_month,prev=True):
         url = reverse('dashboard:public_assistance_create', args=[user_id] )
         return redirect(
             f'{url}?year={year}&month={prev_month}'
@@ -163,7 +163,7 @@ def service_act(request, user_id):
     month = int(request.GET.get('month', now.month))
 
     col = get_month_days(year=year, month=month)
-    user = get_object_or_404(User, id=user_id)
+    user = get_object_or_404(UseUser, id=user_id)
 
     query_plans = ServicePlan.objects.filter(
         user=user,
