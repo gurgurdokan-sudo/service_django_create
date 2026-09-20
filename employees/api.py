@@ -31,10 +31,10 @@ def assignment_save(request):
     except (ValueError, TypeError, Staff.DoesNotExist):
         return Response({'status': 'error', 'message': '日付または従業員が不正です'}, status=400)
 
-    from dashboard.models import User
+    from dashboard.models import UseUser
     try:
-        care_user = User.objects.get(id=data.get('user'))
-    except (User.DoesNotExist, ValueError, TypeError):
+        care_user = UseUser.objects.get(id=data.get('user'))
+    except (UseUser.DoesNotExist, ValueError, TypeError):
         return Response({'status': 'error', 'message': '利用者が不正です'}, status=400)
 
     fields = {

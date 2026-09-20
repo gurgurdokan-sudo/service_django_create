@@ -9,7 +9,7 @@ from django.db import models
 class Staff(AbstractUser):
     '''スタッフ（ログインユーザー）
 
-    AUTH_USER_MODEL として使用する。dashboard.User（被保険者/利用者）とは別物なので注意。
+    AUTH_USER_MODEL として使用する。dashboard.UseUser（被保険者/利用者）とは別物なので注意。
     - superuser はサイト管理専用で、スタッフ一覧・選択肢には出さない
     - can_delete（削除権限）は Django 管理サイトからのみ付与する
     Slack連携: slack_user_id にSlackのメンバーID（U...）を設定すると
@@ -64,7 +64,7 @@ class Assignment(models.Model):
         verbose_name='従業員', related_name='assignments',
     )
     user = models.ForeignKey(
-        'dashboard.User', on_delete=models.CASCADE,
+        'dashboard.UseUser', on_delete=models.CASCADE,
         verbose_name='利用者', related_name='assignments',
     )
     date = models.DateField('日付')
@@ -109,7 +109,7 @@ class ShiftPattern(models.Model):
         verbose_name='従業員', related_name='shift_patterns',
     )
     user = models.ForeignKey(
-        'dashboard.User', on_delete=models.CASCADE,
+        'dashboard.UseUser', on_delete=models.CASCADE,
         verbose_name='利用者', related_name='shift_patterns',
     )
     weekday = models.IntegerField('曜日', choices=WEEKDAY_CHOICES)

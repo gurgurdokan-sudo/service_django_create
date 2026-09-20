@@ -135,7 +135,7 @@ def attendance_list(request):
 
 # カレンダー（利用者=終日イベント、スタッフ担当=時間帯イベント）
 def calendar_view(request):
-    from dashboard.models import User
+    from dashboard.models import UseUser
     today = timezone.localdate()
     return render(request, 'employees/calendar.html', {
         'this_year': today.year,
@@ -143,7 +143,7 @@ def calendar_view(request):
         # ポップアップ（シフト追加/編集モーダル）の選択肢
         'staff_options': Staff.objects.filter(is_active=True, is_superuser=False)
                                          .order_by('username'),
-        'care_user_options': User.objects.all().order_by('name_kana'),
+        'care_user_options': UseUser.objects.all().order_by('name_kana'),
     })
 
 

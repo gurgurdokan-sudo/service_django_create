@@ -1,6 +1,6 @@
 from django import forms
 
-from dashboard.models import User
+from dashboard.models import UseUser
 from .models import Entry
 
 
@@ -17,6 +17,6 @@ class EntryForm(forms.ModelForm):
         }
     def __init__(self, *args, **kwargs):
         super(EntryForm, self).__init__(*args, **kwargs)
-        self.fields['user'].queryset = User.objects.all()
+        self.fields['user'].queryset = UseUser.objects.all()
         self.fields['user'].required = True
         self.fields['user'].empty_label = "選択してください"

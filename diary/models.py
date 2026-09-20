@@ -1,6 +1,6 @@
 from django.db import models
 from django.urls import reverse
-from dashboard.models import User
+from dashboard.models import UseUser
 
 class Entry(models.Model):
     class Mood(models.TextChoices):
@@ -10,7 +10,7 @@ class Entry(models.Model):
         BAD = 'bad', '😞 いまいち'
         TERRIBLE = 'terrible', '😢 最悪'
 
-    user = models.ForeignKey(User, verbose_name='利用者',on_delete=models.CASCADE)
+    user = models.ForeignKey(UseUser, verbose_name='利用者',on_delete=models.CASCADE)
     title = models.CharField(verbose_name='タイトル', max_length=200)
     body = models.TextField(verbose_name='本文')
     date = models.DateField(verbose_name='日付')

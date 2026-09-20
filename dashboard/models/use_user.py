@@ -2,17 +2,13 @@ from django.db import models
 from django.utils import timezone
 from datetime import date
 
-from dashboard.models import (
-    Certificate,
-    CareManager
-)
 class UseUser(models.Model):
     '''被保険者の情報を管理するモデル'''
 
     class Meta:
         verbose_name_plural = "利用者"
 
-    care_manager = models.ForeignKey(CareManager, on_delete=models.SET_NULL, null=True, verbose_name='ケアマネージャー')
+    care_manager = models.ForeignKey('CareManager', on_delete=models.SET_NULL, null=True, verbose_name='ケアマネージャー')
     name = models.CharField(max_length=100, verbose_name='被保険者氏名')
     name_kana = models.CharField(max_length=100, verbose_name='フリガナ')
     insured_number = models.CharField(unique=True, max_length=10, verbose_name='被保険者番号')
@@ -20,8 +16,6 @@ class UseUser(models.Model):
     GENDER_CHOICES = [('male', '男性'), ('female', '女性'), ]
     gender = models.CharField(max_length=10, choices=GENDER_CHOICES, verbose_name='性別')
 
-    # BENEFIT_RATE_CHOICES = [(0.9, "給付率90%（1割負担）"),(0.8, "給付率80%（2割負担）"),(0.7, "給付率70%（3割負担）")]
-    # benefit_rate = models.FloatField(choices=BENEFIT_RATE_CHOICES, verbose_name = '給付率')
     notes = models.TextField(blank=True, default="", verbose_name='メモ')
 
     def __str__(self):
@@ -37,7 +31,7 @@ class UseUser(models.Model):
         ).first()
 
     @property
-    def is_active_pa_user(self):
+    def is_public_assistance_for_month(self):
         """ 前月で生保だったか判定する """
         return self.public_assistance.filter(is_active=True).exists()
 
@@ -45,7 +39,7 @@ class UseUser(models.Model):
     def current_certificate(self):
         """今日時点で有効な認定情報を返す"""
         today = timezone.now().date()
-        return self.certificate.filter(
+        return self.certificates.filter(
             limit_start__lte=today,
             limit_end__gte=today
         ).first()
@@ -53,7 +47,7 @@ class UseUser(models.Model):
     def get_certificate_for_month(self, year, month):
         """サービス提供月に有効な認定情報を返す"""
         target_date = date(year, month, 1)
-        return self.certificate.filter(
+        return self.certificates.filter(
             limit_start__lte=target_date,
             limit_end__gte=target_date
         ).first()
@@ -93,16 +87,16 @@ class UseUser(models.Model):
                 .first()
                 )
 
-    def get_certificate(self, year, month) -> Certificate:
+    def get_certificate(self, year, month) :
         """ 指定した日付時点で有効な認定データを1件返す """
         target_date = date(int(year), int(month), 1)
-        return self.certificate.filter(
+        return self.certificates.filter(
             limit_start__lte=target_date,
             limit_end__gte=target_date
         ).first()
 
-    def latest_changed_cert(self, year, month) -> Certificate:  # 紐づく介護認定情報
-        return Certificate.objects.filter(
+    def latest_changed_cert(self, year, month):  # 紐づく介護認定情報
+        return self.certificates.filter(
             limit_start__year=year,
             limit_start__month=month,
             is_active=True

@@ -3,7 +3,7 @@ from datetime import datetime, date
 from .const import LEVEL_CHOICES
 
 from dashboard.calendar_table import get_month_days
-from dashboard.models import UseUser, Certificate, AddOnService,ServiceMaster
+from .master import AddOnService,ServiceMaster
 
 class ServiceMonthlyRecord(models.Model):
     '''実際に提供されたサービスの記録を管理するモデル'''
@@ -13,7 +13,7 @@ class ServiceMonthlyRecord(models.Model):
         unique_together = ('user', 'date')  # その月のサービス提供票は1件のみ
 
     office = models.ForeignKey('Office', on_delete=models.PROTECT, verbose_name='サービス提供の事業所')
-    user = models.ForeignKey(UseUser, on_delete=models.CASCADE, related_name="monthly_records")
+    user = models.ForeignKey('UseUser', on_delete=models.CASCADE, related_name="monthly_records")
     confirmed = models.BooleanField(default=False)  # 確定フラグ
     confirmed_at = models.DateField(verbose_name='確定日', blank=True, null=True)
     date = models.DateField(help_text="月初の日付（例: 2026-07-01）")
@@ -45,7 +45,7 @@ class ServicePlan(models.Model):
     class Meta:
         verbose_name_plural = "サービス利用計画"
 
-    user = models.ForeignKey(UseUser, on_delete=models.CASCADE)
+    user = models.ForeignKey('UseUser', on_delete=models.CASCADE)
     monthly_record = models.ForeignKey(ServiceMonthlyRecord, on_delete=models.CASCADE, related_name="plans", )
 
     this_year = datetime.now().year
@@ -65,7 +65,7 @@ class ServicePlan(models.Model):
 
     start_day = models.IntegerField(null=True, blank=True, default=1)
     end_day = models.IntegerField(verbose_name="介護認定情報が月の中で変わる時に代わる日を記録", null=True, blank=True)
-    cert = models.ForeignKey(Certificate, null=True, blank=True, on_delete=models.PROTECT)
+    cert = models.ForeignKey('Certificate', null=True, blank=True, on_delete=models.PROTECT)
 
     @property
     def stay_time_category(self):

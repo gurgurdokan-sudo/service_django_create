@@ -1,16 +1,34 @@
 from django.db import models
-from .const import LEVEL_CHOICES,STAY_TIME_CHOICES
+from .const import LEVEL_CHOICES,STAY_TIME_CHOICES,SERVICE_TYPE_CHOICES
 
 class ServiceMaster(models.Model):
     '''提供されるサービスのマスターデータを管理するモデル'''
     class Meta:
         verbose_name_plural= "利用サービス マスタ"
-    care_level = models.CharField(max_length=10, choices=LEVEL_CHOICES)
-    stay_time_category = models.CharField(max_length=20, choices=STAY_TIME_CHOICES)
-    service_code = models.CharField(max_length=20)
-    service_name = models.CharField(max_length=20)
-    unit = models.IntegerField()  # 409 など
-    description = models.CharField(max_length=100,default="2026-03-01")
+    care_level = models.CharField(
+                                max_length=10,
+                                choices=LEVEL_CHOICES,
+                                verbose_name = '要介護状態区分'
+                            )
+    stay_time_category = models.CharField(
+                                max_length=20,
+                                choices=STAY_TIME_CHOICES,
+                                verbose_name='滞在時間区分'
+                            )
+    service_code = models.CharField(
+                                max_length=20,
+                                verbose_name='サービスコード'
+                            )
+    service_name = models.CharField(
+                                max_length=20,
+                                verbose_name = 'サービス名'
+                            )
+    unit = models.IntegerField(verbose_name='単位')  # 409 など
+    description = models.CharField(
+                                max_length=100,
+                                default="2026-03-01",
+                                verbose_name = 'サービス説明'
+                            )
     def __str__(self):
         return str(self.service_name)
 
@@ -61,7 +79,6 @@ class Office(models.Model):
     office_number = models.IntegerField()
     municipality = models.ForeignKey(Municipality, on_delete=models.PROTECT)
     default_service = models.ForeignKey(AddOnService, on_delete=models.SET_NULL, null=True, blank=True)
-    SERVICE_TYPE_CHOICES = [(78, "地域密着型通所介護"),(79, "通所介護（通常規模）"),(80, "通所介護（大規模Ⅰ）"),(81, "通所介護（大規模Ⅱ）"),]
     service_type_code = models.IntegerField(choices=SERVICE_TYPE_CHOICES,default=78, verbose_name = '種類コード') #種類コード: 78 （地域密着型通所介護）
 
     # Slack連携設定（事業所ごとにボットを持てるようにする。値は管理サイトから設定）
