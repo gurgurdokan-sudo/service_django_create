@@ -28,3 +28,31 @@ SERVICE_TYPE_CHOICES = [
     (80, "通所介護（大規模Ⅰ）"),
     (81, "通所介護（大規模Ⅱ）"),
 ]
+
+DATA_TYPE_CARE_INSURANCE = 7
+ITEM_NUMBER =77
+CLAIM_CATEGORY = 711
+CLAIM_DETAIL_CATEGORY = 7111
+
+SERVICE_TYPE_CODE = 78
+
+DATA_SET_CLAM ={    
+    SERVICE_TYPE_CODE: {  # 地域密着型通所介護
+        "item_number": ITEM_NUMBER,
+        "claim_category": CLAIM_CATEGORY,
+        "detail_category": CLAIM_DETAIL_CATEGORY,
+        "record_name": "介護給付費請求書情報",
+    },
+    79: { #今後必要なら追加
+        "item_number": 78,
+        "claim_category": 713,
+        "detail_category": 7131,
+        "record_name": "介護給付費明細書情報",
+    },
+    80: {
+        "item_number": 79,
+        "claim_category": 714,
+        "detail_category": 7141,
+        "record_name": "介護給付費摘要情報",
+    },
+}

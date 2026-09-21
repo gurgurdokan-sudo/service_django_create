@@ -79,7 +79,14 @@ class Office(models.Model):
     office_number = models.IntegerField()
     municipality = models.ForeignKey(Municipality, on_delete=models.PROTECT)
     default_service = models.ForeignKey(AddOnService, on_delete=models.SET_NULL, null=True, blank=True)
-    service_type_code = models.IntegerField(choices=SERVICE_TYPE_CHOICES,default=78, verbose_name = '種類コード') #種類コード: 78 （地域密着型通所介護）
+    service_type_code = models.IntegerField(
+        choices=SERVICE_TYPE_CHOICES,
+        default=78, verbose_name = '種類コード',
+        help_text="""地域密着型通所介護 → 78
+                    通所介護（通常規模） → 79
+                    通所介護（大規模Ⅰ） → 80
+                    通所介護（大規模Ⅱ） → 81"""
+        ) #種類コード: 78 （地域密着型通所介護）
 
     # Slack連携設定（事業所ごとにボットを持てるようにする。値は管理サイトから設定）
     _slack_bot_token = models.CharField(
@@ -94,5 +101,9 @@ class Office(models.Model):
     @property # 地域区分ごとの単位単価テーブル
     def unit_price(self):
         return self.UNIT_PRICE_TABLE.get(self.municipality.area_grade, 0)
+    @property
+    def pref_code(self) -> int: #都道府県コードを事務所番号から切り出し
+       return int(str(self.office_number)[:2]) 
+   
     def __str__(self):
         return self.name
