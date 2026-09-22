@@ -21,6 +21,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 def build_user_service_context(user_id, year, month):
+    """画面やExcelに渡すcontextを組み立てる"""
     target = get_object_or_404(UseUser,id=user_id)
     office = Office.objects.filter(id=1).first() #todoログインユーザー事務所
     default = AddOnService.objects.get(pk=office.default_service.pk)
@@ -41,13 +42,7 @@ def build_user_service_context(user_id, year, month):
     monthly_addon_totals = {}
     add_codes = {} #todo　Excelではcode=0
     for plan in plans:
-        addon_names = plan.get_addon_summary or {}
-        addon_units = {a.service_name: a.unit for a in AddOnService.objects.filter(service_name__in=addon_names.keys())}
-        for addon_name,days in addon_names.items():
-            addon = AddOnService.objects.filter(service_name = addon_name).first()
-            add_codes[addon_name] = {"unit": addon.unit, "code": addon.code, "count": len(days), "price":addon.price}
-            if addon.unit:
-                monthly_addon_totals[addon_name] = monthly_addon_totals.get(addon_name,0) + addon.unit * len(days)
+        add_codes.update(plan.get_addon_summary)
     addon_service = AddOnService.objects.all()
     record_date = date(year, month, 1)
     logger.info(f'{year}-{month}のサービス提供票の確認状態を取得')

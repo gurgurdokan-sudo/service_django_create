@@ -57,3 +57,6 @@ class ServicePlanCountTest(TestCase):
     def test_schedule_count(self):
         """schedule_json が空なら 0"""
         self.assertEqual(self.plan.get_total_count("schedule"), 0)
+    def test_summary_count(self):
+        print(self.plan.get_addon_summary)
+        self.assertEqual(self.plan.get_addon_summary, 0)

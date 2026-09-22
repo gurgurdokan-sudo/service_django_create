@@ -108,7 +108,7 @@ class ClaimBuilder:
 
                 # 実績回数と単位数の集計
                 service_groups[key]["count"] += plan.get_total_count("actual")
-                service_groups[key]["units"] += plan.total_actual_units
+                service_groups[key]["units"] += plan.total_insurance_actual_units
 
         # 明細内の行番号カウンター（1, 2, 3...）
         detail_line_number = 0
@@ -282,7 +282,7 @@ class ClaimBuilder:
         )
 
         service_units = sum(
-            int(plan.total_actual_units)
+            int(plan.total_insurance_actual_units)
             for plan in self.plans
         )
         total_units = int(

@@ -85,6 +85,7 @@ class UseUser(models.Model):
 
     @property
     def care_level(self):  # certificateとlimit_endは存在する前提
+        """現時点で有効な要介護"""
         cert = self.current_certificate
         return cert.care_level if cert else '認定情報更新が必要'
 

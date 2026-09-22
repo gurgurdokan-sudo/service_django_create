@@ -119,34 +119,84 @@ class ServicePlan(models.Model):
                 if key.get("main") == '1':
                     total += 1
             return total
-        elif row_type == "addon":  # 全てのaddon
+        # todo 加算の時は保険外は除外
+        elif row_type == "addon_all":  # 全てのaddon
             a_date = self.actual_dict
             for key in a_date.values():
                 total += len(key.get("addon", []))
             return total
+        elif row_type == "addon":
+            addon_data = self.get_addon_summary
+            for key, value in addon_data.items():
+                print(key, value)
         return total
 
-    @property
-    def get_addon_summary(self):  # ->{ "加算1": ["1", "5", "12"],"加算2": ["1"] }
-        date_data = self.actual_dict
-        all_addon_ids = set()
-        for day_info in date_data.values():
-            all_addon_ids.update(day_info.get("addon", {}))
+    def get_actual_addons(self):
+        """
+        実績に登録されている加算を取得する。
+        """
 
-        # マスタから名前を引くための辞書
-        master = {a.id: a.service_name for a in AddOnService.objects.filter(id__in=all_addon_ids)}
+        result = []
+        for day, day_info in self.actual_dict.items():
+
+            addon_ids = day_info.get("addon", [])
+
+            for addon_id in addon_ids:
+
+                addon = AddOnService.objects.filter(
+                    id=int(addon_id)
+                ).first()
+
+                if not addon:
+                    continue
+
+                result.append({
+                    "day": day,
+                    "addon": addon,
+                })
+        return result
+
+    @property
+    def get_addon_summary(self):  # ->{ "加算ID1(str)": {"addon": <AddOnService ...>,"days": ["1", "5", "12"]},"加算名ID2": ... }
+        """
+        actual_json に設定されている加算を、
+        AddOnService単位で利用日と一緒にまとめる。
+        """
+        addon_ids = set()
+
+        for day_info in self.actual_dict.values():
+            addon_ids.update(day_info.get("addon", []))
+
+        if not addon_ids:
+            return {}
+
+        addons = {
+            addon.id: addon
+            for addon in AddOnService.objects.filter(
+                id__in=addon_ids
+            )
+        }
 
         summary = {}
-        for day, day_info in date_data.items():
-            for addon_id in day_info.get("addon", {}):
-                name = master.get(int(addon_id))
-                if name:
-                    if name not in summary: summary[name] = []
-                    summary[name].append(str(day))
-        return summary  # keyが加算サービス名、valueがその加算が入った日付のリスト
+
+        for day, day_info in self.actual_dict.items():
+            for addon_id in day_info.get("addon", []):
+                addon = addons.get(int(addon_id)) #addonマスタが変更時ずれる可能性あり
+                if not addon: continue
+
+                if addon.id not in summary:
+                    summary[addon.id] = {
+                        "addon": addon,
+                        "days": [],
+                    }
+
+                summary[addon.id]["days"].append(day)
+
+        return summary  # keyが加算サービスID、valueがdict(addonMasterオブジェクト,加算が入った日付[])
 
     @property
-    def total_actual_units(self):
+    def total_insurance_actual_units(self) -> int:
+        """請求データ様にPlanに紐づく合計単位を返す"""
         date_data = self.actual_dict
         total_units = 0
         # プランに含まれる全加算IDを抽出
@@ -169,13 +219,30 @@ class ServicePlan(models.Model):
                     total_units += addon_master.get(int(addon_id), 0)
         return total_units
 
+    # @property
+    # def is_addon(self):
+    #     date = self.actual_dict
+    #     for key in date.values():
+    #         if key.get("addon", []):
+    #             return True
+    #     return False
+
     @property
-    def is_addon(self):
-        date = self.actual_dict
-        for key in date.values():
-            if key.get("addon", []):
-                return True
-        return False
+    def get_insurance_addons(self):
+        """請求データへの加算の振る舞い"""
+        return {
+            addon_id: data
+            for addon_id, data in self.get_addon_summary.items()
+            if data["addon"].insurance_type == "insurance"
+        }
+    @property
+    def get_self_pay_addons(self):
+        """本人負担用の加算"""
+        return {
+            addon_id: data
+            for addon_id, data in self.get_addon_summary.items()
+            if data["addon"].insurance_type == "self_pay"
+        }
 
     def build_schedule(self, weekdays, start_day=1, end_day=None):
         """
