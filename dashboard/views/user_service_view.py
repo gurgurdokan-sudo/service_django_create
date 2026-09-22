@@ -35,7 +35,7 @@ def build_user_service_context(user_id, year, month):
     user_code = plans.values_list("service_code",flat=True) #userチェック済みのサービスコード
     all_plans = (ServiceMaster.objects
         .exclude(service_code__in = user_code)
-        .filter(care_level = target.care_level)
+        .filter(care_level = target.get_certificate(year,month))
         )
     logger.info(f'{user_code}以外のplansを取得')
 

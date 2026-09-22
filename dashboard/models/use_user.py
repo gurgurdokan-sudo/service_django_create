@@ -85,7 +85,7 @@ class UseUser(models.Model):
 
     @property
     def care_level(self):  # certificateとlimit_endは存在する前提
-        """現時点で有効な要介護"""
+        """現時点で有効な要介護 画面アラート用"""
         cert = self.current_certificate
         return cert.care_level if cert else '認定情報更新が必要'
 
@@ -101,10 +101,14 @@ class UseUser(models.Model):
     def get_certificate(self, year, month) :
         """ 指定した日付時点で有効な認定データを1件返す """
         target_date = date(int(year), int(month), 1)
-        return self.certificates.filter(
+        q_cert= self.certificates.filter(
             limit_start__lte=target_date,
             limit_end__gte=target_date
-        ).first()
+        )
+        for cert in q_cert: #アクティブを優先してreturn
+            if cert.is_active:
+                return cert
+        return q_cert.first()
 
     def latest_changed_cert(self, year, month):  # 紐づく介護認定情報
         return self.certificates.filter(
