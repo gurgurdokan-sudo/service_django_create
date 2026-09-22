@@ -48,7 +48,7 @@ class BaseTestCase(TestCase):
         # ==========================
         # 利用者
         # ==========================
-        cls.user = UseUser.objects.create(
+        cls.user1 = UseUser.objects.create(
             name="テスト利用者",
             name_kana="テスト",
             insured_number=str(uuid.uuid4())[:10],
@@ -60,7 +60,7 @@ class BaseTestCase(TestCase):
         cls.user2 = UseUser.objects.create(
             name="テスト 利用者2",
             name_kana="テスト リヨウシャ2",
-            insured_number="0000000002",
+            insured_number=str(uuid.uuid4())[:10],
             date_of_birth=date(1955, 1, 1),
             gender="female",
             care_manager=cls.care_manager,
@@ -78,12 +78,12 @@ class BaseTestCase(TestCase):
         # 月間提供票
         cls.record = ServiceMonthlyRecord.objects.create(
             office=cls.office,
-            user=cls.user,
+            user=cls.user1,
             date=date(2026, 8, 1),
         )
 
         cls.cert1 = Certificate.objects.create(
-            user=cls.user,
+            user=cls.user1,
             insured_number='0190123456',
             care_level='要介護2',
             benefit_rate='0.9',
@@ -93,7 +93,7 @@ class BaseTestCase(TestCase):
         )
 
         cls.cert2 = Certificate.objects.create(
-            user=cls.user,
+            user=cls.user2,
             insured_number='0190123457',
             care_level='要介護3',
             benefit_rate='0.9',

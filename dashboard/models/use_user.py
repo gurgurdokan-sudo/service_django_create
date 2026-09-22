@@ -89,14 +89,14 @@ class UseUser(models.Model):
         cert = self.current_certificate
         return cert.care_level if cert else '認定情報更新が必要'
 
-    @property
-    def old_certificate(self):  # 最後の適用介護認定
-        today = timezone.now().date()
-        return (self.certificate
-                .filter(limit_end__lt=today)
-                .order_by("-limit_end")
-                .first()
-                )
+    # @property
+    # def old_certificate(self):  # 最後の適用介護認定
+    #     today = timezone.now().date()
+    #     return (self.certificate
+    #             .filter(limit_end__lt=today)
+    #             .order_by("-limit_end")
+    #             .first()
+    #             )
 
     def get_certificate(self, year, month) :
         """ 指定した日付時点で有効な認定データを1件返す """

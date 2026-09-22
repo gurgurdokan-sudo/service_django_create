@@ -53,9 +53,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = await response.json();
                 // 応答がエラー（404や500）の場合は、JSONパース前にテキストとして確認
                 if (!response.ok) {
-                    const errorHtml = await response.text();
-                    console.error("Server Error HTML:", errorHtml);
-                    throw new Error("サーバーエラーが発生しました");
+                    // APIで拒否されたのでUIを元に戻す
+                    this.innerText = currentValue;
+                    alert(data.message || "編集できません");
+
+                    return;
                 }
                 // 合計値をAPIからの戻り値で更新
                 if (rowType === 'actual_addon') {
