@@ -176,7 +176,10 @@ def user_detail(request, user_id):
             UseUser.objects.prefetch_related('certificates', 'public_assistance'),
         id=user_id
     )
-
+    log = set()
+    for certificate in user.certificates.all():
+        log.add(f'{certificate}')
+    logger.info(log)
     labels = {f.name: f.verbose_name for f in user._meta.fields}
     crumbs = [
         # ("利用者一覧", "dashboard:user_list"),

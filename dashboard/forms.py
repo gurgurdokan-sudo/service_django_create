@@ -192,23 +192,23 @@ class PublicAssistanceForm(forms.ModelForm):
         if len(rec_num) != 10 or not rec_num.isdigit:
             self.add_error('recipient_number', '受給者番号は10桁の数字で入力してください')
         
-class CertificateUpdateForm(forms.ModelForm):
-    required_css_class = 'required'
-    class Meta:
-        verbose_name = '介護保険被保険者証'
-        model = Certificate
-        fields = ['care_level','benefit_rate','benefit_limit_flag','limit_amount_type','limit_amount_value','limit_start','limit_end']
-        widgets = {
-            'limit_start': forms.DateInput(attrs={'type': 'date'}),
-            'limit_end': forms.DateInput(attrs={'type': 'date'}),
-        }
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        for field_name,field in self.fields.items():
-            if 'benefit_limit_flag' != field_name:
-                self.fields[field_name].widget.attrs['class']= f'form-control {field_name}'
-            if field.required:
-                self.fields[field_name].widget.attrs['required'] = True
+# class CertificateUpdateForm(forms.ModelForm):
+#     required_css_class = 'required'
+#     class Meta:
+#         verbose_name = '介護保険被保険者証'
+#         model = Certificate
+#         fields = ['care_level','benefit_rate','benefit_limit_flag','limit_amount_type','limit_amount_value','limit_start','limit_end']
+#         widgets = {
+#             'limit_start': forms.DateInput(attrs={'type': 'date'}),
+#             'limit_end': forms.DateInput(attrs={'type': 'date'}),
+#         }
+#     def __init__(self, *args, **kwargs):
+#         super().__init__(*args, **kwargs)
+#         for field_name,field in self.fields.items():
+#             if 'benefit_limit_flag' != field_name:
+#                 self.fields[field_name].widget.attrs['class']= f'form-control {field_name}'
+#             if field.required:
+#                 self.fields[field_name].widget.attrs['required'] = True
 
 class CareManagerForm(forms.ModelForm):
     required_css_class = 'required'
@@ -241,7 +241,7 @@ class CareManagerForm(forms.ModelForm):
                     ['居宅介護支援事業所番号は10桁の数字で入力してください']
                 )
 
-class officeSettigForm(forms.ModelForm):
+class OfficeSettingForm(forms.ModelForm):
     required_css_class = 'required'
     class Meta:
         model = Office

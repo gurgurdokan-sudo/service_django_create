@@ -86,7 +86,7 @@
             </tr>
           </thead>
           <tbody>
-            {% for cert in user.certificate.all %}
+            {% for cert in user.certificates.all %}
             <tr class="{% if cert.is_active %}fw-bold{% else %}status-expired{% endif %}">
               <td>{{ cert.limit_start|date:"Y/m/d" }} 〜 {{ cert.limit_end|date:"Y/m/d" }}</td>
               <td>{{ cert.care_level }}</td>

@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect
 
-from dashboard.forms import officeSettigForm
+from dashboard.forms import OfficeSettingForm
 from employees.permissions import delete_permission_required
 
 import logging

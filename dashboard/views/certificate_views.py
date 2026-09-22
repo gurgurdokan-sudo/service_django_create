@@ -16,19 +16,26 @@ def certificate_update(request, user_id):
         (f"認定情報更新", None),
     ]
     if request.method == 'POST':
+        print("====================",flush=True)
         form = CertificateForm(request.POST)
         if form.is_valid():
-            cert = form.save(commit=False)
-            cert.pk = None
-            cert.user = user
-
-            # 前回の認定情報を無効化
-            user.certificates.filter(is_active=True).update(is_active=False)
+             cert = form.save(commit=False)
+             cert.pk = None
+             cert.user = user
+             cert_origin = user.certificates.filter(is_active=True).first()
+             limit_strat = cert_origin.limit_start if cert_origin else None
+             limit_end = cert_origin.limit_end if cert_origin else None
+             if (limit_strat >= cert.limit_strat >= limit_end and
+                     cert_origin.care_level == cert.care_level):
+                    messages.error(request,'更新日が範囲外です')
+                    return redirect('dashboard:detail', user_id=user.id)
+             # 前回の認定情報を無効化
+             cert_origin.update(is_active=False)
             
-            cert.care_level_changed_at = form.cleaned_data['limit_start']
-            cert.is_active = True
+             cert.care_level_changed_at = form.cleaned_data['limit_start']
+             cert.is_active = True
             
-            cert.save()
+             cert.save()
         messages.success(request, '認定情報を更新しました。')
         return redirect('dashboard:detail', user_id=user.id)
     else:
@@ -46,11 +53,7 @@ def certificate_update(request, user_id):
 #認定情報3
 def certificate_create(request,user_id):
     user = get_object_or_404(UseUser,id = user_id)
-    latest_cert = user.certificates.order_by('-limit_end').first()
-    if latest_cert:
-        update = True
-    else :
-        update = False
+
     crumbs = [
         # ("利用者一覧", "dashboard:user_list"),
         (f"{user.name} 様", None),
