@@ -1,3 +1,5 @@
+from typing import Literal
+
 from django.db import models
 from datetime import datetime, date
 from .const import LEVEL_CHOICES
@@ -106,21 +108,21 @@ class ServicePlan(models.Model):
             return False
         return True
 
-    def get_total_count(self, row_type) -> int:  # scheduleなら予定の回数、actualなら実績の回数、addonなら全ての加算回数
+    def get_total_count(self, row_type) -> None | int | Literal[0]:  # scheduleなら予定の回数、actualなら実績の回数、addonなら全ての加算回数
         if row_type == "schedule":
-            date = self.schedule_dict
-            return sum(1 for v in date.values() if v == '1')
+            a_date = self.schedule_dict
+            return sum(1 for v in a_date.values() if v == '1')
         elif row_type == "actual":
-            date = self.actual_dict
+            a_date = self.actual_dict
             total = 0
-            for key in date.values():
+            for key in a_date.values():
                 if key.get("main") == '1':
                     total += 1
             return total
         elif row_type == "addon":  # 全てのaddon
-            date = self.actual_dict
+            a_date = self.actual_dict
             total = 0
-            for key in date.values():
+            for key in a_date.values():
                 total += len(key.get("addon", []))
             return total
 

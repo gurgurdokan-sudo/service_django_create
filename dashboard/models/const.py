@@ -28,31 +28,38 @@ SERVICE_TYPE_CHOICES = [
     (80, "通所介護（大規模Ⅰ）"),
     (81, "通所介護（大規模Ⅱ）"),
 ]
+# 所属の市町村で率が変化
+UNIT_PRICE_TABLE = {7: 11.40, 6: 10.90, 5: 10.45, 4: 10.25, 3: 10.15, 2: 10.10, 1: 10.00}
 
 DATA_TYPE_CARE_INSURANCE = 7
 ITEM_NUMBER =77
 CLAIM_CATEGORY = 711
 CLAIM_DETAIL_CATEGORY = 7111
+CLAIM_HOME_BASED_CATEGORY = 7131
 
-SERVICE_TYPE_CODE = 78
+# 通所介護事務所
+SERVICE_TYPE_CODE = 78 #地域密着型通所介護
 
 DATA_SET_CLAM ={    
     SERVICE_TYPE_CODE: {  # 地域密着型通所介護
         "item_number": ITEM_NUMBER,
         "claim_category": CLAIM_CATEGORY,
         "detail_category": CLAIM_DETAIL_CATEGORY,
-        "record_name": "介護給付費請求書情報",
+        "record_name": "地域密着型　介護給付費請求書情報",
+        "claim_home_based_category":CLAIM_HOME_BASED_CATEGORY
     },
     79: { #今後必要なら追加
         "item_number": 78,
         "claim_category": 713,
-        "detail_category": 7131,
-        "record_name": "介護給付費明細書情報",
+        "detail_category": CLAIM_HOME_BASED_CATEGORY,
+        "record_name": "通常規模 介護給付費明細書情報",
+        "claim_home_based_category":CLAIM_HOME_BASED_CATEGORY #?
     },
     80: {
         "item_number": 79,
         "claim_category": 714,
         "detail_category": 7141,
-        "record_name": "介護給付費摘要情報",
+        "record_name": "大規模Ⅰ 介護給付費摘要情報",
+        "claim_home_based_category":CLAIM_HOME_BASED_CATEGORY #?
     },
 }

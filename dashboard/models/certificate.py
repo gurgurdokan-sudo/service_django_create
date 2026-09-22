@@ -25,7 +25,8 @@ class Certificate(models.Model):
     care_level_changed_at = models.DateField(
                             verbose_name="要介護状態区分変更日" ,
                             null=True ,
-                            blank=True
+                            blank=True,
+                            # help_text='次の介護認定の更新時に設定される日付'
                         )
     benefit_rate = models.FloatField(
                             choices=BENEFIT_RATE_CHOICES ,
@@ -65,6 +66,28 @@ class Certificate(models.Model):
         if self.limit_end and today <= self.limit_end:
             return "認定済み"
         return "消去"
+
+
+    @property
+    def certification_start (self):
+        return self.limit_start.strftime("%Y%m%d")
+    @property
+    def certification_end (self):
+        return self.limit_end.strftime("%Y%m%d")
+
+    @property
+    def convert_care_level(self):
+        """
+        介護度を国保連用コードに変換する。
+        """
+        mapping = {
+            "要介護1": 21,
+            "要介護2": 22,
+            "要介護3": 23,
+            "要介護4": 24,
+            "要介護5": 25,
+        }
+        return mapping.get(self.care_level, None)
 
     def __str__(self):
         return self.user.name + f'({self.limit_end})'

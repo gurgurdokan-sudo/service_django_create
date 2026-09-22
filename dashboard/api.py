@@ -7,8 +7,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 @api_view(["PATCH"])
-def update_schedule(request, planId):
-    plan = get_object_or_404(ServicePlan, id=planId)
+def update_schedule(request, plan_id):
+    plan = get_object_or_404(ServicePlan, id=plan_id)
     value = request.data.get("value", "")
 
     day = int(request.data.get("day", 1))

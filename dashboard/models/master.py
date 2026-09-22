@@ -1,5 +1,6 @@
 from django.db import models
-from .const import LEVEL_CHOICES,STAY_TIME_CHOICES,SERVICE_TYPE_CHOICES
+from .const import LEVEL_CHOICES, STAY_TIME_CHOICES, SERVICE_TYPE_CHOICES, UNIT_PRICE_TABLE, SERVICE_TYPE_CODE
+
 
 class ServiceMaster(models.Model):
     '''提供されるサービスのマスターデータを管理するモデル'''
@@ -43,7 +44,7 @@ class AddOnService(models.Model):
     service_name = models.CharField(max_length=100)
     price = models.IntegerField(null=True, blank=True) # 単価（1000円 など）
     category = models.CharField(max_length=20)
-    is_tax = models.BooleanField(max_length=20,default=False, verbose_name='課税')  # 非課税 / 課税
+    is_tax = models.BooleanField(default=False, verbose_name='課税')  # 非課税 / 課税
     insurance_type = models.CharField(max_length=20, verbose_name='保険適用',choices=[
         ("insurance","保険内"),
         ("self_pay","自費")
@@ -73,7 +74,6 @@ class Municipality(models.Model):
 class Office(models.Model):
     class Meta:
         verbose_name_plural = "事務所マスタ"
-    UNIT_PRICE_TABLE = {7: 11.40,6: 10.90,5: 10.45,4: 10.25,3: 10.15,2: 10.10,1: 10.00}
 
     name = models.CharField(max_length=100)
     office_number = models.IntegerField()
@@ -81,7 +81,7 @@ class Office(models.Model):
     default_service = models.ForeignKey(AddOnService, on_delete=models.SET_NULL, null=True, blank=True)
     service_type_code = models.IntegerField(
         choices=SERVICE_TYPE_CHOICES,
-        default=78, verbose_name = '種類コード',
+        default=SERVICE_TYPE_CODE, verbose_name = '種類コード',
         help_text="""地域密着型通所介護 → 78
                     通所介護（通常規模） → 79
                     通所介護（大規模Ⅰ） → 80
@@ -98,9 +98,10 @@ class Office(models.Model):
         help_text='xapp- で始まるトークン（Socket Mode接続用）',
     )
 
+
     @property # 地域区分ごとの単位単価テーブル
     def unit_price(self):
-        return self.UNIT_PRICE_TABLE.get(self.municipality.area_grade, 0)
+        return UNIT_PRICE_TABLE.get(self.municipality.area_grade, 1)
     @property
     def pref_code(self) -> int: #都道府県コードを事務所番号から切り出し
        return int(str(self.office_number)[:2]) 

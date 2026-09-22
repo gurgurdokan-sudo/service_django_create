@@ -31,6 +31,16 @@ class UseUser(models.Model):
         ).first()
 
     @property
+    def birth_date_value(self) ->str:
+        return (
+            self.date_of_birth.strftime("%Y%m%d")
+            if self.date_of_birth
+            else ""
+        )
+    @property
+    def gender_disp(self) ->str:
+        return '1' if self.gender == 'male' else '2'
+    @property
     def is_public_assistance_for_month(self):
         """ 前月で生保だったか判定する """
         return self.public_assistance.filter(is_active=True).exists()
