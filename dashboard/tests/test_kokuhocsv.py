@@ -1,14 +1,14 @@
 from datetime import date
-from decimal import Decimal
 from pathlib import Path
 
 from django.test import TestCase
+import uuid
 
 from dashboard.models import (
     Office,
     UseUser,
     ServiceMonthlyRecord,
-    ServicePlan, Municipality, AddOnService,
+    ServicePlan, Municipality, AddOnService, Certificate, CareManager,
 )
 from dashboard.kokuho.builder import ClaimBuilder
 from dashboard.kokuho.exporter import CsvExporter
@@ -18,11 +18,10 @@ class KokuhoCsvTest(TestCase):
 
     def setUp(self):
         # ==========================
-        # Office 関連
+        # マスタ 関連
         # ==========================
-        # Municipality
         self.municipality = Municipality.objects.create(
-            municipality_code = '112300',
+            municipality_code = str(uuid.uuid4())[:6],
             prefecture = '埼玉県',
             name = '新座市',
             area_grade = 5
@@ -30,10 +29,19 @@ class KokuhoCsvTest(TestCase):
         self.addon = AddOnService.objects.create(
             code="6107",
             type='rate',
+            rate='0.09',
             service_name= "通所介護処遇改善加算Ⅱ",
             category= "通所介護",
             insurance_type= "insurance",
             apply_unit= "monthly"
+        )
+        self.addon2 = AddOnService.objects.create(
+            code='5301',
+            service_name='通所介護入浴介助加算Ⅰ',
+            unit=40,
+            category='通所介護',
+            insurance_type='insurance',
+            apply_unit='per_day'
         )
         print("municipality:", repr(self.municipality), flush=True)
         print("addon:", repr(self.addon), flush=True)
@@ -44,7 +52,14 @@ class KokuhoCsvTest(TestCase):
             municipality=self.municipality,
             default_service=self.addon
         )
-
+        # ==========================
+        # ケアマネジャー
+        # ==========================
+        self.care_manager = CareManager.objects.create(
+            name = 'ケア　マネ',
+            office_name = '一歩',
+            care_management_office_number = '1010112032',
+        )
         # ==========================
         # 利用者
         # ==========================
@@ -54,6 +69,7 @@ class KokuhoCsvTest(TestCase):
             insured_number="0000000001",
             date_of_birth=date(1950, 1, 1),
             gender="male",
+            care_manager= self.care_manager,
         )
 
         self.user2 = UseUser.objects.create(
@@ -62,6 +78,7 @@ class KokuhoCsvTest(TestCase):
             insured_number="0000000002",
             date_of_birth=date(1955, 1, 1),
             gender="female",
+            care_manager=self.care_manager,
         )
 
         self.user3 = UseUser.objects.create(
@@ -70,6 +87,7 @@ class KokuhoCsvTest(TestCase):
             insured_number="0000000003",
             date_of_birth=date(1960, 1, 1),
             gender="male",
+            care_manager=self.care_manager,
         )
 
         # ==========================
@@ -152,7 +170,39 @@ class KokuhoCsvTest(TestCase):
                 "4": {"main": "1", "addon": {}},
             },
         )
-
+        # ==========================
+        # Certificate
+        # ==========================
+        self.cert1=Certificate.objects.create(
+            user=self.user1,
+            insured_number='0190123456',
+            care_level = '要介護1',
+            benefit_rate = '0.9',
+            limit_start = date(2025, 8, 1),
+            limit_end = date(2026, 8, 1),
+            is_active = True,
+            created_at=date(2026, 8, 1),
+        )
+        self.cert2 = Certificate.objects.create(
+            user=self.user2,
+            insured_number='0190123458',
+            care_level='要介護2',
+            benefit_rate='0.9',
+            limit_start=date(2025, 8, 1),
+            limit_end=date(2026, 8, 1),
+            is_active=True,
+            created_at=date(2026, 8, 1),
+        )
+        self.cert1 = Certificate.objects.create(
+            user=self.user3,
+            insured_number='1190123456',
+            care_level='要介護3',
+            benefit_rate='0.9',
+            limit_start=date(2025, 8, 1),
+            limit_end=date(2026, 8, 1),
+            is_active=True,
+            created_at=date(2026, 8, 1),
+        )
     def test_kokuho_csv_is_created(self):
         builder = ClaimBuilder(
             office=self.office,
@@ -182,23 +232,23 @@ class KokuhoCsvTest(TestCase):
         )
         self.assertTrue(Path(csv_path).exists())
 
-    def exception_test(self):
-        office = Office.objects.create(
-            name='通所介護事務所　民の家',
-            office_number=1012175150,
-            service_type_code=81,
-            municipality=self.municipality,
-            default_service=self.addon
-        )
-        builder = ClaimBuilder(
-            office=self.office,
-            year=2026,
-            month=8,
-        )
-        builder = ClaimBuilder(
-            office=self.office,
-            year=2026,
-            month=8,
-        )
-
-        rows = builder.build()
+    # def exception_test(self):
+    #     office = Office.objects.create(
+    #         name='通所介護事務所　民の家',
+    #         office_number=1012175150,
+    #         service_type_code=81,
+    #         municipality=self.municipality,
+    #         default_service=self.addon
+    #     )
+    #     builder = ClaimBuilder(
+    #         office=self.office,
+    #         year=2026,
+    #         month=8,
+    #     )
+    #     builder = ClaimBuilder(
+    #         office=self.office,
+    #         year=2026,
+    #         month=8,
+    #     )
+    #
+    #     rows = builder.build()

@@ -108,23 +108,23 @@ class ServicePlan(models.Model):
             return False
         return True
 
-    def get_total_count(self, row_type) -> None | int | Literal[0]:  # scheduleなら予定の回数、actualなら実績の回数、addonなら全ての加算回数
+    def get_total_count(self, row_type) ->  int:  # scheduleなら予定の回数、actualなら実績の回数、addonなら全ての加算回数
+        total = 0
         if row_type == "schedule":
             a_date = self.schedule_dict
             return sum(1 for v in a_date.values() if v == '1')
         elif row_type == "actual":
             a_date = self.actual_dict
-            total = 0
             for key in a_date.values():
                 if key.get("main") == '1':
                     total += 1
             return total
         elif row_type == "addon":  # 全てのaddon
             a_date = self.actual_dict
-            total = 0
             for key in a_date.values():
                 total += len(key.get("addon", []))
             return total
+        return total
 
     @property
     def get_addon_summary(self):  # ->{ "加算1": ["1", "5", "12"],"加算2": ["1"] }

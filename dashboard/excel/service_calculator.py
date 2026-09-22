@@ -48,7 +48,7 @@ class ServiceSheetCalculator:
         # 1. デフォルト加算計算
         def_unit = 0
         def_total_cost = 0
-        if self.office.default_service:
+        if self.office.default_service: #todo デフォルトの加算はパーセントrateが前提
             rate = float(self.office.default_service.rate)
             def_unit = int(self.total_act_price_unit * rate)
             def_total_cost = int(def_unit * self.unit_price)

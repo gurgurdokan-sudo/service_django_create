@@ -2,6 +2,8 @@ from asyncio.windows_events import NULL
 from datetime import date
 
 from dateutil.relativedelta import relativedelta
+
+from dashboard.excel.service_calculator import ServiceSheetCalculator
 from dashboard.models.const import (
     DATA_TYPE_CARE_INSURANCE,
     DATA_SET_CLAM
@@ -10,6 +12,14 @@ from dashboard.models import ServiceMonthlyRecord
 
 
 class ClaimBuilder:
+    #定数
+    RECORD_TYPE_HEADER = 1          # ヘッダーレコード
+    RECORD_TYPE_DETAIL = 2          # 事業所の詳細レコード
+    RECORD_TYPE_END = 3             # 全体の最終レコード
+
+    USER_RECORD_BASIC = '01'        # 利用者の認定・基本情報
+    USER_RECORD_SERVICE = '02'      # サービス提供情報
+    USER_RECORD_TOTAL = '10'        # 集計情報
 
     def __init__(self, office, year, month):
         self.office = office
@@ -60,28 +70,27 @@ class ClaimBuilder:
         """
         請求書情報：基本情報レコード(国保連CSV 1行目)
         """
-        RECORD_TYPE_HEADER = 1
 
         return [
-            RECORD_TYPE_HEADER,                 #レコード識別子（固定1
-            self.count_up_row(),                #連番
-            0,                                  #交換識別子（通常請求 固定0
-            self.record_set['item_number'],     #項番
-            self.record_set['claim_category'],  #請求分類コード 7110 or 7111
-            self.office.pref_code,              #都道府県コード  propertyでスライス
-            0,                                  #請求区分　通常請求 固定0
-            self.office.office_number,          #事務所番号
-            0,                                  #作成区分　固定0
-            DATA_TYPE_CARE_INSURANCE,           #データ種別　7=介護給付請求
-            self.target_year_month,             #請求年月
-            0,                                  #予備/送信回数 固定0
+            self.RECORD_TYPE_HEADER,            # レコード識別子（固定1
+            self.count_up_row(),                # 連番
+            0,                                  # 交換識別子（通常請求 固定0
+            self.record_set['item_number'],     # 項番
+            self.record_set['claim_category'],  # 請求分類コード 7110 or 7111
+            0, #todo 仕様確認
+            # self.office.pref_code,            # 都道府県コード  propertyでスライス
+            0,                                  # 請求区分　通常請求 固定0
+            self.office.office_number,          # 事務所番号
+            0,                                  # 作成区分　固定0
+            DATA_TYPE_CARE_INSURANCE,           # データ種別　7=介護給付請求
+            self.target_year_month,             # 請求年月
+            0,                                  # 予備/送信回数 固定0
         ]
     def build_office_claim_details(self):
         """
         請求書情報：明細情報レコード（国保連CSV 2~N行目）
         """
-        RECORD_TYPE_DETAIL = 2
-        
+
         claim_details = []
 
         # サービス種類単位で集計
@@ -111,7 +120,7 @@ class ClaimBuilder:
             total_units = data["units"]
 
             claim_details.append([
-                RECORD_TYPE_DETAIL,                 #  レコード識別子 (固定: 2)
+                self.RECORD_TYPE_DETAIL,                 #  レコード識別子 (固定: 2)
                 self.count_up_row(),                #  全体連番 (行番号)
                 self.record_set['detail_category'], #  サービス費用コード (7111)
                 self.target_year_month,             #  請求年月 (YYYYMM)
@@ -119,7 +128,7 @@ class ClaimBuilder:
                 
                 detail_line_number,                 #  明細行番号 (1, 2, 3...)
                 self.office.service_type_code,      #  サービス種類コード (例: 15 または 78)
-                self.record_set['classification_code'],#  サービス区分コード (固定: "01")
+                self.USER_RECORD_BASIC,             #  サービス区分コード (固定: "01")
                 
                 data["count"],                      #  延べ件数/回数
                 service_code,                       #  サービスコード (6桁)
@@ -138,12 +147,8 @@ class ClaimBuilder:
 
         return claim_details
 
-    def build_user_claim_basic(self, record):
-        RECORD_TYPE_DETAIL = 2
-        USER_RECORD_BASIC = '01'
-        user = record.user
-        care_level_code = record.care_level_code
-        cert = user.get_certificate(
+    def build_user_claim_basic(self):
+        cert = self.user.get_certificate(
             self.year,
             self.month,
             # is_active=True
@@ -151,37 +156,37 @@ class ClaimBuilder:
         if not cert:
             raise ValueError(
                 f"認定情報がありません: "
-                f"insured_number={user.insured_number}, "
+                f"insured_number={self.user.insured_number}, "
                 f"year={self.year}, "
                 f"month={self.month}"
             )
-        elif cert.is_active :
+        elif not cert.is_active :
             '''一旦例外 その時有効なら使える'''
             raise ValueError(
                 f"認定情報が変更されています"
-                f"insured_number={user.insured_number}, "
+                f"insured_number={self.user.insured_number}, "
                 f"year={self.year}, "
                 f"month={self.month}"
             )
 
         return [
-            RECORD_TYPE_DETAIL,
+            self.RECORD_TYPE_DETAIL,
             self.count_up_row(),                            # 全体連番
             self.record_set["claim_home_based_category"],   # サービス費用コード
-            USER_RECORD_BASIC,                              # 利用者基本・認定レコード
+            self.USER_RECORD_BASIC,                         # 利用者基本・認定レコード
             self.target_year_month,                         # 請求年月
             self.office.office_number,                      # 事業所番号
             self.office.municipality.municipality_code,     # 市町村コード
-            user.insured_number,                            # 被保険者番号
-            user.birth_date_value,                          # 生年月日19341126
-            user.gender_disp,                               # 性別区分(男1
+            self.user.insured_number,                            # 被保険者番号
+            self.user.birth_date_value,                          # 生年月日(YYYYMM)
+            self.user.gender_disp,                               # 性別区分(男1
             cert.convert_care_level,                        # 介護度を国保連用コードに変換
-            cert.certification_start,                       # 適用開始日20251208
-            cert.certification_end,                         # 適用終了日20261231
+            cert.certification_start,                       # 適用開始日(YYYYMM)
+            cert.certification_end,                         # 適用終了日(YYYYMM)
 
             # 以降よくわからない
             1,
-            user.care_manager.care_management_office_number,# 居宅介護支援事業所番号
+            self.user.care_manager.care_management_office_number,# 居宅介護支援事業所番号
             None,
             None,
             None,
@@ -190,13 +195,15 @@ class ClaimBuilder:
             0,
             0,
             None,
-            90,
+            cert,
             0,
             0,
             0,
             8608,
-            record.user_share_amount,                       # 利用者負担額
+            self.record.user_share_amount,                  # 利用者負担額
             8996,
+
+            # 予備
             None,
             None,
             None,
@@ -216,154 +223,149 @@ class ClaimBuilder:
             0,
         ]
 
-    def build_user_claim_details(self, record):
+    def build_user_claim_details(self):
         """
         利用者1人分の 02 レコードを作る。
         """
-        RECORD_TYPE_DETAIL = 2
-        RECORD_TYPE_USER_TOTAL = 2
-        USER_RECORD_SERVICE = '02'
         rows = []
-        user = record.user
-
-        plans = list(record.plans.all())
-        for plan in plans:
+        for plan in self.plans:
             count = int(plan.get_total_count("actual"))
             unit = int(plan.unit)
             subtotal = (unit * count)
-            rows.append([
-                RECORD_TYPE_DETAIL,
+            rows.append([ #プランごとの行
+                self.RECORD_TYPE_DETAIL,
                 self.count_up_row(),
                 self.record_set["claim_home_based_category"],           # サービス費用コード
-                USER_RECORD_SERVICE,
+                self.USER_RECORD_SERVICE,
                 self.target_year_month,                                 # 請求年月
                 self.office.office_number,                              # 事業所番号
                 self.office.municipality.municipality_code,             # 市町村コード
-                user.insured_number,                                    # 被保険者番号
+                self.user.insured_number,                                    # 被保険者番号
                 self.office.service_type_code,                          # サービス種類
                 str(plan.service_code),                                 # サービスコード
                 unit,                                                   # 単価
                 count,                                                  # 回数
+                # 予備
                 0,
                 0,
                 0,
-
-                # 小計単位数
-                subtotal,
-
+                subtotal,                                                # 小計単位数
                 0,
                 0,
                 0,
-
                 "",
             ])
         return rows
+    def build_user_claim_total(self):
+        """
+            利用者1人分の 02 レコードを作る。
+        """
+        add_codes = {}
 
-    def build_user_claim(self, record):
-        RECORD_TYPE_DETAIL = 2
-        RECORD_TYPE_USER_TOTAL = 2
-        rows = []
-        # 01
-        rows.append(
-            self.build_user_claim_basic(record)
+        context = {
+            "office": self.office,
+            "user": self.user,
+            "plans": self.plans,
+            "add_codes": add_codes, #todo 空の加算
+            "dis_year": self.year,
+            "dis_month": self.month,
+        }
+
+        calculator = ServiceSheetCalculator(context)
+        result = calculator.get_results()
+
+        actual_count = sum(
+            int(
+                plan.get_total_count("actual")
+            )
+            for plan in self.plans
         )
+
+        service_units = sum(
+            int(plan.total_actual_units)
+            for plan in self.plans
+        )
+        total_units = int(
+            result["subtotal_units"]
+        )
+
+        addon_units = max(
+            0,
+            total_units - service_units
+        )
+        claim_units = (
+            service_units + addon_units
+        )
+        return [
+            self.RECORD_TYPE_DETAIL,
+            self.count_up_row(),                                # 全体連番
+            self.record_set["claim_home_based_category"],       # サービス費用コード
+            self.USER_RECORD_TOTAL,
+            self.target_year_month,                             # 請求年月
+            self.office.office_number,                          # 事業所番号
+            self.office.municipality.municipality_code,         # 市町村コード
+            self.user.insured_number,                           # 被保険者番号
+            self.office.service_type_code,                      # サービス種類
+            actual_count,                                       # 給付日数 / 利用日数
+            service_units,                                      # 計画単位数
+            service_units,                                      # 実績単位数
+            addon_units,                                        # 加算単位数
+
+            # 以下はCSV仕様上の金額項目
+            0,
+            0,
+            0,
+            claim_units,                                        # 総請求単位数
+            result["insurance_seikyu"],                         # 保険請求
+            result["public_seikyu"],                            # 公費請求
+            result["user_hutan"],                               # 本人支払(超過分込)
+
+            # 予備
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+        ]
+    def build_user_claim(self, record):
+        self.record = record
+        self.plans = list(self.record.plans.all())
+        self.user = self.record.user
+        if not self.user.care_manager:
+            raise ValueError(f'ケアマネジャーが設定されていない利用者={self.user.name}')
+        # 01
+        rows = [self.build_user_claim_basic()]
 
         # 02
         rows.extend(
-            self.build_user_claim_details(record)
+            self.build_user_claim_details()
         )
 
         # 10
         rows.append(
-            self.build_user_claim_total(record)
+            self.build_user_claim_total()
         )
 
         return rows
-        users = {}
 
-        for record in user_rows:
-            insured_number = record["insured_number"]
-
-            if insured_number not in users:
-                users[insured_number] = []
-
-            users[insured_number].append(record)
-
-        rows = []
-
-        for insured_number, records in users.items():
-
-            # -----------------------------
-            # 利用者のサービス明細
-            # -----------------------------
-            for record in records:
-                rows.append([
-                    RECORD_TYPE_DETAIL,
-                    self.count_up_row(),
-                    self.record_set['claim_home_based_category'],
-                    "02",
-                    record["service_month"],
-                    record["office_number"],
-                    # ここは事業所に紐づく市町村コード
-                    self.office.municipality.municipality_code,
-                    record["insured_number"],
-                    self.office.service_type_code,
-                    record["service_code"],
-                    # 単価
-                    # 現在の中間データには単価がないため要追加
-                    0,
-                    record["count"],
-                    0,
-                    0,
-                    0,
-                    record["units"],
-                    0,
-                    0,
-                    0,
-                    "",
-                ])
-
-            # -----------------------------
-            # 利用者集計
-            # -----------------------------
-            total_count = sum(
-                record["count"]
-                for record in records
-            )
-
-            total_units = sum(
-                record["units"]
-                for record in records
-            )
-
-            rows.append([
-                RECORD_TYPE_USER_TOTAL,
-                self.count_up_row(),
-                7131,
-                "10",
-                records[0]["service_month"],
-                records[0]["office_number"],
-                self.office.municipality.municipality_code,
-                insured_number,
-                self.office.service_type_code,
-                total_count,
-                total_units,
-                total_units,
-                0,
-                0,
-                0,
-                total_units,
-                0,
-                0,
-                0,
-            ])
-
-        return rows
-
-    def build_office_claim_end(self,user_row):
-        RECORD_TYPE_END = 3
+    def build_office_claim_end(self):
         return [
-            RECORD_TYPE_END,
+            self.RECORD_TYPE_END,
             self.count_up_row(),
         ]
 
@@ -379,13 +381,8 @@ class ClaimBuilder:
 
         の順に構築する。
         """
-
-        rows = []
-
         # 1. 請求書基本情報
-        rows.append(
-            self.build_office_claim_header()
-        )
+        rows = [self.build_office_claim_header()]
 
         # 2. 請求書明細情報
         rows.extend(
@@ -393,9 +390,10 @@ class ClaimBuilder:
         )
 
         # 3. 利用者ごとの請求情報を作成し、仕様順に直す 1~3行
-        rows.extend(
-            self.replase_user_claim()
-        )
+        for record in self.records:
+            rows.extend(
+                self.build_user_claim(record)
+            )
         # 5. エンドの行
         rows.append(
             self.build_office_claim_end()

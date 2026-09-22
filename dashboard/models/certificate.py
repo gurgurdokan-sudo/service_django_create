@@ -26,7 +26,7 @@ class Certificate(models.Model):
                             verbose_name="要介護状態区分変更日" ,
                             null=True ,
                             blank=True,
-                            # help_text='次の介護認定の更新時に設定される日付'
+                            help_text='次の介護認定の更新時に設定される日付'
                         )
     benefit_rate = models.FloatField(
                             choices=BENEFIT_RATE_CHOICES ,
@@ -67,13 +67,16 @@ class Certificate(models.Model):
             return "認定済み"
         return "消去"
 
-
     @property
     def certification_start (self):
         return self.limit_start.strftime("%Y%m%d")
     @property
     def certification_end (self):
         return self.limit_end.strftime("%Y%m%d")
+
+    @property
+    def disp_benefit_rate(self):
+        return str(int(self.benefit_rate)*100)
 
     @property
     def convert_care_level(self):
