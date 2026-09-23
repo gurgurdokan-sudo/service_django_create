@@ -20,13 +20,11 @@ class KokuhoCsvTest(TestCase):
         # ==========================
         # マスタ 関連
         # ==========================
-        self.municipality = Municipality.objects.create(
-            municipality_code = str(uuid.uuid4())[:6],
-            prefecture = '埼玉県',
-            name = '新座市',
-            area_grade = 5
+        self.municipality, _ = Municipality.objects.get_or_create(
+            municipality_code='112300',
+            defaults={'prefecture': '埼玉県', 'name': '新座市', 'area_grade': 5}
         )
-        self.addon = AddOnService.objects.create(
+        self.addon:AddOnService = AddOnService.objects.create(
             code="6107",
             type='rate',
             rate='0.09',
@@ -35,7 +33,7 @@ class KokuhoCsvTest(TestCase):
             insurance_type= "insurance",
             apply_unit= "monthly"
         )
-        self.addon2 = AddOnService.objects.create(
+        self.addon2:AddOnService = AddOnService.objects.create(
             code='5301',
             service_name='通所介護入浴介助加算Ⅰ',
             unit=40,
@@ -45,9 +43,10 @@ class KokuhoCsvTest(TestCase):
         )
         print("municipality:", repr(self.municipality), flush=True)
         print("addon:", repr(self.addon), flush=True)
-        self.office = Office.objects.create(
+        self.office_number = 1175101250
+        self.office,_ = Office.objects.get_or_create(
             name='通所介護事務所　民の家',
-            office_number=1175101250,
+            office_number=self.office_number,
             service_type_code=78,
             municipality=self.municipality,
             default_service=self.addon
@@ -218,7 +217,7 @@ class KokuhoCsvTest(TestCase):
         header = rows[0]
 
         self.assertEqual(header[0], 1)
-        self.assertEqual(str(header[7]), "1012175150")
+        self.assertEqual(str(header[7]), str(self.office.office_number))
         self.assertEqual(header[9], 7)
         self.assertEqual(header[10], "202608")
 

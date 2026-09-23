@@ -1,18 +1,15 @@
 import os
 import io
+from datetime import date
+from django.utils.timezone import now
+from django.conf import settings
 import boto3
 import textwrap
 
 from openpyxl import load_workbook
 from openpyxl.styles import Alignment
-from openpyxl.utils import get_column_letter
 
-from django.conf import settings
-from django.utils import timezone
-from django.conf import settings
-
-from dashboard.models import AddOnService
-from dashboard.excel.service_calculator import ServiceSheetCalculator, to_nengo, format_comma
+from dashboard.excel.service_calculator import ServiceSheetCalculator, format_comma
 
 import logging
 logger = logging.getLogger(__name__)
@@ -118,7 +115,7 @@ def _auto_newline(text, ws, cell, line=10):
 def _record_model_update(user, year, month, res):
     """ServiceMonthlyRecordに計算結果を反映する"""
     from dashboard.models import ServiceMonthlyRecord
-    target_date = timezone.datetime(year, month, 1).date()
+    target_date = date(year, month, 1)
     
     record, _ = ServiceMonthlyRecord.objects.get_or_create(
         user=user, 
@@ -134,7 +131,7 @@ def _record_model_update(user, year, month, res):
     record.over_units = res['over_units']
     
     record.confirmed = True
-    record.confirmed_at = timezone.now().date()
+    record.confirmed_at = now()
     record.save()
     logger.info(f"{user.name}様の{year}年{month}月分実績を保存しました")
 

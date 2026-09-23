@@ -1,6 +1,3 @@
-from datetime import date
-from dateutil.relativedelta import relativedelta
-
 from dashboard.models import AddOnService
 
 
@@ -114,17 +111,3 @@ def format_comma(value, default=""):
     except (ValueError, TypeError):
         return default
 
-
-def to_nengo(y,m,d=1):
-    """datetimeオブジェクトを受け取り和暦文字を返す"""
-    if (y, m, d) >= (2019, 5, 1):
-        era, year = "令和", y - 2018
-    elif (y, m, d) >= (1989, 1, 8):
-        era, year = "平成", y - 1988
-    elif (y, m, d) >= (1926, 12, 25):
-        era, year = "昭和", y - 1925
-    else:
-        era, year = "大正", y - 1911
-    
-    year_str = "元" if year == 1 else str(year)
-    return f"{era}{year_str}年"
