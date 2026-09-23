@@ -13,7 +13,7 @@ from .views.export_service_sheet import download_service_sheet, export_excel
 from .views.user_service_view import user_service, prev_month_plan, service_act
 from .views.create_plan import create_plan
 from .views.init_plan import init_plan
-from .views.caremana import caremana_list,caremana_update,caremana_delete, caremana_create
+from .views.caremana import care_mana_list,care_mana_update,care_mana_delete, care_mana_create
 from .views.created_service_list import created_service_list, created_service_list_api
 from .views.create_kokuho_csv import create_kokuho_csv
 
@@ -23,9 +23,9 @@ app_name = 'dashboard'
 urlpatterns = [
     path('office_setting/', office_setting, name='office_setting'),
     path('users/', user_list, name='user_list'),
-    path('users/caremana_create', caremana_create, name='caremana_create'),
-    path('users/user_create/<int:cm_id>/', user_create, name='create'),
-    path('user/<int:user_id>/user_create/', certificate_create, name='certificate_create'),
+    path('users/caremana_create', care_mana_create, name='care_mana_create'),
+    path('user/<int:cm_id>/user_create/', user_create, name='create'),
+    path('user/<int:user_id>/user_certificate_create/', certificate_create, name='certificate_create'),
     path('user/<int:user_id>/certificate_update/', certificate_update, name='certificate_update'),
     path('user/<int:user_id>/ps_create/', public_assistance_create, name='public_assistance_create'),
     path('user/<int:user_id>/create_sheet/', export_excel, name='create_sheet'),
@@ -39,9 +39,9 @@ urlpatterns = [
     path('user/<int:user_id>/create_plan/', create_plan, name='createPlan'),
     path('created_service_list/', created_service_list, name='created_service_list'),
     path('created_service_list/api/', created_service_list_api, name='created_service_list_api'),
-    path('caremanagers/', caremana_list, name='caremana_list'),
-    path('caremanagers/<int:caremanager_id>/update/', caremana_update, name='caremana_update'),
-    path('caremanagers/<int:caremanager_id>/delete/', caremana_delete, name='caremana_delete'),
+    path('care_managers/', care_mana_list, name='care_mana_list'),
+    path('caremanagers/<int:caremanager_id>/update/', care_mana_update, name='care_mana_update'),
+    path('caremanagers/<int:caremanager_id>/delete/', care_mana_delete, name='care_mana_delete'),
     path('user/init', init_plan, name='plan'),
     path('dashboard/create_kokuho_csv/', create_kokuho_csv, name='create_kokuho_csv'),
 
