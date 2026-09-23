@@ -25,8 +25,8 @@ def user_create(request, cm_id):
         # ("利用者一覧", "dashboard:user_list"),
         ("利用者新規登録", None)
     ]
-    caremaneger = get_object_or_404(CareManager, id= cm_id)
-    cm_name = f'{caremaneger.name} ({caremaneger.office_name})'
+    care_maneger = get_object_or_404(CareManager, id= cm_id)
+    cm_name = f'{care_maneger.name} ({care_maneger.office_name})'
     if request.method == 'POST':
         logger.info('新規作成post')
         form = UserForm(request.POST)

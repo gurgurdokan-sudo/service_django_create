@@ -25,9 +25,9 @@
       {% for caremanager in caremanagers %}
         <tr>
           <td class="action-buttons">
-            <a href="{% url 'dashboard:caremana_update' caremanager.id %}" class="btn btn-edit">更新</a>
+            <a href="{% url 'dashboard:care_mana_update' caremanager.id %}" class="btn btn-edit">更新</a>
             {% if can_delete %}
-              <a href="{% url 'dashboard:caremana_delete' caremanager.id %}" class="btn delete-single">消去</a>
+              <a href="{% url 'dashboard:care_mana_delete' caremanager.id %}" class="btn delete-single">消去</a>
             {% endif %}
           </td>
           <td>{{ caremanager.name }}</td>

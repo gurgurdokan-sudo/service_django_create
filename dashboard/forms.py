@@ -147,6 +147,8 @@ class CertificateForm(forms.ModelForm):
         if limit_end<today:
             self.add_error('limit_start', '過去の認定期間は登録できません')
             return cleaned
+        if self.instance.insured_number =='': # 新規は空
+            return cleaned
         duplicate = Certificate.objects.filter(
             insured_number=self.instance.insured_number,
             care_level=care_level,
