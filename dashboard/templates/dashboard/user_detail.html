@@ -86,19 +86,19 @@
             </tr>
           </thead>
           <tbody>
-            {% for cert in user.certificates.all %}
+            {% for cert in certificates %}
             <tr class="{% if cert.is_active %}fw-bold{% else %}status-expired{% endif %}">
               <td>{{ cert.limit_start|date:"Y/m/d" }} 〜 {{ cert.limit_end|date:"Y/m/d" }}</td>
               <td>{{ cert.care_level }}</td>
               <td>{% if cert.is_active %}<span class="status-active">適用中</span>{% else %}過去{% endif %}</td>
             </tr>
             {% empty %}
-            <tr><td colspan="3">認定情報がありません</td></tr>
+            <tr><td colspan="3" class="text-center">認定情報がありません</td></tr>
             {% endfor %}
           </tbody>
         </table>
       </div>
-
+    {% if public_assistance %}
       <div class="section-title">
         <h3>生活保護情報</h3>
         <a href="{% url 'dashboard:public_assistance_create' user.id %}" class="btn btn-sm btn-outline-primary">生保情報を追加</a>
@@ -114,7 +114,7 @@
             </tr>
           </thead>
           <tbody>
-            {% for pa in user.public_assistance.all %}
+            {% for pa in public_assistance %}
             <tr class="{% if pa.is_active %}fw-bold{% else %}status-expired{% endif %}">
               <td>{{ pa.start_date|date:"Y年m月" }}分</td>
               <td>{{ pa.hogo_number }}</td>
@@ -127,7 +127,7 @@
           </tbody>
         </table>
       </div>
-
+    {% endif %}
       <div class="section-title">
     <h3>サービス提供表作成実績</h3>
     <a href="{% url 'dashboard:created_service_list' %}" class="btn btn-sm btn-outline-primary">提供表 国保請求へ</a>

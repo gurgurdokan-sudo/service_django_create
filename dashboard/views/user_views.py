@@ -176,10 +176,10 @@ def user_detail(request, user_id):
             UseUser.objects.prefetch_related('certificates', 'public_assistance'),
         id=user_id
     )
-    log = set()
-    for certificate in user.certificates.all():
-        log.add(f'{certificate}')
-    logger.info(log)
+    certificates = list(user.certificates.all()[:5])
+    public_assistance = list(user.public_assistance.all()[:5])
+
+    logger.info(f'{certificates}\n{public_assistance}')
     labels = {f.name: f.verbose_name for f in user._meta.fields}
     crumbs = [
         # ("利用者一覧", "dashboard:user_list"),
@@ -188,6 +188,8 @@ def user_detail(request, user_id):
 
     context = {
         'user': user,
+        'certificates': certificates,
+        'public_assistance': public_assistance,
         'labels': labels,
         'breadcrumbs': BreadcrumbUtil.create(crumbs),
     }

@@ -47,7 +47,7 @@ class KokuhoCsvTest(TestCase):
         print("addon:", repr(self.addon), flush=True)
         self.office = Office.objects.create(
             name='通所介護事務所　民の家',
-            office_number=1012175150,
+            office_number=1175101250,
             service_type_code=78,
             municipality=self.municipality,
             default_service=self.addon
@@ -58,7 +58,7 @@ class KokuhoCsvTest(TestCase):
         self.care_manager = CareManager.objects.create(
             name = 'ケア　マネ',
             office_name = '一歩',
-            care_management_office_number = '1010112032',
+            care_management_office_number = str(uuid.uuid4())[:10],
         )
         # ==========================
         # 利用者
@@ -66,7 +66,7 @@ class KokuhoCsvTest(TestCase):
         self.user1 = UseUser.objects.create(
             name="テスト 利用者1",
             name_kana="テスト リヨウシャ1",
-            insured_number="0000000001",
+            insured_number=str(uuid.uuid4())[:10],
             date_of_birth=date(1950, 1, 1),
             gender="male",
             care_manager= self.care_manager,
@@ -75,7 +75,7 @@ class KokuhoCsvTest(TestCase):
         self.user2 = UseUser.objects.create(
             name="テスト 利用者2",
             name_kana="テスト リヨウシャ2",
-            insured_number="0000000002",
+            insured_number=str(uuid.uuid4())[:10],
             date_of_birth=date(1955, 1, 1),
             gender="female",
             care_manager=self.care_manager,
@@ -84,7 +84,7 @@ class KokuhoCsvTest(TestCase):
         self.user3 = UseUser.objects.create(
             name="テスト 利用者3",
             name_kana="テスト リヨウシャ3",
-            insured_number="0000000003",
+            insured_number=str(uuid.uuid4())[:10],
             date_of_birth=date(1960, 1, 1),
             gender="male",
             care_manager=self.care_manager,
