@@ -185,41 +185,41 @@ class ClaimBuilder:
             cert.certification_start,                       # 適用開始日(YYYYMM)
             cert.certification_end,                         # 適用終了日(YYYYMM)
 
-            # 以降よくわからない
-            1,
+            1,                                              # 住居サービス作成区分
             self.user.care_manager.care_management_office_number,# 居宅介護支援事業所番号
-            None,
-            None,
-            None,
-            None,
-            None,
-            0,
-            0,
-            None,
-            cert.disp_benefit_rate,
-            0,
-            0,
-            0,
-            8608,
-            self.record.user_share_amount,                  # 利用者負担額
-            8996,
+            "",                                             # 公費負担者番号1
+            "",                                             # 公費負担者番号1
+            "",                                             # 公費負担者番号2
+            "",                                             # 公費負担者番号2
+            "",                                             # 公費負担者番号3
+            0,                                              # 開始年月日 月途中（通常0
+            0,                                              # 終了年月日 月途中（通常0
+            "",                                             # 中止理由
+            cert.disp_benefit_rate,                         # 保険給付率(90 or 計画単位数
+            0,                                              # 保険対象単位数 (保険分
+            0,                                              # 保険対象請求額 (円
+            0,                                              # 利用者負担額 (保険分
+            8608,                                           # 総請求単位数
+            self.record.user_share_amount,                  # 利用者負担合計額
+            8996,                                           # 請求合計額 (円換算
 
-            # 予備
-            None,
-            None,
-            None,
+            # 予備および公費
+            "",                                             # 公費1 対象単位数
+            "",                                             # 公費1 請求額
+            "",                                             # 公費1 利用者負担
+            0,                                              # 公費2 対象単位数
+            0,                                              # 公費2 請求額
+            0,                                              # 公費2 利用者負担
+            "",                                             # 公費3 対象単位数
+            "",                                             # 公費3 請求額
+            #予備項目
+            "",
             0,
             0,
             0,
-            None,
-            None,
-            None,
-            0,
-            0,
-            0,
-            None,
-            None,
-            None,
+            "",
+            "",
+            "",
             0,
             0,
         ]
