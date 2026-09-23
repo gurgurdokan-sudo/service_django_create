@@ -176,7 +176,7 @@ def user_detail(request, user_id):
             UseUser.objects.prefetch_related('certificates', 'public_assistance'),
         id=user_id
     )
-    certificates = list(user.certificates.all()[:5])
+    certificates = list(user.certificates.all())
     public_assistance = list(user.public_assistance.all()[:5])
 
     logger.info(f'{certificates}\n{public_assistance}')

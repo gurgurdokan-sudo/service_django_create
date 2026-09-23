@@ -22,13 +22,13 @@ logger = logging.getLogger(__name__)
 
 def build_user_service_context(user_id, year, month):
     """画面やExcelに渡すcontextを組み立てる"""
-    target = get_object_or_404(UseUser,id=user_id)
     office = Office.objects.filter(id=1).first() #todoログインユーザー事務所
     default = AddOnService.objects.get(pk=office.default_service.pk)
-    plans = ServicePlan.objects.filter(
-        user = target,
-        year = year,
-        month = month,
+
+    target = (UseUser.objects.select_related('care_manager').get(id=user_id))
+    monthly_record = target.get_monthly_recode(year, month)
+    plans = (ServicePlan.objects.filter(user = target,year = year,month = month,)
+             .prefetch_related('addon_services')
         )
     logger.info(f'{year}-{month}のサービス提供票のplansを取得')
 
@@ -39,36 +39,40 @@ def build_user_service_context(user_id, year, month):
         )
     logger.info(f'{user_code}以外のplansを取得')
 
-    monthly_addon_totals = {}
-    add_codes = {} #todo　Excelではcode=0
-    for plan in plans:
-        add_codes.update(plan.get_addon_summary)
+    # monthly_addon_totals = {}
+    # add_codes = {}
+    # for plan in plans:
+    #     add_codes.update(plan.get_addon_summary)
     addon_service = AddOnService.objects.all()
-    record_date = date(year, month, 1)
+    # record_date = date(year, month, 1)
     logger.info(f'{year}-{month}のサービス提供票の確認状態を取得')
-    try:
-        record = ServiceMonthlyRecord.objects.filter(user=target, date=record_date).first()
-        confirmed = record.confirmed if record else False
-    except Exception as e:
-        logger.error(f"確認状態の取得中にエラーが発生しました: {e}")
-        raise
+    # record = ServiceMonthlyRecord.objects.filter(user=target, date=record_date).first()
+    # confirmed = record.confirmed if record else False
+
     return {
         'office': office,
         'default': default,
         'user': target,
-        'plans': plans, 
-        'service': all_plans, #userの対象全プラン
+        'plans': plans,
         'calendar': get_month_days(year, month),
         'dis_year': year,
         'dis_month': month,
         'current_year': now.year, #Excel出力の表示用
         'current_month': now.month,
+
+        # 'add_codes': add_codes, #excelテスト表示
+
+        # 画面用　batchアラート
+        'monthly_record': monthly_record, #サービス提供票の確定状態
+        'public_assistance':target.get_public_assistance(year,month),
+        # 画面用　select移動範囲
         'year_range': range(now.year - 1, now.year + 1),
         'month_range': range(1, 13),
-        'add_codes': add_codes, #excelテスト表示
+        # tableのtotal 使ってなさそう
+        # 'monthly_addon_totals': monthly_addon_totals,
+        # 画面用　モーダルに出すPlan/Addon
         'addon_service': addon_service,
-        'monthly_addon_totals': monthly_addon_totals, #tableのtotal
-        'confirmed': confirmed, #サービス提供票の確定状態
+        'service': all_plans,  # userの対象全プラン
     }
 
 def _is_future_month_not_plan(user_id, year, month, prev=False):
@@ -102,7 +106,6 @@ def user_service(request,user_id):
     dis_year = int(request.GET.get('year', now.year))
     dis_month = int(request.GET.get('month', now.month))
     user = UseUser.objects.get(id=user_id)
-    check_flag = request.GET.get('check_flag',False)
     if not user.care_manager or user.care_level == '認定情報更新が必要':
         '''利用者一覧画面にリダイレクトする'''
         logger.error(f'{user.name}')
@@ -127,11 +130,11 @@ def user_service(request,user_id):
     crumbs = [
         (f"{user.name}様 サービス提供表作成", None)
     ]
-    start_date = date(dis_year, dis_month, 1)
-    context['public_assistance'] = PublicAssistance.objects.filter(
-        user = user , start_date= start_date ).first()
+    # start_date = date(dis_year, dis_month, 1)
+    # context['public_assistance'] = PublicAssistance.objects.filter(user = user , start_date= start_date ).first()
     context['breadcrumbs'] = BreadcrumbUtil.create(crumbs)
     logger.info(f'======{user.name} 様 提供表確定 {context["confirmed"]}======')
+    print(context,flush=True)
     return render(request,'dashboard/user_service.html',context)
 
 #一括前月モード

@@ -16,7 +16,7 @@
     </h2>
     
     <div id="confirmed-status" data-confirmed="{{ confirmed }}">
-      {% if confirmed %}
+      {% if monthly_record.confirmed %}{#  レコードがNoneを考慮しない  #}
         <span class="badge bg-danger">確定済み</span>
       {% else %}
         <span class="badge bg-secondary">未確定</span>
@@ -216,18 +216,16 @@
     {% for plan in plans %}
     <li>{{ plan.service_name }}: {{ plan.unit }}単位</li>
     <dd>サービスコード: {{ office.service_type_code }}{{ plan.service_code }}</dd>
-    {% endfor %}
-    
-  {#  国保に請求の加算  #}
-    {% for service_name, item in add_codes.items %}
-    <li>{{ service_name }}: 
-      {% if item.unit or item.price %}
-        <span>{{ item.unit|default:item.price }} (単位/円)</span>
-      {% endif %}
-    </li>
-    {% if item.code == 0 %}
-    <dd>サービスコード: {{ office.service_type_code }}{{ item.code }}</dd>
-    {% endif %}
+
+      {% for value in plan.get_addon_summary.values %}
+        <li>{{ value.addon.service_name }}:
+          {% if value.addon.insurance_type == 'insurance' %} {#  国保に請求の加算  #}
+            <dd>{{ value.addon.unit|default:value.addon.price }} (単位/円)</dd>
+          {% elif value.addon.insurance_type == 'self_pay' %} {#  自費を表示  #}
+            <dd>サービスコード: {{ value.addon.full_code }}</dd>
+          {% endif %}
+        </li>
+      {% endfor %}
     {% endfor %}
   </ul>
   {% if plans %}

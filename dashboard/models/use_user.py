@@ -29,7 +29,11 @@ class UseUser(models.Model):
             start_date__lte=target_date,
             end_date__gte=target_date
         ).first()
-
+    def get_monthly_record(self, year, month):
+        """指定した日付時点で有効な生保データを1件返す"""
+        return self.monthly_records.filter(
+            date=date(year, month, 1),
+        )
     @property
     def birth_date_value(self) ->str:
         return (

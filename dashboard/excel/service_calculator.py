@@ -1,6 +1,9 @@
 from datetime import date
 from dateutil.relativedelta import relativedelta
 
+from dashboard.models import AddOnService
+
+
 class ServiceSheetCalculator:
     def __init__(self, context):
         self.office = context['office']
@@ -32,17 +35,27 @@ class ServiceSheetCalculator:
 
     def _calculate_base_and_addons(self):
         for plan in self.plans:
-            count = int(plan.get_total_count('actual'))
-            unit = int(plan.unit)
-            subtotal = count * unit
+            count:int = int(plan.get_total_count('actual'))
+            unit:int = int(plan.unit)
+            subtotal:int = count * unit
             self.plan_items.append({'name': plan.service_name, 'code': f"{self.office.service_type_code}{plan.service_code}", 'unit': unit, 'count': count, 'subtotal': subtotal})
             self.total_act_price_unit += subtotal
-        for name, item in self.add_codes.items():
-            unit, count = int(item['unit']), int(item['count'])
-            subtotal = unit * count
-            if subtotal > 0:
-                self.addon_items.append({'name': name, 'code': f"{self.office.service_type_code}{item['code']}" if str(item['code']) != '0' else '', 'unit': unit, 'count': count, 'subtotal': subtotal})
-                self.total_act_price_unit += subtotal
+            for value in plan.get_addon_summary.values():
+                addon_obj:AddOnService = value.get('addon')
+                add_total:int = int(addon_obj.unit) * len(value.get('days',[]))
+
+                if addon_obj.type == 'rate': # パーセント加算率などを除外
+                    continue
+                if addon_obj.insurance_type == 'self_pay': # 自費を除外
+                    continue
+                if add_total<= 0: # 例外 単位*実績回数(日付)が0になる事はない
+                    continue
+                addon_code_str = f"{self.office.service_type_code}{addon_obj.code}"
+                self.addon_items.append({
+                                        'name': addon_obj.service_name,
+                                        'code': addon_code_str
+                                         })
+                self.total_act_price_unit += add_total
 
     def get_results(self):
         # 1. デフォルト加算計算

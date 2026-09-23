@@ -189,7 +189,6 @@ class ServicePlan(models.Model):
                         "addon": addon,
                         "days": [],
                     }
-
                 summary[addon.id]["days"].append(day)
 
         return summary  # keyが加算サービスID、valueがdict(addonMasterオブジェクト,加算が入った日付[])

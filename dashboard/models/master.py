@@ -37,6 +37,8 @@ class ServiceMaster(models.Model):
 class AddOnService(models.Model):
     class Meta:
         verbose_name_plural= "加算マスタ"
+
+    service_type_code =  models.IntegerField(choices=SERVICE_TYPE_CHOICES, blank=True, null=True)
     code = models.CharField(max_length=20)
     type = models.CharField(choices=[("unit", "単位"), ("rate", "率")])
     unit = models.IntegerField( null=True, blank=True)
@@ -59,6 +61,9 @@ class AddOnService(models.Model):
     def rate100(self):
         if self.rate:
             return (self.rate * 100).normalize()
+    def full_code(self) ->str:
+        return f'{self.service_type_code}{self.code}'
+
     def __str__(self):
         return self.service_name+' ('+self.type+')'
 class Municipality(models.Model):

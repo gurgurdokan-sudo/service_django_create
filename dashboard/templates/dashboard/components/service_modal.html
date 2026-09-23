@@ -24,20 +24,24 @@
 
     <!-- 加算用検索 -->
     <div id="search-bar-addon" class="modal-search-bar">
-    <div class="search-inputs">
-        <input type="text" id="addon_keyword" class="form-input-sm" placeholder="サービス名で検索...">
-        <button type="button" id="btn_filter_addon" class="btn btn-secondary">検索</button>
+        <div class="search-inputs">
+            <input type="text" id="addon_keyword" class="form-input-sm" placeholder="サービス名で検索...">
+            <button type="button" id="btn_filter_addon" class="btn btn-secondary">検索</button>
 
-        <div class="plan-selector">
-        <label>紐付け先:</label>
-        <select id="main_plan_select" class="form-input-sm">
-            <option value="">-- プランを選択 --</option>
-            {% for p in plans %}<option value="{{ p.id }}" {% if p.code == plan.code %}
-                selected
-            {% endif %} >{{ p.service_name }}</option>{% endfor %}
-        </select>
+            <div class="plan-selector">
+            <label>紐付け先:</label>
+            <select id="main_plan_select" class="form-input-sm">
+                <option value="">-- プランを選択 --</option>
+                {% for p in plans %}
+                    <option value="{{ p.id }}"
+                            {% if p.code == plan.code %}
+                                selected
+                            {% endif %} >{{ p.service_name }}
+                    </option>
+                {% endfor %}
+            </select>
+            </div>
         </div>
-    </div>
     </div>
 
     <div id="tab-basic" class="tab-panel">

@@ -1,6 +1,6 @@
 from django.urls import path
 from .views.office_setting import office_setting
-from .views.user_views import (
+from .views.user_profile_view import (
     user_create,
     public_assistance_create,
     user_list,

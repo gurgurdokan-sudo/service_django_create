@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, timezone
 
 from django import forms
 from django.forms.utils import ErrorList
@@ -7,7 +7,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 class UserForm(forms.ModelForm):
-    required_css_class = 'required'
+    _errors = {}
     class Meta:
         model = UseUser
         fields = ['care_manager','name','name_kana','insured_number','date_of_birth','gender','notes']
@@ -82,7 +82,6 @@ class UserForm(forms.ModelForm):
                 self.fields[field_name].widget.attrs['required'] = True
                 self.fields[field_name].widget.attrs['class']= f'form-control {field_name} required'
 class PlanForm(forms.ModelForm):
-    required_css_class = 'required'
     WEEKDAY_CHOICES = [("0", "月"),("1", "火"),("2", "水"),("3", "木"),("4", "金"),("5", "土"),("6", "日"),]
 
     weekdays = forms.MultipleChoiceField(
@@ -115,7 +114,7 @@ class PlanForm(forms.ModelForm):
                 self.fields[field_name].widget.attrs['class']= f'form-control {field_name}'
 class CertificateForm(forms.ModelForm):
     "  認定情報from "
-    required_css_class = 'required'
+    _errors = {}
     class Meta:
         model = Certificate
         fields = ['care_level', 'limit_amount_type', 'public_assistance_flag', 'benefit_limit_flag', 'limit_amount_value', 'benefit_rate', 'limit_start', 'limit_end']
@@ -135,25 +134,45 @@ class CertificateForm(forms.ModelForm):
         limit_amount_value =cleaned.get('limit_amount_value')
         if care_level is None:
             self._errors['care_level'] = ErrorList(['要介護状態区分は必須です'])
-        if limit_amount_type is None:
-            self._errors['limit_amount_type'] = ErrorList(['限度額区分は必須です'])
-        if limit_amount_value and 1000000> limit_amount_value >0 : #todo　とりあえず可笑しな値をはじく
+        if limit_amount_value and 1000000> limit_amount_value >0 :
             self._errors['limit_amount_value'] = ErrorList(['正式な限度額を設定してください'])
-        cert_obj = Certificate.objects.filter(
-                insured_number=self.instance.insured_number,
-                care_level=cleaned.get('care_level'),
-                limit_amount_type=cleaned.get('limit_amount_type'),
-                limit_amount_value=cleaned.get('limit_amount_value'),
-                benefit_rate=cleaned.get('benefit_rate'),
-                limit_start=cleaned.get('limit_start'),
-                limit_end=cleaned.get('limit_end'),
-            )
+        today = date.today()
+        limit_start = cleaned.get('limit_start')
+        limit_end = cleaned.get('limit_end')
+        if (limit_start is None) or (limit_end is None):
+            return cleaned
+        if limit_start > limit_end:
+            self.add_error('limit_start', '終了日は開始日以降の日付を設定してください')
+            return cleaned
+        if limit_end<today:
+            self.add_error('limit_start', '過去の認定期間は登録できません')
+            return cleaned
+        duplicate = Certificate.objects.filter(
+            insured_number=self.instance.insured_number,
+            care_level=care_level,
+            limit_start__lte=limit_end,
+            limit_end__gte=limit_end,
+        )
         if self.instance.pk:
-            cert_obj = cert_obj.exclude(pk=self.instance.pk)
-        logger.info(f'cleaned: {cert_obj}')
-        if cert_obj.exists():
+            duplicate = duplicate.exclude(pk=self.instance.pk)
+        if duplicate.exists():
             self.add_error('care_level', '同じ内容の認定情報が既に登録されています')
+            return cleaned
         return cleaned
+    def save(self,user=None, commit=True):
+        instance = super().save(commit=False)
+        if user:
+            instance.user = user
+            instance.insured_number = self.instance.insured_number
+        old_cert = Certificate.objects.filter(user=user, is_active=True).first()
+        if old_cert:
+            old_cert.is_active = False
+            old_cert.save()
+        instance.is_active = True
+        instance.care_level_changed_at = self.cleaned_data['limit_start']
+        if commit:
+            instance.save()
+        return instance
     def __init__(self, *args, **kwargs):
         self.request = kwargs.pop('request', None)
         super().__init__(*args, **kwargs)
@@ -191,27 +210,9 @@ class PublicAssistanceForm(forms.ModelForm):
         rec_num = str(cleaned.get('recipient_number'))
         if len(rec_num) != 10 or not rec_num.isdigit:
             self.add_error('recipient_number', '受給者番号は10桁の数字で入力してください')
-        
-# class CertificateUpdateForm(forms.ModelForm):
-#     required_css_class = 'required'
-#     class Meta:
-#         verbose_name = '介護保険被保険者証'
-#         model = Certificate
-#         fields = ['care_level','benefit_rate','benefit_limit_flag','limit_amount_type','limit_amount_value','limit_start','limit_end']
-#         widgets = {
-#             'limit_start': forms.DateInput(attrs={'type': 'date'}),
-#             'limit_end': forms.DateInput(attrs={'type': 'date'}),
-#         }
-#     def __init__(self, *args, **kwargs):
-#         super().__init__(*args, **kwargs)
-#         for field_name,field in self.fields.items():
-#             if 'benefit_limit_flag' != field_name:
-#                 self.fields[field_name].widget.attrs['class']= f'form-control {field_name}'
-#             if field.required:
-#                 self.fields[field_name].widget.attrs['required'] = True
 
 class CareManagerForm(forms.ModelForm):
-    required_css_class = 'required'
+    _errors = {}
     class Meta:
         model = CareManager
         fields = '__all__'
