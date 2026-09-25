@@ -123,13 +123,19 @@ def _record_model_update(user, year, month, res):
     )
     
     # 計算結果をモデルのフィールドに保存
-    record.total_cost = res['seikyu_taisyu']
+    record.total_cost = res['seikyu_taisyu'] # 10割分
     record.benefit_amount = res['insurance_seikyu'] # 保険請求額
     record.public_amount = res['public_seikyu']  # 公費請求額 
     record.user_share_amount = res['user_hutan']  # 利用者負担額
-    record.within_units = res['within_units']
-    record.over_units = res['over_units']
-    
+    record.within_units = res['within_units'] # 10割分の単位数
+    record.over_units = res['over_units'] # 超過分の単位数
+
+    # CSV出力用のフィールドも更新
+    record.actual_count = res['subtotal_units']  # 実績日数
+    record.service_units = sum(item['unit'] for item in res['plan_items'])  # サービス＋加算などの単位数合計
+    record.addon_units = sum(item['unit'] for item in res['addon_items'])  # 加算単位数
+    record.claim_units = record.service_units + record.addon_units  # 請求
+
     record.confirmed = True
     record.confirmed_at = now()
     record.save()

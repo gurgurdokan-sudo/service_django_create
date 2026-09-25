@@ -149,6 +149,11 @@ class ClaimBuilder:
         return claim_details
 
     def _build_user_claim_basic(self):
+        """
+        利用者1人分の 01 レコードを作る。
+            - cert 認定情報を取得
+            - 月で認定情報が変更されてる場合を考慮する
+        """
         cert = self.user.get_certificate(
             self.year,
             self.month,
@@ -259,7 +264,8 @@ class ClaimBuilder:
         return rows
     def _build_user_claim_total(self):
         """
-            利用者1人分の 02 レコードを作る。
+            利用者1人分の 03 レコードを作る。
+            - サービス提供表で集計した結果を使う
         """
 
         context = {
@@ -270,31 +276,6 @@ class ClaimBuilder:
             "dis_month": self.month,
         }
 
-        calculator = ServiceSheetCalculator(context)
-        result = calculator.get_results()
-
-        actual_count = sum(
-            int(
-                plan.get_total_count("actual")
-            )
-            for plan in self.plans
-        )
-
-        service_units = sum(
-            int(plan.total_insurance_actual_units)
-            for plan in self.plans
-        )
-        total_units = int(
-            result["subtotal_units"]
-        )
-
-        addon_units = max(
-            0,
-            total_units - service_units
-        )
-        claim_units = (
-            service_units + addon_units
-        )
         return [
             self.RECORD_TYPE_DETAIL,
             self.count_up_row(),                                # 全体連番
@@ -305,19 +286,19 @@ class ClaimBuilder:
             self.municipality_code_zfill,                       # 市町村コード
             self.user.insured_number,                           # 被保険者番号
             self.office.service_type_code,                      # サービス種類
-            actual_count,                                       # 給付日数 / 利用日数
-            service_units,                                      # 計画単位数
-            service_units,                                      # 実績単位数
-            addon_units,                                        # 加算単位数
+            self.record.actual_count,                           # 給付日数 / 利用日数
+            self.record.service_units,                          # 計画単位数
+            self.record.service_units,                          # 実績単位数
+            self.record.addon_units,                            # 加算単位数
 
-            # 以下はCSV仕様上の金額項目
+            # 以下は金額項目
             0,
             0,
             0,
-            claim_units,                                        # 総請求単位数
-            result["insurance_seikyu"],                         # 保険請求
-            result["public_seikyu"],                            # 公費請求
-            result["user_hutan"],                               # 本人支払(超過分込)
+            self.record.claim_units,                            # 総請求単位数
+            self.record.benefit_amount,                         # 保険請求
+            self.record.public_amount,                          # 公費請求
+            self.record.user_share_amount,                      # 本人支払(超過分込)
 
             # 予備
             0,
@@ -342,6 +323,13 @@ class ClaimBuilder:
             0,
         ]
     def _build_user_claim(self, record):
+        """
+         利用者のレコードから、01, 02, 10 の順に構築する。
+            01: 利用者の認定・基本情報
+            02: 利用者のサービス提供情報
+            14: 利用者のサービス提供情報（特殊ケース）
+            10: 利用者の集計情報
+        """
         self.record = record
         self.plans = list(self.record.plans.all())
         self.user = self.record.user

@@ -38,6 +38,12 @@ class ServiceMonthlyRecord(models.Model):
     # 超過分の内訳
     over_cost = models.IntegerField(verbose_name='限度超過分の総額', default=0)
     over_user_share = models.IntegerField(verbose_name='限度超過分の自己負担額', default=0)
+    
+    # csv出力用
+    actual_count = models.IntegerField(verbose_name='実績日数', default=0)
+    service_units = models.IntegerField(verbose_name='サービス＋加算などの単位数合計', default=0)
+    addon_units = models.IntegerField(verbose_name='加算単位数', default=0)
+    claim_units = models.IntegerField(verbose_name='請求単位数', default=0)
 
     def __str__(self):
         return f'{self.user} - {self.date.strftime("%Y-%m")}'
