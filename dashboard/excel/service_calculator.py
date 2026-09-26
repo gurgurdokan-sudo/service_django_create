@@ -68,34 +68,34 @@ class ServiceSheetCalculator:
         over_units = max(0, self.total_act_price_unit - self.max_payment)
 
         # 3. 金額算出 (10割分)
-        seikyu_taisyu = int(within_units * self.unit_price) + def_total_cost
+        total_cost = int(within_units * self.unit_price) + def_total_cost
         over_cost = int(over_units * self.unit_price)
 
         # 4. 請求の内訳計算 (生保対応)
         # 保険請求分 (9割〜7割)
-        insurance_seikyu = int(seikyu_taisyu * self.benefit_rate)
+        benefit_amount = int(total_cost * self.benefit_rate)
         # 本来の利用者負担分 (1割〜3割)
-        raw_user_share = seikyu_taisyu - insurance_seikyu
+        raw_user_share = total_cost - benefit_amount
 
         if self.is_hogo:
             # 生活保護：本来の負担分を「公費」へ、本人は「0円」
-            public_seikyu = raw_user_share
-            user_hutan = 0
+            public_amount = raw_user_share
+            user_share_amount = 0
         else:
             # 一般：公費は「0円」、本人が「負担分」を払う
-            public_seikyu = 0
-            user_hutan = raw_user_share
+            public_amount = 0
+            user_share_amount = raw_user_share
 
         return {
             'is_hogo': self.is_hogo,
             'pa_data': self.pa_data,
-            'subtotal_units': self.total_act_price_unit,
+            'actual_count': self.total_act_price_unit,
             'within_units': within_units,
             'over_units': over_units,
-            'seikyu_taisyu': seikyu_taisyu,     # 費用合計(10割)
-            'insurance_seikyu': insurance_seikyu, # 保険請求
-            'public_seikyu': public_seikyu,       # 公費請求
-            'user_hutan': user_hutan + over_cost, # 本人支払(超過分込)
+            'total_cost': total_cost,     # 費用合計(10割)
+            'benefit_amount': benefit_amount, # 保険請求
+            'public_amount': public_amount,       # 公費請求
+            'user_share_amount': user_share_amount + over_cost, # 本人支払(超過分込)
             'def_unit': def_unit,
             'def_total_cost': def_total_cost,
             'plan_items': self.plan_items,

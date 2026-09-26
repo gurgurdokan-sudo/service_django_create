@@ -25,7 +25,7 @@ class ServiceMonthlyRecord(models.Model):
     end_time = models.TimeField(default="17:00")
 
     # 単位関連
-    total_units = models.IntegerField(verbose_name='総単位数', default=0)  # （限度内＋超過）
+    total_units = models.IntegerField(verbose_name='総単位数', default=0, help_text='サービス＋加算等の総単位')  # （限度内＋超過）
     within_units = models.IntegerField(verbose_name='区分支給限度内単位数', default=0)
     over_units = models.IntegerField(verbose_name='限度超過単位数', default=0)
 
@@ -42,8 +42,6 @@ class ServiceMonthlyRecord(models.Model):
     # csv出力用
     actual_count = models.IntegerField(verbose_name='実績日数', default=0)
     service_units = models.IntegerField(verbose_name='サービス＋加算などの単位数合計', default=0)
-    addon_units = models.IntegerField(verbose_name='加算単位数', default=0)
-    claim_units = models.IntegerField(verbose_name='請求単位数', default=0)
 
     def __str__(self):
         return f'{self.user} - {self.date.strftime("%Y-%m")}'

@@ -44,24 +44,24 @@ def create_service_sheet(context):
             current_row += 1
 
         # 小計行 (地域密着通所合計)
-        ws2[f'AT{current_row}'] = format_comma(res['seikyu_taisyu']) # 10割分
-        ws2[f'AX{current_row}'] = format_comma(res['insurance_seikyu']) # 保険分(9割)
+        ws2[f'AT{current_row}'] = format_comma(res['total_cost']) # 10割分
+        ws2[f'AX{current_row}'] = format_comma(res['benefit_amount']) # 保険分(9割)
         
         # 本人負担欄 (BD列) の制御
         if res['is_hogo']:
-            ws2[f'BA{current_row}'] = format_comma(res['public_seikyu']) # 公費分(1割)
+            ws2[f'BA{current_row}'] = format_comma(res['public_amount']) # 公費分(1割)
             ws2[f'BD{current_row}'] = "0" # 本人は0
         else:
-            ws2[f'BD{current_row}'] = format_comma(res['user_hutan']) # 本人が払う
+            ws2[f'BD{current_row}'] = format_comma(res['user_share_amount']) # 本人が払う
 
         # 最終合計行 (20行目固定)
-        ws2['AT20'] = format_comma(res['seikyu_taisyu'])
-        ws2['AX20'] = format_comma(res['insurance_seikyu'])
+        ws2['AT20'] = format_comma(res['total_cost'])
+        ws2['AX20'] = format_comma(res['benefit_amount'])
         if res['is_hogo']:
-            ws2['BA20'] = format_comma(res['public_seikyu'])
+            ws2['BA20'] = format_comma(res['public_amount'])
             ws2['BD20'] = "0"
         else:
-            ws2['BD20'] = format_comma(res['user_hutan'])
+            ws2['BD20'] = format_comma(res['user_share_amount'])
 
         # --- 生活保護情報の印字を追加 ---
         bikou_text =''
@@ -123,15 +123,15 @@ def _record_model_update(user, year, month, res):
     )
     
     # 計算結果をモデルのフィールドに保存
-    record.total_cost = res['seikyu_taisyu'] # 10割分
-    record.benefit_amount = res['insurance_seikyu'] # 保険請求額
-    record.public_amount = res['public_seikyu']  # 公費請求額 
-    record.user_share_amount = res['user_hutan']  # 利用者負担額
+    record.total_cost = res['total_cost'] # 10割分
+    record.benefit_amount = res['benefit_amount'] # 保険請求額
+    record.public_amount = res['public_amount']  # 公費請求額
+    record.user_share_amount = res['user_share_amount']  # 利用者負担額
     record.within_units = res['within_units'] # 10割分の単位数
     record.over_units = res['over_units'] # 超過分の単位数
 
     # CSV出力用のフィールドも更新
-    record.actual_count = res['subtotal_units']  # 実績日数
+    record.actual_count = res['actual_count']  # 実績日数
     record.service_units = sum(item['unit'] for item in res['plan_items'])  # サービス＋加算などの単位数合計
     record.addon_units = sum(item['unit'] for item in res['addon_items'])  # 加算単位数
     record.claim_units = record.service_units + record.addon_units  # 請求

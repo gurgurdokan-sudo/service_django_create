@@ -63,7 +63,11 @@ class AddOnService(models.Model):
             return (self.rate * 100).normalize()
     def full_code(self) ->str:
         return f'{self.service_type_code}{self.code}'
-
+    def get_unit(self, service_units):
+        if service_units <= 0 or self.rate is None:
+            return 0
+        else:
+            return int(self.rate * service_units)
     def __str__(self):
         return self.service_name+' ('+self.type+')'
 class Municipality(models.Model):

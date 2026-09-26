@@ -2,6 +2,7 @@ from asyncio.windows_events import NULL
 from datetime import date
 
 from dateutil.relativedelta import relativedelta
+from openpyxl.comments.shape_writer import officens
 
 from dashboard.excel.service_calculator import ServiceSheetCalculator
 from dashboard.models.const import (
@@ -9,6 +10,7 @@ from dashboard.models.const import (
     DATA_SET_CLAM
 )
 from dashboard.models import ServiceMonthlyRecord
+from dashboard.views.user_profile_view import public_assistance_create
 
 
 class ClaimBuilder:
@@ -23,7 +25,7 @@ class ClaimBuilder:
 
     def __init__(self, office, year, month):
         self.office = office
-        self.municipality_code_zfill=f'{self.office.municipality.municipality_code.zfill(8)}'
+        self.municipality_code_zfill=f'{str(self.office.municipality.municipality_code).zfill(8)}'
         self.year = year
         self.month = month
 
@@ -73,19 +75,19 @@ class ClaimBuilder:
         """
 
         return [
-            self.RECORD_TYPE_HEADER,            # レコード識別子（固定1
-            self.count_up_row(),                # 連番
-            0,                                  # 交換識別子（通常請求 固定0
-            self.record_set['item_number'],     # 項番
-            self.record_set['claim_category'],  # 請求分類コード 7110 or 7111
-            0, #todo 仕様確認
-            # self.office.pref_code,            # 都道府県コード  propertyでスライス
-            0,                                  # 請求区分　通常請求 固定0
-            self.office.office_number,          # 事務所番号
-            0,                                  # 作成区分　固定0
-            DATA_TYPE_CARE_INSURANCE,           # データ種別　7=介護給付請求
-            self.target_year_month,             # 請求年月
-            0,                                  # 予備/送信回数 固定0
+            self.RECORD_TYPE_HEADER,                                # レコード識別子（固定1
+            self.count_up_row(),                                    # 全体連番
+            0,                                                      # 交換識別子（通常請求 固定0
+            self.record_set['item_number'],                         # 項番
+            self.record_set['claim_category'],                      # 請求分類コード 7110 or 7111
+            0,                                                      # 事務所からの送信の場合は0 固定
+            # self.office.pref_code,                                # ↑都道府県コード  propertyでスライス
+            0,                                                      # 請求区分　通常請求 固定0
+            self.office.office_number,                              # 事務所番号
+            0,                                                      # 作成区分　固定0
+            DATA_TYPE_CARE_INSURANCE,                               # データ種別　7=介護給付請求
+            self.target_year_month,                                 # 請求年月(YYYYMM)
+            0,                                                      # 予備/送信回数 固定0
         ]
     def build_office_claim_details(self):
         """
@@ -121,29 +123,29 @@ class ClaimBuilder:
             total_units = data["units"]
 
             claim_details.append([
-                self.RECORD_TYPE_DETAIL,            #  レコード識別子 (固定: 2)
-                self.count_up_row(),                #  全体連番 (行番号)
-                self.record_set['detail_category'], #  サービス費用コード (7111)
-                self.target_year_month,             #  請求年月 (YYYYMM)
-                self.office.office_number,          #  事業所番号
+                self.RECORD_TYPE_DETAIL,                            # レコード識別子 (固定: 2)
+                self.count_up_row(),                                # 全体連番 (行番号)
+                self.record_set['detail_category'],                 # サービス費用コード (7111)
+                self.target_year_month,                             # 請求年月 (YYYYMM)
+                self.office.office_number,                          # 事業所番号
                 
-                detail_line_number,                 #  明細行番号 (1, 2, 3...)
-                self.office.service_type_code,      #  サービス種類コード (例: 15 または 78)
-                self.USER_RECORD_BASIC,             #  サービス区分コード (固定: "01")
+                detail_line_number,                                 # 明細行番号 (1, 2, 3...)
+                self.office.service_type_code,                      # サービス種類コード (例: 15 または 78)
+                self.USER_RECORD_BASIC,                             # サービス区分コード (固定: "01")
                 
-                data["count"],                      #  延べ件数/回数
-                service_code,                       #  サービスコード (6桁)
-                total_units,                        #  請求単位数
+                data["count"],                                      # 延べ件数/回数
+                service_code,                                       # サービスコード (6桁)
+                total_units,                                        # 請求単位数
                 
-                total_units,                        #  保険給付対象単位数
-                0,                                  #  超過・自費単位数
-                0,                                  #  公費対象単位数
-                0,                                  #  保険給付請求額
-                0,                                  #  公費請求額
-                0,                                  #  利用者負担額
-                0,                                  #  予備
-                0,                                  #  予備
-                0,                                  #  予備
+                total_units,                                        # 保険給付対象単位数
+                0,                                                  # todo 超過・自費単位数
+                0,                                                  # 公費対象単位数
+                0,                                                  # 保険給付請求額
+                0,                                                  # 公費請求額
+                0,                                                  # 利用者負担額
+                0,                                                  # 予備
+                0,                                                  # 予備
+                0,                                                  # 予備
             ])
 
         return claim_details
@@ -175,48 +177,56 @@ class ClaimBuilder:
                 f"month={self.month}"
             )
 
+        if self.user.get_public_assistance(self.year, self.month): #生活保護があるか
+            public_assist_units = self.record.claim_units
+            public_amount = self.record.public_amount
+            public_rate = 100
+        else:
+            public_assist_units = 0
+            public_amount = 0
+            public_rate = 0
         return [
-            self.RECORD_TYPE_DETAIL,
-            self.count_up_row(),                            # 全体連番
-            self.record_set["claim_home_based_category"],   # サービス費用コード
-            self.USER_RECORD_BASIC,                         # 利用者基本・認定レコード
-            self.target_year_month,                         # 請求年月(YYYYMM)
-            self.office.office_number,                      # 事業所番号
-            self.municipality_code_zfill,                   # 市町村コード
-            self.user.insured_number,                       # 被保険者番号
-            self.user.birth_date_value,                     # 生年月日(YYYYMM)
-            self.user.gender_disp,                          # 性別区分(男1
-            cert.convert_care_level,                        # 介護度を国保連用コードに変換
-            cert.certification_start,                       # 適用開始日(YYYYMM)
-            cert.certification_end,                         # 適用終了日(YYYYMM)
+            self.RECORD_TYPE_DETAIL,                                    # レコード識別子（固定: 2）
+            self.count_up_row(),                                        # 全体連番
+            self.record_set["claim_home_based_category"],               # サービス費用コード(固定:7131)
+            self.USER_RECORD_BASIC,                                     # 利用者基本・認定レコード(固定:01)
+            self.target_year_month,                                     # 請求年月(YYYYMM)
+            self.office.office_number,                                  # 事業所番号
+            self.municipality_code_zfill,                               # 市町村コード
+            self.user.insured_number,                                   # 被保険者番号
+            self.user.birth_date_value,                                 # 生年月日(YYYYMM)
+            self.user.gender_disp,                                      # 性別区分(男1
+            cert.convert_care_level,                                    # 介護度を国保連用コードに変換
+            cert.certification_start,                                   # 適用開始日(YYYYMM)
+            cert.certification_end,                                     # 適用終了日(YYYYMM)
 
-            1,                                              # 住居サービス作成区分
-            self.user.care_manager.care_management_office_number,# 居宅介護支援事業所番号
-            "",                                             # 公費負担者番号1
-            "",                                             # 公費負担者番号1
-            "",                                             # 公費負担者番号2
-            "",                                             # 公費負担者番号2
-            "",                                             # 公費負担者番号3
-            0,                                              # 開始年月日 月途中（通常0
-            0,                                              # 終了年月日 月途中（通常0
-            "",                                             # 中止理由
-            cert.disp_benefit_rate,                         # 保険給付率(90 or 計画単位数
-            0,                                              # 保険対象単位数 (保険分
-            0,                                              # 保険対象請求額 (円
-            0,                                              # 利用者負担額 (保険分
-            8608,                                           # 総請求単位数
-            self.record.user_share_amount,                  # 利用者負担合計額
-            8996,                                           # 請求合計額 (円換算
+            1,                                                          # 住居サービス作成区分
+            self.user.care_manager.care_management_office_number,       # 居宅介護支援事業所番号
+            "",                                                         # 公費負担者番号1
+            "",                                                         # 公費負担者番号1
+            "",                                                         # 公費負担者番号2
+            "",                                                         # 公費負担者番号2
+            "",                                                         # 公費負担者番号3
+            0,                                                          # 開始年月日 月途中（通常0
+            0,                                                          # 終了年月日 月途中（通常0
+            "",                                                         # 23:中止理由（退所理由コード）
+            cert.disp_benefit_rate,                                     # 保険給付率(90 80 70
+            public_rate,                                                # 公費1の給付率
+            0,                                                          # 公費2の給付率
+            0,                                                          # 公費3の給付率
+            self.record.claim_units,                                    # 総請求単位数
+            self.record.benefit_amount,                                 # 利用者負担合計額 保険請求（円換算
+            self.record.user_share_amount,                              # 利用者負担額(超過分含む)生活保護0
 
             # 予備および公費
-            "",                                             # 公費1 対象単位数
-            "",                                             # 公費1 請求額
-            "",                                             # 公費1 利用者負担
-            0,                                              # 公費2 対象単位数
-            0,                                              # 公費2 請求額
-            0,                                              # 公費2 利用者負担
-            "",                                             # 公費3 対象単位数
-            "",                                             # 公費3 請求額
+            "",                                                         # 公費1
+            "",                                                         # 公費2
+            "",                                                         # 公費3 利用者負担
+            public_assist_units,                                        # 公費2 対象単位数
+            public_amount,                                              # 公費2 請求額
+            0,                                                          # 公費2 利用者負担
+            "",                                                         # 公費3 対象単位数
+            "",                                                         # 公費3 請求額
             #予備項目
             "",
             0,
@@ -232,17 +242,24 @@ class ClaimBuilder:
     def _build_user_claim_details(self):
         """
         利用者1人分の 02 レコードを作る。
+
         """
         rows = []
         for plan in self.plans:
             count = int(plan.get_total_count("actual"))
             unit = int(plan.unit)
             subtotal = (unit * count)
+            if self.user.get_public_assistance(self.year, self.month):
+                public_count = count
+                public_subtotal = subtotal
+            else:   # 生活保護があるか
+                public_count = 0
+                public_subtotal = 0
             rows.append([ #プランごとの行
-                self.RECORD_TYPE_DETAIL,
-                self.count_up_row(),
+                self.RECORD_TYPE_DETAIL,                                # レコード識別子（固定: 2）
+                self.count_up_row(),                                    # 全体連番
                 self.record_set["claim_home_based_category"],           # サービス費用コード
-                self.USER_RECORD_SERVICE,
+                self.USER_RECORD_SERVICE,                               # サービス区分コード（固定: "02"）
                 self.target_year_month,                                 # 請求年月(YYYYMM)
                 self.office.office_number,                              # 事業所番号
                 self.municipality_code_zfill,                           # 市町村コード
@@ -251,76 +268,132 @@ class ClaimBuilder:
                 str(plan.service_code),                                 # サービスコード
                 unit,                                                   # 単価
                 count,                                                  # 回数
-                # 予備
-                0,
-                0,
-                0,
-                subtotal,                                                # 小計単位数
-                0,
-                0,
-                0,
-                "",
+                # 公費が特定のサービスにのみ適用される場合
+                public_count,                                           # 公費1対象回数
+                0,                                                      # 公費2対象回数
+                0,                                                      # 公費3対象回数
+                subtotal,                                               # 小計単位数(単位*回数)
+                public_subtotal,                                        # 公費1小計単位数
+                0,                                                      # 公費2小計単位数
+                0,                                                      # 公費3小計単位数
+                f'\"\"',                                                # 摘要欄（サービス名などを記載する 基本空文字）
             ])
+        for plan in self.plans:
+            for item in plan.get_addon_summary().values():
+                addon_obj = item['addon']
+                if not addon_obj and addon_obj.insurance_type == 'self_pay':
+                    continue
+                if addon_obj.type == 'rate':
+                    """ todo 加算の率対応 """
+                    continue
+                if addon_obj.type == 'unit' and addon_obj.unit is None:
+                    raise ValueError(
+                        f"加算単位が設定されていません: {addon_obj.code}"
+                    )
+                count = int(len(item['days']))
+                subtotal:int = addon_obj.unit * count
+                if self.user.get_public_assistance(self.year, self.month):
+                    public_count = count
+                    public_subtotal = subtotal
+                else:  # 生活保護があるか
+                    public_count = 0
+                    public_subtotal = 0
+                rows.append([  # 加算ごとの行
+                    self.RECORD_TYPE_DETAIL,                            # レコード識別子（固定: 2）
+                    self.count_up_row(),                                # 全体連番
+                    self.record_set["claim_home_based_category"],       # サービス費用コード
+                    self.USER_RECORD_SERVICE,                           # サービス区分コード（固定: "02"）
+                    self.target_year_month,                             # 請求年月(YYYYMM)
+                    self.office.office_number,                          # 事業所番号
+                    self.municipality_code_zfill,                       # 市町村コード
+                    self.user.insured_number,                           # 被保険者番号
+                    self.office.service_type_code,                      # サービス種類
+                    str(plan.service_code),                             # サービスコード
+                    addon_obj.unit,                                     # 単価
+                    count,                                              # 回数
+                    # 公費が適用される場合
+                    public_count,                                       # 公費1対象回数
+                    0,                                                  # 公費2対象回数
+                    0,                                                  # 公費3対象回数
+                    subtotal,                                           # 小計単位数(単位*回数)
+                    public_subtotal,                                    # 公費1小計単位数
+                    0,                                                  # 公費2小計単位数
+                    0,                                                  # 公費3小計単位数
+                    f'\"\"',                                            # 摘要欄（サービス名などを記載する 基本空文字）
+                ])
+        service_units = self.default_addon.get_unit(self.record.service_units)
+        if self.user.get_public_assistance(self.year, self.month):
+            public_count = 1
+            public_subtotal = service_units
+        else:
+            public_count = 0
+            public_subtotal = 0
+        rows.append([  # デフォルトの行
+            self.RECORD_TYPE_DETAIL,                                    # レコード識別子（固定: 2）
+            self.count_up_row(),                                        # 全体連番
+            self.record_set["claim_home_based_category"],               # サービス費用コード
+            self.USER_RECORD_SERVICE,                                   # サービス区分コード（固定: "02"）
+            self.target_year_month,                                     # 請求年月(YYYYMM)
+            self.office.office_number,                                  # 事業所番号
+            self.municipality_code_zfill,                               # 市町村コード
+            self.user.insured_number,                                   # 被保険者番号
+            self.office.service_type_code,                              # サービス種類
+            str(self.default_addon.service_code),                       # サービスコード
+            service_units,                                              # 単価
+            1,                                                          # 回数(固定:1)
+            public_count,                                               # 公費1対象回数
+            0,                                                          # 公費2対象回数
+            0,                                                          # 公費3対象回数
+            service_units,                                              # 小計単位数(率の行 固定:0)
+            public_subtotal,                                            # 公費1小計単位数
+            0,                                                          # 公費2小計単位数
+            0,                                                          # 公費3小計単位数
+            f'\"\"',                                                    # 摘要欄（サービス名などを記載する 基本空文字）
+        ])
         return rows
     def _build_user_claim_total(self):
         """
             利用者1人分の 03 レコードを作る。
             - サービス提供表で集計した結果を使う
         """
-
-        context = {
-            "office": self.office,
-            "user": self.user,
-            "plans": self.plans,
-            "dis_year": self.year,
-            "dis_month": self.month,
-        }
-
+        if self.user.get_public_assistance(self.year, self.month): #生活保護があるか
+            public_assist_units = self.record.claim_units
+            public_amount = self.record.public_amount
+        else:
+            public_assist_units = 0
+            public_amount = 0
         return [
-            self.RECORD_TYPE_DETAIL,
-            self.count_up_row(),                                # 全体連番
-            self.record_set["claim_home_based_category"],       # サービス費用コード
-            self.USER_RECORD_TOTAL,
-            self.target_year_month,                             # 請求年月
-            self.office.office_number,                          # 事業所番号
-            self.municipality_code_zfill,                       # 市町村コード
-            self.user.insured_number,                           # 被保険者番号
-            self.office.service_type_code,                      # サービス種類
-            self.record.actual_count,                           # 給付日数 / 利用日数
-            self.record.service_units,                          # 計画単位数
-            self.record.service_units,                          # 実績単位数
-            self.record.addon_units,                            # 加算単位数
+            self.RECORD_TYPE_DETAIL,                                    # レコード識別子（固定: 2）
+            self.count_up_row(),                                        # 全体連番
+            self.record_set["claim_home_based_category"],               # サービス費用コード(固定: 7111)
+            self.USER_RECORD_TOTAL,                                     # サービス区分コード(固定: 10)
+            self.target_year_month,                                     # 請求年月(YYYYMM)
+            self.office.office_number,                                  # 事業所番号
+            self.municipality_code_zfill,                               # 市町村コード(固定: 8桁)
+            self.user.insured_number,                                   # 被保険者番号(10桁)
+            self.office.service_type_code,                              # サービス種類( 15 or 78)
+            self.record.actual_count,                                   # 給付日数 / 利用日数
+            self.record.service_units,                                  # 計画単位数(基本報酬)
+            self.record.service_units,                                  # 実績単位数
+            self.default_addon.get_unit(self.record.service_units),     # 13:加算単位数（処遇改善加算 入浴加算など）
 
             # 以下は金額項目
-            0,
-            0,
-            0,
-            self.record.claim_units,                            # 総請求単位数
-            self.record.benefit_amount,                         # 保険請求
-            self.record.public_amount,                          # 公費請求
-            self.record.user_share_amount,                      # 本人支払(超過分込)
+            0,                                                          # 超過の単位数
+            0,                                                          # 公費対象単位（なければ0
+            self.record.claim_units,                                    # 保険給付総請求単位数
+            self.record.benefit_amount,                                 # 利用者負担合計額 保険請求（円換算
+            self.record.public_amount,                                  # 公費請求（円換算
+            self.record.user_share_amount,                              # 利用者負担額(超過分含む)生活保護0
 
             # 予備
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
+            public_assist_units,                                        # 公費1 本人負担額 (生活保護の場合
+            public_amount,                                              # 公費1 対象単位数
+            0,                                                          # 公費2 請求額
+            0,                                                          # 公費2 本人負担額
+            0,                                                          # 公費3 対象単位数
+            0,                                                          # 公費3 請求額
+            0,                                                          # 公費3 本人負担額
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         ]
     def _build_user_claim(self, record):
         """
@@ -333,6 +406,8 @@ class ClaimBuilder:
         self.record = record
         self.plans = list(self.record.plans.all())
         self.user = self.record.user
+        self.default_addon = self.record.default_addon
+
         if not self.user.care_manager:
             raise ValueError(f'ケアマネジャーが設定されていない利用者={self.user.name}')
         # 01
