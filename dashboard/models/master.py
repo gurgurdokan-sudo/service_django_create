@@ -67,7 +67,8 @@ class AddOnService(models.Model):
         if service_units <= 0 or self.rate is None:
             return 0
         else:
-            return int(self.rate * service_units)
+            rate = float(self.rate)
+            return int(rate * service_units)
     def __str__(self):
         return self.service_name+' ('+self.type+')'
 class Municipality(models.Model):

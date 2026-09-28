@@ -42,6 +42,28 @@ class ServiceMonthlyRecord(models.Model):
     # csv出力用
     actual_count = models.IntegerField(verbose_name='実績日数', default=0)
     service_units = models.IntegerField(verbose_name='サービス＋加算などの単位数合計', default=0)
+    @property
+    def all_addons(self):
+        plans = self.plans.all()
+        addon_summary = {}
+
+        for plan in self.plans.all():
+            for item in plan.get_addon_summary.values():
+                addon_obj = item["addon"]
+
+                if not addon_obj:
+                    continue
+
+                code = str(addon_obj.code)
+                if code not in addon_summary:
+                    addon_summary[code] = {
+                        "addon": addon_obj,
+                        "days": [],
+                    }
+
+                addon_summary[code]["days"].extend(item["days"])
+
+        return addon_summary
 
     def __str__(self):
         return f'{self.user} - {self.date.strftime("%Y-%m")}'
@@ -166,34 +188,37 @@ class ServicePlan(models.Model):
         actual_json に設定されている加算を、
         AddOnService単位で利用日と一緒にまとめる。
         """
-        addon_ids = set()
+        addon_codes = set()
 
         for day_info in self.actual_dict.values():
-            addon_ids.update(day_info.get("addon", []))
+            addon_codes.update(day_info.get("addon", []))
 
-        if not addon_ids:
+        if not addon_codes:
             return {}
 
+        # DBから取得した加算マスタを辞書化
         addons = {
-            addon.id: addon
+            str(addon.code): addon
             for addon in AddOnService.objects.filter(
-                id__in=addon_ids
+                code__in=addon_codes
             )
         }
 
         summary = {}
-
+        print('処理開始')
         for day, day_info in self.actual_dict.items():
-            for addon_id in day_info.get("addon", []):
-                addon = addons.get(int(addon_id)) #addonマスタが変更時ずれる可能性あり
-                if not addon: continue
+            for addon_code in day_info.get("addon", []):
+                addon = addons.get(str(addon_code)) #addonマスタが変更時ずれる可能性あり
+                if not addon:
+                    print('マスタなし',flush=True)
+                    continue
 
-                if addon.id not in summary:
-                    summary[addon.id] = {
+                if addon.code not in summary:
+                    summary[addon.code] = {
                         "addon": addon,
                         "days": [],
                     }
-                summary[addon.id]["days"].append(day)
+                summary[addon.code]["days"].append(day)
 
         return summary  # keyが加算サービスID、valueがdict(addonMasterオブジェクト,加算が入った日付[])
 
@@ -221,14 +246,6 @@ class ServicePlan(models.Model):
                     # マスタから単位数を取得して加算
                     total_units += addon_master.get(int(addon_id), 0)
         return total_units
-
-    # @property
-    # def is_addon(self):
-    #     date = self.actual_dict
-    #     for key in date.values():
-    #         if key.get("addon", []):
-    #             return True
-    #     return False
 
     @property
     def get_insurance_addons(self):
