@@ -23,7 +23,18 @@
       text-align: left;
     }
     .status-active { color: green; font-weight: bold; }
-    .status-expired { color: #999; }
+    .detail-item {
+      display: flex;
+      flex-wrap: wrap; /* 幅が足りなくなったら子要素を丸ごと改行 */
+      align-items: center;
+      gap: 0.5rem; /* ラベルと値の間の余白 */
+      margin-bottom: 0.5rem;
+      cursor: default; /* カーソルをデフォルトにして選択不可の印象を与える */
+    }
+    .detail-item span {
+      white-space: nowrap; /* テキスト内の自動改行を防ぐ */
+      user-select: none; /* テキストの選択を防ぐ */
+    }
   </style>
 {% endblock %}
 
@@ -35,11 +46,11 @@
   <div class="header-container">
     <h1 class="page-title">{{ user.name }} 様 詳細</h1>
     <div class="action-bar">
-       <button type="button" class="btn btn-primary" onclick="location.href='{% url 'dashboard:update' user.id %}'">
+       <a class="btn btn-primary" href='{% url "dashboard:update" user.id %}'>
          基本情報を編集
-       </button>
+       </a>
        {% if can_delete %}
-         <a href="{% url 'dashboard:delete' user.id %}" class="btn btn-outline-danger">利用者削除</a>
+         <a class="btn btn-outline-danger" href='{% url "dashboard:delete" user.id %}'>利用者削除</a>
        {% endif %}
     </div>
   </div>
@@ -47,23 +58,23 @@
   <div class="row">
     <!-- 左側：基本情報とケアマネ -->
     <div class="col-md-5">
-      <div class="section-title"><h3>基本情報</h3></div>
+      <div class="section-title user-select-none"><h3>基本情報</h3></div>
       <div class="detail-card">
-        <p><label>{{ labels.name_kana }}</label> {{ user.name_kana }}</p>
-        <p><label>現在の介護度</label> <span class="badge bg-info text-dark">{{ user.care_level }}</span></p>
-        <p><label>{{ labels.insured_number }}</label> {{ user.insured_number }}</p>
-        <p><label>{{ labels.date_of_birth }}</label> {{ user.date_of_birth }}</p>
-        <p><label>{{ labels.gender }}</label> {{ user.get_gender_display }}</p>
-        <p><label>{{ labels.notes }}</label><br>{{ user.notes|linebreaksbr }}</p>
+        <div class="detail-item"><label>{{ labels.name_kana }}</label> {{ user.name_kana }}</div>
+        <div class="detail-item"><label>現在の介護度</label> <span class="bg-info text-dark">{{ user.care_level }}</span></div>
+        <div class="detail-item"><label>{{ labels.insured_number }}</label> {{ user.insured_number }}</div>
+        <div class="detail-item"><label>{{ labels.date_of_birth }}</label> {{ user.date_of_birth }}</div>
+        <div class="detail-item"><label>{{ labels.gender }}</label> {{ user.get_gender_display }}</div>
+        <div class="detail-item"><label>{{ labels.notes }}</label><br>{{ user.notes|linebreaksbr }}</div>
       </div>
 
-      <div class="section-title"><h3>連絡先（ケアマネジャー）</h3></div>
+      <div class="section-title user-select-none"><h3>連絡先（ケアマネジャー）</h3></div>
       <div class="detail-card">
         {% if user.care_manager %}
-          <p><label>担当者</label> {{ user.care_manager.name }} </p>
-          <p><label>事務所番号</label> {{ user.care_manager.care_management_office_number }} </p>
-          <p><label>事業所</label> {{ user.care_manager.office_name }}</p>
-          <p><label>電話/FAX</label> {{ user.care_manager.tel|default:"未設定" }} / {{ user.care_manager.fax|default:"未設定" }}</p>
+          <div class="detail-item"><label>担当者</label> {{ user.care_manager.name }} </div>
+          <div class="detail-item"><label>事務所番号</label> {{ user.care_manager.care_management_office_number }} </div>
+          <div class="detail-item"><label>事業所</label><span> {{ user.care_manager.office_name }}</span></div>
+          <div class="detail-item"><label>電話/FAX</label> {{ user.care_manager.tel|default:"未設定" }} / {{ user.care_manager.fax|default:"未設定" }}</div>
         {% else %}
           <p class="text-danger">ケアマネジャーが設定されていません</p>
         {% endif %}
