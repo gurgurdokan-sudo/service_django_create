@@ -4,6 +4,7 @@
   <link rel="stylesheet" href="{% static 'dashboard/css/temp.css' %}" />
 {% endblock %}
 {% block body %}
+  {% include 'dashboard/components/messages.html' %}
   <h2>{{ title|default:"認定情報" }}</h2>
   <div class="detail-card">
     <div id="bread" data-items='{{ breadcrumbs|safe }}'></div>

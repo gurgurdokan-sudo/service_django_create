@@ -176,8 +176,8 @@ def user_detail(request, user_id):
             UseUser.objects.prefetch_related('certificates', 'public_assistance'),
         id=user_id
     )
-    certificates = list(user.certificates.all())
-    public_assistance = list(user.public_assistance.all()[:5])
+    certificates = user.certificates.order_by("-is_active","-limit_start")[:5]
+    public_assistance = user.public_assistance.order_by("-is_active","-end_date")
 
     logger.info(f'{certificates}\n{public_assistance}')
     labels = {f.name: f.verbose_name for f in user._meta.fields}

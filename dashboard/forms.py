@@ -1,4 +1,4 @@
-from datetime import date, timezone
+from datetime import date
 
 from django import forms
 from django.forms.utils import ErrorList
@@ -130,36 +130,25 @@ class CertificateForm(forms.ModelForm):
     def clean(self):
         cleaned = super().clean()
         care_level = cleaned.get('care_level')
-        limit_amount_type = cleaned.get('limit_amount_type')
         limit_amount_value =cleaned.get('limit_amount_value')
         if care_level is None:
-            self._errors['care_level'] = ErrorList(['要介護状態区分は必須です'])
+            self.add_error('care_level','要介護状態区分は必須です')
         if limit_amount_value and 1000000> limit_amount_value >0 :
-            self._errors['limit_amount_value'] = ErrorList(['正式な限度額を設定してください'])
-        today = date.today()
+            self.add_error('limit_amount_value','正式な限度額を設定してください')
+
         limit_start = cleaned.get('limit_start')
         limit_end = cleaned.get('limit_end')
-        if (limit_start is None) or (limit_end is None):
-            return cleaned
-        if limit_start > limit_end:
-            self.add_error('limit_start', '終了日は開始日以降の日付を設定してください')
-            return cleaned
-        if limit_end<today:
-            self.add_error('limit_start', '過去の認定期間は登録できません')
-            return cleaned
-        if self.instance.insured_number =='': # 新規は空
-            return cleaned
-        duplicate = Certificate.objects.filter(
-            insured_number=self.instance.insured_number,
-            care_level=care_level,
-            limit_start__lte=limit_end,
-            limit_end__gte=limit_end,
-        )
-        if self.instance.pk:
-            duplicate = duplicate.exclude(pk=self.instance.pk)
-        if duplicate.exists():
-            self.add_error('care_level', '同じ内容の認定情報が既に登録されています')
-            return cleaned
+        print(f"{limit_end}------------",flush=True)
+        errors = []
+        if limit_start and limit_end:
+            if limit_start > limit_end:
+                errors.append("終了日は開始日以降にしてください")
+            if limit_start < date.today():
+                errors.append("過去の日付は指定できません")
+
+        if errors:
+            self.add_error("limit_start", errors[0])
+
         return cleaned
     def save(self,user=None, commit=True):
         instance = super().save(commit=False)
@@ -180,7 +169,7 @@ class CertificateForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         for field_name,field in self.fields.items():
             if isinstance(field.widget, forms.CheckboxInput):
-                field.widget.attrs['class'] = f'form-check-input {field_name}'
+                field.widget.attrs['class'] = f'form-check-input ms-5 {field_name}'
             else:
                 field.widget.attrs['class']= f'form-control {field_name}'
             if field.required:

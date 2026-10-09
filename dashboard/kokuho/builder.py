@@ -64,7 +64,7 @@ class ClaimBuilder:
     def count_up_row(self): #行番号をカウント
         self.row += 1
         return self.row
-    
+
     def build_office_claim_header(self):
         """
         請求書情報：基本情報レコード(国保連CSV 1行目)
@@ -329,27 +329,27 @@ class ClaimBuilder:
                 public_count = 0
                 public_subtotal = 0
             rows.append([  # 加算ごとの行
-                self.RECORD_TYPE_DETAIL,                            # レコード識別子（固定: 2）
-                self.count_up_row(),                                # 全体連番
-                self.record_set["claim_home_based_category"],       # サービス費用コード
-                self.USER_RECORD_SERVICE,                           # サービス区分コード（固定: "02"）
-                self.target_year_month,                             # 請求年月(YYYYMM)
-                self.office.office_number,                          # 事業所番号
-                self.municipality_code_zfill,                       # 市町村コード
-                self.user.insured_number,                           # 被保険者番号
-                self.office.service_type_code,                      # サービス種類
-                str(service_code),                                  # サービスコード
-                addon_obj.unit,                                     # 単価
-                count,                                              # 回数
+                self.RECORD_TYPE_DETAIL,                                # レコード識別子（固定: 2）
+                self.count_up_row(),                                    # 全体連番
+                self.record_set["claim_home_based_category"],           # サービス費用コード
+                self.USER_RECORD_SERVICE,                               # サービス区分コード（固定: "02"）
+                self.target_year_month,                                 # 請求年月(YYYYMM)
+                self.office.office_number,                              # 事業所番号
+                self.municipality_code_zfill,                           # 市町村コード
+                self.user.insured_number,                               # 被保険者番号
+                self.office.service_type_code,                          # サービス種類
+                str(service_code),                                      # サービスコード
+                addon_obj.unit,                                         # 単価
+                count,                                                  # 回数
                 # 公費が適用される場合
-                public_count,                                       # 公費1対象回数
-                0,                                                  # 公費2対象回数
-                0,                                                  # 公費3対象回数
-                subtotal,                                           # 小計単位数(単位*回数)
-                public_subtotal,                                    # 公費1小計単位数
-                0,                                                  # 公費2小計単位数
-                0,                                                  # 公費3小計単位数
-                f'\"\"',                                            # 摘要欄（サービス名などを記載する 基本空文字）
+                public_count,                                           # 公費1対象回数
+                0,                                                      # 公費2対象回数
+                0,                                                      # 公費3対象回数
+                subtotal,                                               # 小計単位数(単位*回数)
+                public_subtotal,                                        # 公費1小計単位数
+                0,                                                      # 公費2小計単位数
+                0,                                                      # 公費3小計単位数
+                f'\"\"',                                                # 摘要欄（サービス名などを記載する 基本空文字）
             ])
         service_units = self.default_addon.get_unit(self.record.service_units)
         if self.user.get_public_assistance(self.year, self.month):
@@ -435,7 +435,7 @@ class ClaimBuilder:
             10: 利用者の集計情報
         """
         self.record = record
-        self.plans = list(self.record.plans.all())
+        self.plans = self.record.plans.all().values_list()
         self.user = self.record.user
         self.default_addon = self.office.default_service
 
