@@ -77,7 +77,7 @@ def init_plan(request):
     #
     # AddOnService.objects.bulk_create(services)
 
-    ServiceMaster.objects.all().delete()
+    # ServiceMaster.objects.all().delete()
     a = [
         # 地域密着型通所介護（種類コード：78）
         #
