@@ -257,6 +257,7 @@ class PublicAssistanceForm(forms.ModelForm):
         if len(rec_num) != 10 or not rec_num.isdigit:
             self.add_error('recipient_number', '受給者番号は10桁の数字で入力してください')
 
+    @transaction.atomic
     def save(self, user=None, commit=True):
         instance = super().save(commit=False)
         y = int(self.cleaned_data.get('start_year'))

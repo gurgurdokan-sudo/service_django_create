@@ -121,7 +121,6 @@ def user_service(request,user_id):
     if _is_future_month_not_plan(user_id,dis_year, dis_month):
         '''プラン作成画面にリダイレクトする'''
         request.check_flag = True
-        messages.success(request, f'{dis_month}月分の適用曜日と時間を登録してください')
         url = reverse('dashboard:createPlan', args=[user_id] )
         return redirect(f'{url}?year={dis_year}&month={dis_month}')
 
