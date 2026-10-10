@@ -46,19 +46,10 @@ def user_create(request, cm_id):
 #生活保護情報4
 def public_assistance_create(request,user_id):
     user = get_object_or_404(UseUser,id = user_id)
-    zen = PublicAssistance.objects.filter(user= user,is_active = True).first()
-    q_year = request.GET.get('year')
-    q_month = request.GET.get('month')
-    is_from_service = True if q_year else False
-
-    target_y = int(q_year) if q_year else date.today().year
-    target_m = int(q_month) if q_month else date.today().month
-    target_start_date = date(target_y, target_m, 1)
-
-    existing_pa = PublicAssistance.objects.filter(
-        user=user, 
-        start_date=target_start_date
-    ).first()
+    latest_pa = PublicAssistance.objects.filter(user= user,is_active = True).first()
+    q_year = request.POST.get("year") or request.GET.get("year")
+    q_month = request.POST.get("month") or request.GET.get("month")
+    is_from_service = bool(q_year and q_month)
 
     crumbs =[
         # ("利用者一覧", "dashboard:user_list"),
@@ -69,49 +60,34 @@ def public_assistance_create(request,user_id):
     if request.method == 'POST':
         action = request.POST.get('action')
         logger.info(f'{action} ==========================================')
+        try:
+            y = int(q_year) if q_year else date.today().year
+            m = int(q_month) if q_month else date.today().month
+        except ValueError:
+            y, m = date.today().year, date.today().month
         if action == 'release':
             # 「解除」リクエストの処理
             user.public_assistance.filter(is_active=True).update(is_active=False)
-            
             url = reverse('dashboard:service', args=[user_id])
-            y = q_year or date.today().year
-            m = q_month or date.today().month
             return redirect(f'{url}?year={y}&month={m}')
         else:
             form = PublicAssistanceForm(request.POST)
             if form.is_valid():
-                pa = form.save(commit=False)
-                pa.user = user
-                y = int(form.cleaned_data.get('start_year'))
-                m = int(form.cleaned_data.get('start_month'))
-                pa.start_date = date(y, m, 1) # 自動的に1日をセット
-                # その月の月末にendをセット
-                pa.end_date = pa.start_date + relativedelta(months=1, days=-1)
-                #前回の生活保護があればis_activeをFalse
-                if zen:
-                    logger.info(f'以前の生活保護あり')
-                    zen.is_active = False
-                    zen.save()
-                #同じ月のレコードがあれば消去
-                if existing_pa:
-                    existing_pa.delete()
-                pa.is_active = True
-                pa.save()
+                form.save(user=user,commit=False)
                 messages.success(request, f"{user.name}様 の生活保護登録")
                 if is_from_service:
                     url = reverse('dashboard:service', args=[user_id])
                     return redirect(f'{url}?year={y}&month={m}')
                 else:
                     return redirect('dashboard:user_list')
-    else: #GETリクエスト
-        # 初期値
+    else: # GETリクエスト
         initial_data = {
-            'start_year': target_y,
-            'start_month': target_m,
-            'hogo_number': zen.hogo_number if zen else '',
-            'recipient_number': zen.recipient_number if zen else '',
+            'start_year': latest_pa.start_date.year if latest_pa else None,
+            'start_month': latest_pa.start_date.month if latest_pa else None,
+            'hogo_number': latest_pa.hogo_number if latest_pa else '',
+            'recipient_number': latest_pa.recipient_number if latest_pa else '',
         }
-        form = PublicAssistanceForm( initial = initial_data )
+        form = PublicAssistanceForm(initial = initial_data)
     return render(request, 'dashboard/public_assistance_form.html',{
         'form': form,
         'user': user,

@@ -1,39 +1,45 @@
 from datetime import date
 
 from django import forms
+from django.db import transaction
 from django.forms.utils import ErrorList
 from dashboard.models import UseUser, ServicePlan, Certificate, CareManager, Office, PublicAssistance
 import logging
+
 logger = logging.getLogger(__name__)
+
 
 class UserForm(forms.ModelForm):
     _errors = {}
+
     class Meta:
         model = UseUser
-        fields = ['care_manager','name','name_kana','insured_number','date_of_birth','gender','notes']
+        fields = ['care_manager', 'name', 'name_kana', 'insured_number', 'date_of_birth', 'gender', 'notes']
         labels = {
             'name': '氏名',
             'name_kana': 'フリガナ',
             'insured_number': '被保険者番号',
             'date_of_birth': '生年月日',
             'gender': '性別',
-            'notes' : 'メモ',
+            'notes': 'メモ',
         }
         widgets = {
-        'date_of_birth': forms.DateInput(attrs={'type': 'date'}),
+            'date_of_birth': forms.DateInput(attrs={'type': 'date'}),
         }
+
     care_manager = forms.ModelChoiceField(
         queryset=CareManager.objects.all(),
         label="担当ケアマネジャー",
         empty_label="------ 選択してください ------",
-        required=False 
+        required=False
     )
-    def save(self,commit = True):
+
+    def save(self, commit=True):
         instance = super().save(commit=False)
         if instance.name:
-            instance.name = instance.name.replace('　',' ')
+            instance.name = instance.name.replace('　', ' ')
         if instance.name_kana:
-            instance.name_kana = instance.name_kana.replace('　',' ')
+            instance.name_kana = instance.name_kana.replace('　', ' ')
         if commit: instance.save()
         return instance
 
@@ -42,18 +48,20 @@ class UserForm(forms.ModelForm):
         dob = cleaned.get('date_of_birth')
         if not dob:
             self._errors['date_of_birth'] = ErrorList(['生年月日は必須です'])
-            
+
         name = cleaned.get('name')
-        name = name.replace('　',' ') if name else ''
-        if not name: self._errors['name'] = ErrorList(['氏名は必須です'])
+        name = name.replace('　', ' ') if name else ''
+        if not name:
+            self._errors['name'] = ErrorList(['氏名は必須です'])
         else:
             parts = [p for p in name.split() if p]
             if len(parts) != 2:
                 self._errors['name'] = ErrorList(['氏名は「姓 半角スペース 名」で入力してください'])
 
         kana = cleaned.get('name_kana')
-        kana = kana.replace('　',' ') if kana else ''
-        if not kana: self._errors['name_kana'] = ErrorList(['フリガナは必須です'])
+        kana = kana.replace('　', ' ') if kana else ''
+        if not kana:
+            self._errors['name_kana'] = ErrorList(['フリガナは必須です'])
         else:
             parts = [p for p in kana.split() if p]
             if len(parts) != 2:
@@ -70,19 +78,20 @@ class UserForm(forms.ModelForm):
         if queryset.exists():
             self._errors['insured_number'] = ErrorList(['この被保険者番号は既に登録されています'])
 
-        
         return cleaned
-            
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         label_suffix = ''
-        for field_name,field in self.fields.items():
-            self.fields[field_name].widget.attrs['class']= f'form-control {field_name}'
+        for field_name, field in self.fields.items():
+            self.fields[field_name].widget.attrs['class'] = f'form-control {field_name}'
             if field.required:
                 self.fields[field_name].widget.attrs['required'] = True
-                self.fields[field_name].widget.attrs['class']= f'form-control {field_name} required'
+                self.fields[field_name].widget.attrs['class'] = f'form-control {field_name} required'
+
+
 class PlanForm(forms.ModelForm):
-    WEEKDAY_CHOICES = [("0", "月"),("1", "火"),("2", "水"),("3", "木"),("4", "金"),("5", "土"),("6", "日"),]
+    WEEKDAY_CHOICES = [("0", "月"), ("1", "火"), ("2", "水"), ("3", "木"), ("4", "金"), ("5", "土"), ("6", "日"), ]
 
     weekdays = forms.MultipleChoiceField(
         required=False,
@@ -90,6 +99,7 @@ class PlanForm(forms.ModelForm):
         choices=WEEKDAY_CHOICES,
         label="通う曜日"
     )
+
     class Meta:
         model = ServicePlan
         fields = ['year', 'month', 'start_time', 'end_time']
@@ -104,6 +114,7 @@ class PlanForm(forms.ModelForm):
             'start_time': forms.TimeInput(attrs={'type': 'time'}),
             'end_time': forms.TimeInput(attrs={'type': 'time'}),
         }
+
     def __init__(self, *args, **kwargs):
         user_id = kwargs.pop('user_id', None)
         super().__init__(*args, **kwargs)
@@ -111,46 +122,85 @@ class PlanForm(forms.ModelForm):
             self.user_id = user_id
         for field_name in self.fields:
             if field_name != 'weekdays':
-                self.fields[field_name].widget.attrs['class']= f'form-control {field_name}'
+                self.fields[field_name].widget.attrs['class'] = f'form-control {field_name}'
+
+
 class CertificateForm(forms.ModelForm):
-    "  認定情報from "
-    _errors = {}
+    """  認定情報from """
     class Meta:
         model = Certificate
-        fields = ['care_level', 'limit_amount_type', 'public_assistance_flag', 'benefit_limit_flag', 'limit_amount_value', 'benefit_rate', 'limit_start', 'limit_end']
+        fields = ['care_level', 'limit_amount_type', 'public_assistance_flag', 'benefit_limit_flag',
+                  'limit_amount_value', 'benefit_rate', 'limit_start', 'limit_end']
         widgets = {
             'limit_start': forms.DateInput(attrs={'type': 'date'}),
             'limit_end': forms.DateInput(attrs={'type': 'date'}),
         }
+
     public_assistance_flag = forms.BooleanField(
         label='生活保護受給',
         required=False,
         widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
     )
+
     def clean(self):
         cleaned = super().clean()
-        care_level = cleaned.get('care_level')
-        limit_amount_value =cleaned.get('limit_amount_value')
-        if care_level is None:
-            self.add_error('care_level','要介護状態区分は必須です')
-        if limit_amount_value and 1000000> limit_amount_value >0 :
-            self.add_error('limit_amount_value','正式な限度額を設定してください')
+        care_level = cleaned.get("care_level")
+        limit_amount_value = cleaned.get("limit_amount_value")
+        limit_start = cleaned.get("limit_start")
+        limit_end = cleaned.get("limit_end")
 
-        limit_start = cleaned.get('limit_start')
-        limit_end = cleaned.get('limit_end')
-        print(f"{limit_end}------------",flush=True)
-        errors = []
-        if limit_start and limit_end:
-            if limit_start > limit_end:
-                errors.append("終了日は開始日以降にしてください")
-            if limit_start < date.today():
-                errors.append("過去の日付は指定できません")
+        # 1. 必須・単体チェック
+        if limit_amount_value and not (0 < limit_amount_value < 1000000):
+            self.add_error(
+                "limit_amount_value", "正式な限度額を設定してください"
+            )
 
-        if errors:
-            self.add_error("limit_start", errors[0])
+        if not limit_start or not limit_end:
+            return cleaned
+
+        # 2. 日付の前後関係チェック
+        if limit_start > limit_end:
+            self.add_error(
+                "limit_start", "終了日は開始日以降の日付を設定してください"
+            )
+            return cleaned
+
+        # 3. 過去日付チェック（新規登録時のみ）
+        if not self.instance.pk and limit_end < date.today():
+            self.add_error("limit_start", "過去の認定期間は登録できません")
+
+        # 4. 期間重複・更新の検証
+        user = getattr(self.instance, "user", None)
+        insured_number = getattr(self.instance, "insured_number", None)
+
+        # 対象ユーザーの既存レコードを抽出
+        existing_qs = Certificate.objects.all()
+        if user:
+            existing_qs = existing_qs.filter(user=user)
+        elif insured_number:
+            existing_qs = existing_qs.filter(insured_number=insured_number)
+
+        if self.instance.pk:
+            existing_qs = existing_qs.exclude(pk=self.instance.pk)
+
+        # A) 期間が少しでも重複しているレコードを取得
+        # 条件: (既存start <= 今回end) AND (既存end >= 今回start)
+        overlapping_qs = existing_qs.filter(
+            limit_start__lte=limit_end, limit_end__gte=limit_start
+        )
+
+        if overlapping_qs.exists():
+            # 重複している既存データの中に「同じ介護度」がある場合はNG
+            if overlapping_qs.filter(care_level=care_level).exists():
+                self.add_error(
+                    "care_level",
+                    "同じ介護度で期間が重複する認定情報が既に存在します",
+                )
+            # ※ 介護度が異なる場合は「区分変更」とみなして許容（エラーにしない）
 
         return cleaned
-    def save(self,user=None, commit=True):
+    @transaction.atomic
+    def save(self, user=None, commit=True):
         instance = super().save(commit=False)
         if user:
             instance.user = user
@@ -164,57 +214,93 @@ class CertificateForm(forms.ModelForm):
         if commit:
             instance.save()
         return instance
+
     def __init__(self, *args, **kwargs):
         self.request = kwargs.pop('request', None)
         super().__init__(*args, **kwargs)
-        for field_name,field in self.fields.items():
+        for field_name, field in self.fields.items():
             if isinstance(field.widget, forms.CheckboxInput):
                 field.widget.attrs['class'] = f'form-check-input ms-5 {field_name}'
             else:
-                field.widget.attrs['class']= f'form-control {field_name}'
+                field.widget.attrs['class'] = f'form-control {field_name}'
             if field.required:
                 field.widget.attrs['required'] = True
-                
+
+
 class PublicAssistanceForm(forms.ModelForm):
     this_year = date.today().year
     YEAR_CHOICES = [(y, f"{y}年") for y in range(this_year - 1, this_year + 1)]
     MONTH_CHOICES = [(m, f"{m}月") for m in range(1, 13)]
     start_year = forms.ChoiceField(choices=YEAR_CHOICES, label="開始年")
     start_month = forms.ChoiceField(choices=MONTH_CHOICES, label="開始月")
+
     class Meta:
         model = PublicAssistance
         fields = [
             'hogo_number',
             'recipient_number',
         ]
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         for field_name, field in self.fields.items():
             field.widget.attrs['class'] = f'form-control {field_name}'
             if field.required:
                 field.widget.attrs['required'] = True
+
     def clean(self):
         cleaned = super().clean()
-        hogo_num =str(cleaned.get('hogo_number'))
+        hogo_num = str(cleaned.get('hogo_number'))
         if len(hogo_num) != 8 or not hogo_num.isdigit:
-            self.add_error('hogo_number','保護番号は8桁の数字で入力してください')
+            self.add_error('hogo_number', '保護番号は8桁の数字で入力してください')
         rec_num = str(cleaned.get('recipient_number'))
         if len(rec_num) != 10 or not rec_num.isdigit:
             self.add_error('recipient_number', '受給者番号は10桁の数字で入力してください')
 
+    def save(self, user=None, commit=True):
+        instance = super().save(commit=False)
+        y = int(self.cleaned_data.get('start_year'))
+        m = int(self.cleaned_data.get('start_month'))
+        start_date = date(y, m, 1)
+        #  同じ月の既存レコードがあれば上書きのため削除
+        PublicAssistance.objects.filter(user=user, start_date=start_date).delete()
+
+        if user:
+            instance.user = user
+        if commit:
+            instance.save()
+
+        target = instance.user
+        PublicAssistance.objects.filter(user=target).update(is_active=False)
+
+        latest_record = (
+            PublicAssistance.objects.filter(user=target)
+            .order_by("-start_date")
+            .first()
+        )
+        if latest_record:
+            latest_record.is_active = True
+            latest_record.save(update_fields=["is_active"])
+        return instance
+
+
 class CareManagerForm(forms.ModelForm):
     _errors = {}
+
     class Meta:
         model = CareManager
         fields = '__all__'
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         label_suffix = ''
         for field_name, field in self.fields.items():
             if field.required:
                 self.fields[field_name].widget.attrs['required'] = True
-                self.fields[field_name].widget.attrs['class']= f'form-control {field_name} required'
-            else: self.fields[field_name].widget.attrs['class']= f'form-control {field_name}'
+                self.fields[field_name].widget.attrs['class'] = f'form-control {field_name} required'
+            else:
+                self.fields[field_name].widget.attrs['class'] = f'form-control {field_name}'
+
     def clean(self):
         cleaned = super().clean()
         cm_num = cleaned.get('care_manager_number')
@@ -233,8 +319,10 @@ class CareManagerForm(forms.ModelForm):
                     ['居宅介護支援事業所番号は10桁の数字で入力してください']
                 )
 
+
 class OfficeSettingForm(forms.ModelForm):
     required_css_class = 'required'
+
     class Meta:
         model = Office
         fields = ['_slack_bot_token', '_slack_app_token']

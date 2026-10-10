@@ -1,11 +1,11 @@
 {% extends "dashboard/base/base.html" %}
 {% block body %}
 <div class="container">
-  <h1>{{ user.name }}の消去確認</h1>
+  <h1>{{ user.name }}様の消去確認</h1>
   <form method="post">
     {% csrf_token %}
-    <button type="submit">消去</button>
+      <button class="btn btn-outline-danger" type="submit">消去</button>
+      <a class="p-4" href="{% url 'dashboard:user_list' %}">キャンセル</a>
   </form>
-  <a href="{% url 'dashboard:user_list' %}">キャンセル</a>
 </div>
 {% endblock %}
