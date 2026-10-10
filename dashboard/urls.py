@@ -46,7 +46,7 @@ urlpatterns = [
     path('dashboard/create_kokuho_csv/', create_kokuho_csv, name='create_kokuho_csv'),
 
 # API
-    path("api/plan/<int:planId>/update/", api.update_schedule, name="update_schedule"),
+    path("api/plan/<int:plan_id>/update/", api.update_schedule, name="update_schedule"),
     path("api/plan/<int:user_id>/create/", api.create_plan, name="api_create_plan"),
-    path("api/plan/<int:planId>/delete/", api.delete_plan, name="api_delete_plan"),
+    path("api/plan/<int:plan_id>/delete/", api.delete_plan, name="api_delete_plan"),
 ]

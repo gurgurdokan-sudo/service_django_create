@@ -82,7 +82,7 @@
         </thead>
     <tbody>
     {% for a in addon_service %}
-    <tr class="service-row addon-row selectable-row" data-name="{{ a.service_name }}">
+    <tr class="service-row addon-row selectable-row" data-addon-name="{{ a.service_name }}">
         <td class="text-center">
             <input type="radio" name="selected_addon" value="addon_{{ a.id }}">
         </td>

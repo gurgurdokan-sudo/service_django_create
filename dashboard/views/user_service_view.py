@@ -27,6 +27,22 @@ def build_user_service_context(user_id, year, month):
     target = (UseUser.objects.select_related('care_manager').get(id=user_id))
     monthly_record = target.get_monthly_record(year, month)
     plans = ServicePlan.objects.filter(user = target,year = year,month = month,)
+    addons = []
+    for p in plans:
+        summary = p.get_addon_summary
+        for key, item in summary.items():
+            addon = item.get("addon")
+            days = item.get("days", [])
+            if not addon:
+                continue
+            addons.append({
+                "p_id": p.id,
+                "id": addon.id,
+                "name": addon.service_name,
+                "days": days,
+                "total": len(days),
+            })
+    print(addons)
     logger.info(f'{year}-{month}のサービス提供票のplansを取得')
 
     user_codes = plans.values_list("service_code",flat=True) #userチェック済みのサービスコード
@@ -46,6 +62,7 @@ def build_user_service_context(user_id, year, month):
         'default': default,
         'user': target,
         'plans': plans,
+        'addons':addons,
         'calendar': get_month_days(year, month),
         'dis_year': year,
         'dis_month': month,
@@ -53,7 +70,7 @@ def build_user_service_context(user_id, year, month):
         'current_month': now.month,
 
         # 画面用　batchアラート
-        'monthly_record': monthly_record, #サービス提供票の確定状態
+        'monthly_record': monthly_record, # サービス提供票の確定状態
         'public_assistance':target.get_public_assistance(year,month),
         # 画面用　Flag
         'confirmed': record.confirmed if record else False,

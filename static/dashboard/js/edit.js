@@ -15,7 +15,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert('編集を開始します');
                 isFirstEdit = false;
             }
-            const userId = document.getElementById("userid").getAttribute("data-user-id")
             const planId = this.closest("tr").getAttribute("data-plan-id");
             const rowType = this.parentElement.getAttribute('data-row-type');
             const day = this.getAttribute('data-day');
@@ -59,11 +58,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     return;
                 }
+                window.console.log(`total=${total}`)
                 // 合計値をAPIからの戻り値で更新
                 if (rowType === 'actual_addon') {
-                this.parentElement.querySelector('.total-cell').innerText = data.total+' 単位';
+                    const calendarRow = this.closest('.calendar-row');
+                    const totalCell = calendarRow?.querySelector('.total-cell');
+                    totalCell.innerText = data.total;
                 }else{    
-                this.parentElement.querySelector('.total-cell').innerText = data.total;
+                    this.parentElement.querySelector('.total-cell').innerText = data.total;
                 }
             } catch (err) {
                 alert("通信エラーが発生しました");

@@ -8,13 +8,13 @@
 {% block body %}
 <div class="container">
   <!-- ヘッダーエリア -->
-   
+
   <div id="bread" data-items="{{ breadcrumbs }}"></div>
   <div class="header-container">
     <h2 id="userid" data-user-id="{{ user.id }}" class="page-title">
       <span>{{ user.name }} さんのサービス提供表 {{ dis_month }} 月  </span>
     </h2>
-    
+
     <div id="confirmed-status" data-confirmed="{{ confirmed }}">
       {% if monthly_record.confirmed %}{#  レコードがNoneを考慮しない  #}
         <span class="badge bg-danger">確定済み</span>
@@ -119,11 +119,11 @@
             <div class="calendar-row" data-row-type="schedule">
               <div class="label-cell">予定</div>
               {% for d in calendar %}
-              <div
-                class="day-cell editable-cell {% if d.is_sun or d.is_holiday %}sun-bg{% elif d.is_sat %}sat-bg{% endif %}"
-                data-day="{{ d.day }}">
-                {{ plan.schedule_dict|get_item:d.day }}
-              </div>
+                <div
+                  class="day-cell editable-cell {% if d.is_sun or d.is_holiday %}sun-bg{% elif d.is_sat %}sat-bg{% endif %}"
+                  data-day="{{ d.day }}">
+                  {{ plan.schedule_dict|get_item:d.day }}
+                </div>
               {% endfor %}
               <div class="total-cell">{{ plan|total_count:"schedule" }}</div>
             </div>
@@ -142,15 +142,15 @@
         </tr>
 
         <!-- このプランに紐づく加算行 -->
-        {% for addon_name, day_array in plan.get_addon_summary.items %}
-        <tr class="addon-row" data-plan-id="{{ plan.id }}" data-addon-name="{{ addon_name }}">
+        {% for a_obj in addons %}
+        <tr class="addon-row" data-plan-id="{{ a_obj.p_id }}" data-name="{{ a_obj.name }}">
           <td class="col-delete">
             <button type="button" class="btn-delete-row"
-              onclick="deleteAddon({{ plan.id }}, '{{ addon_name }}')">🗑</button>
+              onclick="deleteAddon({{ a_obj.p_id }}, '{{ a_obj.name }}')">🗑</button>
           </td>
           <td class="col-time">--:--</td>
           <td class="col-service service-addon-name" colspan="2">
-            <span>{{ addon_name }}</span>
+            <span>{{ a_obj.name }}</span>
           </td>
           {#  <td class="col-office">-</td>  #}
           <td class="col-calendar">
@@ -159,13 +159,13 @@
               {% for d in calendar %}
               <div
                 class="day-cell editable-cell {% if d.is_sun or d.is_holiday %}sun-bg{% elif d.is_sat %}sat-bg{% endif %}"
-                data-day="{{ d.day }}" data-addon-name="{{ addon_name }}">
-                {% if d.day|stringformat:"s" in day_array %}
-                <span>1</span>
+                data-day="{{ d.day }}" data-addon-name="{{ a_obj.name }}">
+                {% if d.day|stringformat:"s" in a_obj.days %}
+                  <span>1</span>
                 {% endif %}
               </div>
               {% endfor %}
-              <div class="total-cell">{{ monthly_addon_totals|get_item:addon_name|default:'0' }} 単位</div>
+                <div class="total-cell">{{ a_obj.total|default:'0' }}</div>
             </div>
           </td>
         </tr>

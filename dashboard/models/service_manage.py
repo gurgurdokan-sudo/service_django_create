@@ -1,11 +1,11 @@
-from typing import Literal
-
 from django.db import models
 from datetime import datetime, date
 from .const import LEVEL_CHOICES
 
 from dashboard.calendar_table import get_month_days
 from .master import AddOnService,ServiceMaster
+import logging
+logger = logging.getLogger(__name__)
 
 class ServiceMonthlyRecord(models.Model):
     '''実際に提供されたサービスの記録を管理するモデル'''
@@ -44,7 +44,6 @@ class ServiceMonthlyRecord(models.Model):
     service_units = models.IntegerField(verbose_name='サービス＋加算などの単位数合計', default=0)
     @property
     def all_addons(self):
-        plans = self.plans.all()
         addon_summary = {}
 
         for plan in self.plans.all():
@@ -188,40 +187,56 @@ class ServicePlan(models.Model):
         actual_json に設定されている加算を、
         AddOnService単位で利用日と一緒にまとめる。
         """
-        addon_codes = set()
+        addon_ids = set()
+        summary = {}
 
+        # actual_jsonに保存されている加算IDを集める
         for day_info in self.actual_dict.values():
-            addon_codes.update(day_info.get("addon", []))
+            addon_dict = day_info.get("addon") or {}
+            addon_ids.update(str(addon_id) for addon_id in addon_dict.keys())
 
-        if not addon_codes:
+        if not addon_ids:
             return {}
 
-        # DBから取得した加算マスタを辞書化
+        # 保存キーはAddOnService.idなので、idでマスタを取得する
         addons = {
-            str(addon.code): addon
-            for addon in AddOnService.objects.filter(
-                code__in=addon_codes
-            )
+            str(addon.id): addon
+            for addon in AddOnService.objects.filter(id__in=addon_ids)
         }
 
-        summary = {}
-        print('処理開始')
+        # 加算ごとに利用日を集約する
         for day, day_info in self.actual_dict.items():
-            for addon_code in day_info.get("addon", []):
-                addon = addons.get(str(addon_code)) #addonマスタが変更時ずれる可能性あり
-                if not addon:
-                    print('マスタなし',flush=True)
+            addon_dict = day_info.get("addon") or {}
+
+            for addon_id in addon_dict.keys():
+                addon_id = str(addon_id)
+                addon = addons.get(addon_id)
+
+                # マスタが削除されているなどの場合はスキップ
+                if addon is None:
+                    logger.error(
+                        "actual_jsonの加算ID=%sに対応するAddOnServiceマスタがありません",
+                        addon_id,
+                    )
                     continue
 
-                if addon.code not in summary:
-                    summary[addon.code] = {
+                if addon_id not in summary:
+                    summary[addon_id] = {
                         "addon": addon,
                         "days": [],
                     }
-                summary[addon.code]["days"].append(day)
 
-        return summary  # keyが加算サービスID、valueがdict(addonMasterオブジェクト,加算が入った日付[])
+                summary[addon_id]["days"].append(str(day))
 
+        return summary # keyが加算サービスID、valueがdict(addonMasterオブジェクト,加算が入った日付[])
+
+    def total_addon(self, addon_id) ->int:
+        """紐づいたAddonの実績の合計を返す""" # 紐づく全Addon
+        for addon in self.get_actual_addons():
+            addon = addon.get('addon')
+            if addon and addon.id == addon_id:
+                return len(addon.get('days'))
+        return 0
     @property
     def total_insurance_actual_units(self) -> int:
         """請求データ様にPlanに紐づく合計単位を返す"""

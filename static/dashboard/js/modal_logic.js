@@ -4,7 +4,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const serviceBtn = document.getElementById('service-btn');
     const closeBtn = document.getElementById('closeBtn');
     const cancelBtn = document.getElementById('cancelBtn');
-    window.console.log('test start')
     if (openBtn) {
         openBtn.addEventListener('click', () => {
             modalOverlay.style.display = 'flex';
@@ -123,7 +122,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if(selected_addon){
                 if (!confirm("この内容で登録しますか？")) return;
                 // API送信
-                window.console.log('fetch start')
                 const response = await fetch(`/api/plan/${planId}/update/`, {
                     method: "PATCH",
                     headers: {
