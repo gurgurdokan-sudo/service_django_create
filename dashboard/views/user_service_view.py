@@ -12,7 +12,6 @@ from dashboard.models import(
     AddOnService,
     Office,
     ServiceMonthlyRecord,
-    PublicAssistance
 )
 from dashboard.calendar_table import get_month_days
 now = timezone.now()
@@ -27,22 +26,17 @@ def build_user_service_context(user_id, year, month):
 
     target = (UseUser.objects.select_related('care_manager').get(id=user_id))
     monthly_record = target.get_monthly_record(year, month)
-    plans = (ServicePlan.objects.filter(user = target,year = year,month = month,)
-             .prefetch_related('addon_services')
-        )
+    plans = ServicePlan.objects.filter(user = target,year = year,month = month,)
     logger.info(f'{year}-{month}のサービス提供票のplansを取得')
 
-    user_code = plans.values_list("service_code",flat=True) #userチェック済みのサービスコード
-    all_plans = (ServiceMaster.objects
-        .exclude(service_code__in = user_code)
-        .filter(care_level = target.get_certificate(year,month))
+    user_codes = plans.values_list("service_code",flat=True) #userチェック済みのサービスコード
+    all_plans = (
+        ServiceMaster.objects
+        .filter(care_level=target.get_certificate(year, month))
+        .exclude(service_code__in = user_codes)
         )
-    logger.info(f'{user_code}以外のplansを取得')
+    logger.info(f'{user_codes}以外のplansを取得')
 
-    # monthly_addon_totals = {}
-    # add_codes = {}
-    # for plan in plans:
-    #     add_codes.update(plan.get_addon_summary)
     addon_service = AddOnService.objects.all()
     logger.info(f'{year}-{month}のサービス提供票の確認状態を取得')
     record = ServiceMonthlyRecord.objects.filter(user=target, date=date(year, month, 1)).first()
@@ -58,34 +52,30 @@ def build_user_service_context(user_id, year, month):
         'current_year': now.year, #Excel出力の表示用
         'current_month': now.month,
 
-        # 'add_codes': add_codes, #excelテスト表示
-
         # 画面用　batchアラート
         'monthly_record': monthly_record, #サービス提供票の確定状態
         'public_assistance':target.get_public_assistance(year,month),
+        # 画面用　Flag
         'confirmed': record.confirmed if record else False,
         # 画面用　select移動範囲
         'year_range': range(now.year - 1, now.year + 1),
         'month_range': range(1, 13),
-        # tableのtotal 使ってなさそう
-        # 'monthly_addon_totals': monthly_addon_totals,
         # 画面用　モーダルに出すPlan/Addon
         'addon_service': addon_service,
         'service': all_plans,  # userの対象全プラン
     }
 
-def _is_future_month_not_plan(user_id, year, month, prev=False):
-    '''指定された年月が未来で、かつその月のプランが存在しない場合にTrueを返す'''
-    now = timezone.now()
+def _is_future_month_not_plan(user, year, month, prev=False):
+    """指定された年月が未来で、かつその月のプランが存在しない場合にTrueを返す"""
     if prev:
-        return not ServicePlan.objects.filter(user_id=user_id, year=year, month=month).exists()
+        return not ServicePlan.objects.filter(user=user, year=year, month=month).exists()
     if (year > now.year) or (year == now.year and month >= now.month):
-        return not ServicePlan.objects.filter(user_id=user_id, year=year, month=month).exists()
+        return not ServicePlan.objects.filter(user=user, year=year, month=month).exists()
     return False
 
 
 def _is_future_month_not_pa(user, year, month, prev=False):
-    '''指定された年月が「今月以降」で、生保利用者データがない場合にTrue'''
+    """指定された年月が「今月以降」で、生保利用者データがない場合にTrue"""
     if not user.is_public_assistance_for_month: return False
     target_date = date(year, month, 1)
     if ServiceMonthlyRecord.objects.filter(user=user,date=target_date).first():
@@ -105,20 +95,21 @@ def user_service(request,user_id):
     dis_year = int(request.GET.get('year', now.year))
     dis_month = int(request.GET.get('month', now.month))
     user = UseUser.objects.get(id=user_id)
+
+# ケアマネジャーor認定情報更新が必要 利用者一覧画面にリダイレクトする
     if not user.care_manager or user.care_level == '認定情報更新が必要':
-        '''利用者一覧画面にリダイレクトする'''
-        logger.error(f'{user.name}')
+        logger.error(f'{user.name} で、認定情報orケアマネジャーが紐づけられてません')
         messages.error(request,'認定情報またはケアマネジャーが設定されてません')
         return redirect('dashboard:user_list')
 
-    # 「今月の生保データ」が未登録なのに、「前月は生保だった」場合、先に生保登録へ誘導
+#「今月の生保データ」が未登録なのに、「前月は生保だった」場合、先に生保登録へ誘導
     if _is_future_month_not_pa(user, dis_year, dis_month):
         messages.error(request, f'前月が生活保護受給のため、{dis_month}月分の情報を先に登録してください')
         url = reverse('dashboard:public_assistance_create', args=[user.id] )
         return redirect(f'{url}?year={dis_year}&month={dis_month}')
-        
+
+# 過去月のプラン作成 ではなく、プラン未作成なら作成画面にリダイレクトする
     if _is_future_month_not_plan(user_id,dis_year, dis_month):
-        '''プラン作成画面にリダイレクトする'''
         request.check_flag = True
         url = reverse('dashboard:createPlan', args=[user_id] )
         return redirect(f'{url}?year={dis_year}&month={dis_month}')
@@ -128,11 +119,9 @@ def user_service(request,user_id):
     crumbs = [
         (f"{user.name}様 サービス提供表作成", None)
     ]
-    # start_date = date(dis_year, dis_month, 1)
-    # context['public_assistance'] = PublicAssistance.objects.filter(user = user , start_date= start_date ).first()
     context['breadcrumbs'] = BreadcrumbUtil.create(crumbs)
     logger.info(f'======{user.name} 様 提供表確定 {context["confirmed"]}======')
-    # print(context,flush=True)
+    print(context,flush=True)
     return render(request,'dashboard/user_service.html',context)
 
 #一括前月モード

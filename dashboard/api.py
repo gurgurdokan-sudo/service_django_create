@@ -187,14 +187,14 @@ def create_plan(request, user_id):
 
 
 @api_view(["DELETE"])
-def delete_plan(request, planId):
+def delete_plan(request, plan_id):
     from employees.permissions import has_delete_permission
     if not has_delete_permission(request.user):
         return Response({"status": "error", "message": "削除権限がありません"}, status=403)
     try:
-        plan = ServicePlan.objects.get(id=planId)
+        plan = ServicePlan.objects.get(id=plan_id)
         plan.delete()
-        return Response({"status": "ok", "message": f"ServicePlan {planId} deleted"})
+        return Response({"status": "ok", "message": f"ServicePlan {plan_id} deleted"})
     except ServicePlan.DoesNotExist:
         return Response(
             {"status": "error", "message": "ServicePlan not found"}, status=404
