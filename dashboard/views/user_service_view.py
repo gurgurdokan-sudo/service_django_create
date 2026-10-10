@@ -44,10 +44,8 @@ def build_user_service_context(user_id, year, month):
     # for plan in plans:
     #     add_codes.update(plan.get_addon_summary)
     addon_service = AddOnService.objects.all()
-    # record_date = date(year, month, 1)
     logger.info(f'{year}-{month}のサービス提供票の確認状態を取得')
-    # record = ServiceMonthlyRecord.objects.filter(user=target, date=record_date).first()
-    # confirmed = record.confirmed if record else False
+    record = ServiceMonthlyRecord.objects.filter(user=target, date=date(year, month, 1)).first()
 
     return {
         'office': office,
@@ -65,6 +63,7 @@ def build_user_service_context(user_id, year, month):
         # 画面用　batchアラート
         'monthly_record': monthly_record, #サービス提供票の確定状態
         'public_assistance':target.get_public_assistance(year,month),
+        'confirmed': record.confirmed if record else False,
         # 画面用　select移動範囲
         'year_range': range(now.year - 1, now.year + 1),
         'month_range': range(1, 13),
@@ -133,7 +132,7 @@ def user_service(request,user_id):
     # context['public_assistance'] = PublicAssistance.objects.filter(user = user , start_date= start_date ).first()
     context['breadcrumbs'] = BreadcrumbUtil.create(crumbs)
     logger.info(f'======{user.name} 様 提供表確定 {context["confirmed"]}======')
-    print(context,flush=True)
+    # print(context,flush=True)
     return render(request,'dashboard/user_service.html',context)
 
 #一括前月モード

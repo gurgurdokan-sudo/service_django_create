@@ -121,9 +121,9 @@ class ServicePlan(models.Model):
 
     @property
     def actual_dict(self):
-        date = self.actual_json or {}  # keyが日付、valueが{"main": "1" or "", "addon": {加算ID:加算NEME}}
+        target_date = self.actual_json or {}  # keyが日付、valueが{"main": "1" or "", "addon": {加算ID:加算NEME}}
         return {
-            str(i): date.get(str(i), {'main': "", 'addon': {}}) for i in range(1, 32)
+            str(i): target_date.get(str(i), {'main': "", 'addon': {}}) for i in range(1, 32)
         }
 
     def can_edit_day(self, day: int) -> bool:
