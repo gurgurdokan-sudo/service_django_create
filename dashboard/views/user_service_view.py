@@ -26,7 +26,7 @@ def build_user_service_context(user_id, year, month):
     default = AddOnService.objects.get(pk=office.default_service.pk)
 
     target = (UseUser.objects.select_related('care_manager').get(id=user_id))
-    monthly_record = target.get_monthly_recode(year, month)
+    monthly_record = target.get_monthly_record(year, month)
     plans = (ServicePlan.objects.filter(user = target,year = year,month = month,)
              .prefetch_related('addon_services')
         )
