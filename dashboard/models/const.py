@@ -22,44 +22,73 @@ STAY_TIME_CHOICES = [
     ('7-8', '7以上-8未満'),
     ('8-9', '8以上-9未満')
 ]
-SERVICE_TYPE_CHOICES = [
-    (78, "地域密着型通所介護"),
-    (79, "通所介護（通常規模）"),
-    (80, "通所介護（大規模Ⅰ）"),
-    (81, "通所介護（大規模Ⅱ）"),
-]
-# 所属の市町村で率が変化
+
+# 所属の市町村（地域区分）で単位数単価が変化
 UNIT_PRICE_TABLE = {7: 11.40, 6: 10.90, 5: 10.45, 4: 10.25, 3: 10.15, 2: 10.10, 1: 10.00}
 
-DATA_TYPE_CARE_INSURANCE = 7
-ITEM_NUMBER =77
-CLAIM_CATEGORY = 711
-CLAIM_DETAIL_CATEGORY = 7111
-CLAIM_HOME_BASED_CATEGORY = 7131
+# ==================================================
+# サービス種類（国保連のサービス種類コード 2桁）
+#   規模（通常・大規模Ⅰ・Ⅱ）はサービス種類ではなく
+#   サービスコード（項目コード4桁）で区別する
+# ==================================================
+SERVICE_TYPE_CODE = 78  # 既定値（Office.service_type_code の default）
 
-# 通所介護事務所
-SERVICE_TYPE_CODE = 78 #地域密着型通所介護
+SERVICE_TYPES = {
+    15: {"name": "通所介護",           "profile": "care_home"},
+    78: {"name": "地域密着型通所介護", "profile": "care_home"},
+}
+SERVICE_TYPE_CHOICES = [(code, v["name"]) for code, v in SERVICE_TYPES.items()]
 
-DATA_SET_CLAM ={    
-    SERVICE_TYPE_CODE: {  # 地域密着型通所介護
-        "item_number": ITEM_NUMBER,
-        "claim_category": CLAIM_CATEGORY,
-        "detail_category": CLAIM_DETAIL_CATEGORY,
-        "record_name": "地域密着型　介護給付費請求書情報",
-        "claim_home_based_category":CLAIM_HOME_BASED_CATEGORY
+# 通所介護（15）の事業所規模。サービスコード表の選択に使う
+FACILITY_SCALE_CHOICES = [
+    ("normal", "通常規模"),
+    ("large1", "大規模Ⅰ"),
+    ("large2", "大規模Ⅱ"),
+]
+
+# ==================================================
+# 国保連IF 請求区分（共通編 p.7, p.37, p.50 / サービス事業所編 p.15-）
+#   data_type        : コントロールレコードのデータ種別（3桁）
+#   summary_id       : 請求書情報の交換情報識別番号
+#   detail_id        : 明細書情報の交換情報識別番号（01/02/10 行）
+#   claim_info_code  : 請求情報区分コード
+# ==================================================
+MEDIA_TYPE_INTERNET = 7  # 媒体区分 7:伝送（インターネット）
+
+CLAIM_PROFILES = {
+    "care_home": {
+        "name": "介護給付 居宅サービス（様式第二）",
+        "data_type": "711",
+        "summary_id": "7111",
+        "detail_id": "7131",
+        "claim_info_code": "01",
     },
-    79: { #今後必要なら追加
-        "item_number": 78,
-        "claim_category": 713,
-        "detail_category": CLAIM_HOME_BASED_CATEGORY,
-        "record_name": "通常規模 介護給付費明細書情報",
-        "claim_home_based_category":CLAIM_HOME_BASED_CATEGORY #?
+    "preventive_home": {
+        "name": "介護予防サービス（様式第二の二）",
+        "data_type": "711",
+        "summary_id": "7111",
+        "detail_id": "7132",
+        "claim_info_code": "01",
     },
-    80: {
-        "item_number": 79,
-        "claim_category": 714,
-        "detail_category": 7141,
-        "record_name": "大規模Ⅰ 介護給付費摘要情報",
-        "claim_home_based_category":CLAIM_HOME_BASED_CATEGORY #?
+    "comprehensive": {
+        "name": "介護予防・日常生活支援総合事業（様式第二の三）",
+        "data_type": "71R",
+        "summary_id": "7113",
+        "detail_id": "71R1",
+        "claim_info_code": "05",
     },
 }
+
+# ClaimBuilder が項目レイアウトまで実装済みの区分
+SUPPORTED_CLAIM_PROFILES = {"care_home"}
+
+
+def get_claim_profile(service_type_code):
+    """サービス種類コードから請求区分を返す。未対応なら ValueError"""
+    service = SERVICE_TYPES.get(int(service_type_code))
+    if not service:
+        raise ValueError(f"未登録のサービス種類コードです: {service_type_code}")
+    key = service["profile"]
+    if key not in SUPPORTED_CLAIM_PROFILES:
+        raise ValueError(f"請求区分 {key} のCSV出力は未対応です")
+    return {"key": key, **CLAIM_PROFILES[key]}
