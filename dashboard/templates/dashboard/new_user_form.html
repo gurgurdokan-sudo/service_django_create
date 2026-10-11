@@ -30,7 +30,7 @@
           <span class="cm-value">{{ cm_name }} 様</span>
           {# 保存時に値が消えないよう、Formにケアマネフィールドがある場合は隠しで持つ #}
           {% if form.care_manager %}
-            <div style="display:none;">{{ form.care_manager }}</div>
+            <div class="d-none">{{ form.care_manager }}</div>
           {% endif %}
         {% else %}
           {# プルダウンを表示 #}
