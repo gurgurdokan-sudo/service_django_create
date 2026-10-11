@@ -2,7 +2,7 @@ from datetime import date
 from decimal import Decimal, ROUND_HALF_UP
 from dateutil.relativedelta import relativedelta
 from dashboard.models import ServiceMonthlyRecord
-from dashboard.models.const import DATA_SET_CLAM
+from dashboard.models.const import MEDIA_TYPE_INTERNET, get_claim_profile
 
 import logging
 logger = logging.getLogger(__name__)
@@ -19,11 +19,9 @@ class ClaimBuilder:
     USER_RECORD_SERVICE = '02'      # 明細情報
     USER_RECORD_TOTAL = '10'        # 集計情報
 
-    MEDIA_TYPE_INTERNET = 7         # 共通編 p.7 媒体区分 7:伝送（インターネット）
     INSURANCE_CLAIM = 1             # 共通編 p.37 保険・公費等区分 1:保険請求
     PUBLIC_CLAIM = 2                # 2:公費請求
     LAW_NUMBER_WELFARE = 12         # 法別番号 12:生活保護
-    CLAIM_INFO_SERVICE = '01'       # 請求情報区分 01:居宅・施設・予防・地域密着サービス
     OLD_MEASURE_NONE = ''           # 旧措置入所者特例：様式第二は設定不要
     STOP_REASON_NONE = 1            # 中止理由 1:非該当（様式第二は必須）
 
@@ -38,9 +36,8 @@ class ClaimBuilder:
             create_year, create_month = next_month.year, next_month.month
         self.create_year_month = f"{create_year}{create_month:02d}"  # 処理対象年月（提出月）
 
-        self.record_set = DATA_SET_CLAM.get(self.office.service_type_code)
-        if not self.record_set:
-            raise ValueError("対応するレコードセットがありません")
+        # 請求区分（データ種別・交換情報識別番号）をサービス種類から決める
+        self.profile = get_claim_profile(self.office.service_type_code)
 
         # 単位数単価：整数2桁＋小数2桁（10.45円 → "1045"）共通編 p.42
         price = Decimal(str(self.office.unit_price))
@@ -59,7 +56,7 @@ class ClaimBuilder:
     def _data_prefix(self, record_kind=None):
         """データレコード共通部：2, 通番, 交換情報識別番号[, レコード種別コード]"""
         prefix = [self.RECORD_TYPE_DETAIL, self.count_up_row(),
-                  self.record_set["claim_home_based_category"]]
+                  self.profile["detail_id"]]
         if record_kind:
             prefix.append(record_kind)
         return prefix
@@ -100,12 +97,12 @@ class ClaimBuilder:
             self.count_up_row(),                     # 2 レコード番号
             0,                                       # 3 ボリューム通番
             data_count,                              # 4 データレコード件数（build()で確定）
-            self.record_set['claim_category'],       # 5 データ種別 711
+            self.profile['data_type'],               # 5 データ種別 711
             0,                                       # 6 福祉事務所特定番号
             0,                                       # 7 保険者番号
             self.office.office_number,               # 8 事業所番号
             0,                                       # 9 都道府県番号
-            self.MEDIA_TYPE_INTERNET,                # 10 媒体区分
+            MEDIA_TYPE_INTERNET,                     # 10 媒体区分
             self.create_year_month,                  # 11 処理対象年月（提出月）
             0,                                       # 12 ファイル管理番号
         ]
@@ -115,12 +112,12 @@ class ClaimBuilder:
                            insurance_amount, public_amount, user_share):
         return [
             self.RECORD_TYPE_DETAIL, self.count_up_row(),
-            self.record_set['detail_category'],      # 1 交換情報識別番号 7111
+            self.profile['summary_id'],              # 1 交換情報識別番号 7111
             self.target_year_month,                  # 2 サービス提供年月
             self.office.office_number,               # 3 事業所番号
             ins_pub_kind,                            # 4 保険・公費等区分
             law_number,                              # 5 法別番号
-            self.CLAIM_INFO_SERVICE,                 # 6 請求情報区分
+            self.profile['claim_info_code'],         # 6 請求情報区分 01
             count, units, cost,                      # 7-9 件数・単位数・費用合計
             insurance_amount,                        # 10 保険請求額
             public_amount,                           # 11 公費請求額

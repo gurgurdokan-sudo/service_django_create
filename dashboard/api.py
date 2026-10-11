@@ -200,7 +200,7 @@ def create_plan(request, user_id):
     master_id = request.data.get("selected_service", "")  # "1"
     if master_id:
         master = get_object_or_404(ServiceMaster, id=master_id)
-        new_plan = ServicePlan.objects.create(
+        ServicePlan.objects.create(
             user = target_user,
             year = int(request.data.get("year")),
             month = int(request.data.get("month")),
