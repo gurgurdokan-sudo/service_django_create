@@ -99,7 +99,7 @@ const backDestination = "{% url 'dashboard:user_list' %}";
     });
 
     form.addEventListener('submit', (e) => {
-　　　　　isDirty = fales;
+　　　　　isDirty = false;
         const btn = form.querySelector('button[value="save"]');
       if (btn) {
         setTimeout(() => { btn.disabled = true; }, 1);
@@ -112,7 +112,6 @@ const backDestination = "{% url 'dashboard:user_list' %}";
   window.addEventListener('beforeunload', (e) => {
     if (isDirty) {
       e.preventDefault();
-      e.returnValue = '';
     }
   });  
 </script>

@@ -179,10 +179,7 @@ class CertificateForm(forms.ModelForm):
         existing_qs = Certificate.objects.all()
         if user:
             logger.info(f'{user=}に紐づいた')
-            existing_qs = existing_qs.filter(user=user)
-        elif insured_number:
-            logger.info(f'{insured_number=}に紐づいた')
-            existing_qs = existing_qs.filter(insured_number=insured_number)
+            existing_qs = existing_qs.filter(user=user,insured_number=user.insured_number)
 
         if not self.instance.pk:
             existing_qs = existing_qs.exclude(pk=self.instance.pk)
@@ -190,18 +187,20 @@ class CertificateForm(forms.ModelForm):
         # A) 期間が少しでも重複しているレコードを取得
         # 条件: (既存start <= 今回end) OR (既存end >= 今回start)
         overlapping_qs = existing_qs.filter(
-            Q(limit_start__lte=limit_end) |
-            Q(limit_end__gte=limit_start)
+            Q(limit_end__gte=limit_end)
+            # | Q(limit_end__gte=limit_start)
         )
         if overlapping_qs.exists():
             logger.info(f'{overlapping_qs=}期間が同じ')
             # 重複している既存データの中に「同じ介護度」がある場合はNG
             if overlapping_qs.filter(care_level=care_level).exists():
                 logger.warning('同じ介護レベルでの期間重複')
-                # self.add_error(
-                #     "care_level",
-                #     "同じ介護度で期間が重複する認定情報が既に存在します",
-                # )
+                self.add_error(
+                    "care_level",
+                    "同じ介護度で期間が重複する認定情報が既に存在します",
+                )
+            else:
+                logger.info('介護レベルの更新')
             # ※ 介護度が異なる場合は「区分変更」とみなして許容（エラーにしない）
 
         return cleaned

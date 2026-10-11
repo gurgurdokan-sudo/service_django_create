@@ -58,6 +58,7 @@ def certificate_create(request, user_id):
 
     if request.method == 'POST':
         form = CertificateForm(request.POST)
+        form.instance.user = user
         if form.is_valid():
             form.save(user=user,insured_number=user.insured_number)
             messages.success(request, f'{user.name}様 新規登録完了しました')
