@@ -16,33 +16,52 @@
             top: 0;
             left: 0;
             z-index: 1000;
-            width: 1px;
+            width: 50px; /* たたたまれている時はハンバーガーアイコンが見える幅 */
             height: 100vh;
             transition: width 0.3s ease;
-            /* アニメーション速度 */
             overflow-x: hidden;
             white-space: nowrap;
+            background-color: #f8f9fa;
         }
 
         /* ホバー時に展開 */
         #sidebar:hover {
-            width: 250px;
-            /* 展開時の幅 */
+            width: 240px; /* 展開時の幅 */
         }
 
-        /* 閉じてる時は文字を隠す（透過度で調整するとスムーズ） */
+        /* アイコン自体の固定幅と位置調整 */
+        .icon-width {
+            width: 20px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        /* ハンバーガーアイコンの表示スタイル */
+        .sidebar-toggle-icon {
+            width: 20px;
+            text-align: center;
+            cursor: pointer;
+            flex-shrink: 0;
+            color: #495057;
+        }
+
+        /* 閉じている時はテキストを隠す */
         .sidebar-text {
             opacity: 0;
             transition: opacity 0.2s ease;
+            pointer-events: none;
         }
 
+        /* サイドバーが開いた時のみテキストを表示 */
         #sidebar:hover .sidebar-text {
             opacity: 1;
+            pointer-events: auto;
         }
 
+        /* メインコンテンツの位置調整 */
         #main-content {
-            margin-left: 0;
-            margin-top: 0;
+            margin-left: 50px; /* サイドバーの折りたたみ幅に合わせる */
+            transition: margin-left 0.3s ease;
         }
     </style>
     {% block css %}
