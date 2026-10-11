@@ -31,7 +31,7 @@ def user_create(request, cm_id):
         logger.info('新規作成post')
         form = UserForm(request.POST)
         if form.is_valid():
-            user = form.save(commit=False)
+            user:UseUser = form.save(commit=False)
             user.care_manager_id = cm_id
             user.save()
             return redirect('dashboard:certificate_create',user_id=user.id) # 認定情報作成画面へ遷移

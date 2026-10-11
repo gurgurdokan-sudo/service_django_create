@@ -60,7 +60,7 @@ def certificate_create(request, user_id):
         form = CertificateForm(request.POST)
         form.instance.user = user
         if form.is_valid():
-            form.save(user=user,insured_number=user.insured_number)
+            form.save(user=user)
             messages.success(request, f'{user.name}様 新規登録完了しました')
 
             flag = form.cleaned_data.get('public_assistance_flag')
