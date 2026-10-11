@@ -3,7 +3,7 @@ from django.contrib import messages
 
 from dashboard.models import UseUser, Certificate
 from dashboard.utils import BreadcrumbUtil
-from dashboard.forms import CertificateForm
+from dashboard.forms import CertificateForm, CertificateBaseForm
 
 import logging
 
@@ -57,7 +57,7 @@ def certificate_create(request, user_id):
     ]
 
     if request.method == 'POST':
-        form = CertificateForm(request.POST)
+        form = CertificateBaseForm(request.POST)
         form.instance.user = user
         if form.is_valid():
             form.save(user=user)
@@ -76,5 +76,27 @@ def certificate_create(request, user_id):
         'user': user,
         'title': '利用者の介護保険被保険者証登録',
         'cetrificate': '1',
+        'breadcrumbs': BreadcrumbUtil.create(crumbs),
+    })
+
+def certificate_edit(request, user_id, certificate_id):
+    user = get_object_or_404(UseUser, id=user_id)
+    certificate = get_object_or_404(Certificate, pk=certificate_id, user=user)
+
+    form = CertificateBaseForm(request.POST or None, instance=certificate)
+    crumbs = [
+        # ("利用者一覧", "dashboard:user_list"),
+        (f"{user.name} 様", "dashboard:detail", [user.id]),
+        ("被保険者証情報の登録", None)
+    ]
+
+    if request.method == 'POST' and form.is_valid():
+        form.save() # Flagの付け変えをしない
+        messages.success(request, f'{user.name}様 介護認定を編集完了しました')
+        return redirect("dashboard:detail", user_id=user.id)
+    return render(request, "dashboard/certificate_form.html", {
+        "form": form,
+        "user": user,
+        "certificate": certificate,
         'breadcrumbs': BreadcrumbUtil.create(crumbs),
     })

@@ -102,7 +102,11 @@
           <tbody>
             {% for cert in certificates %}
             <tr class="{% if cert.is_active %}fw-bold{% else %}status-expired{% endif %}">
-              <td>{{ cert.limit_start|date:"Y/m/d" }} 〜 {{ cert.limit_end|date:"Y/m/d" }}</td>
+                <td>
+                    <a class="link-name" href="{% url 'dashboard:certificate_edit' user.id cert.id %}">
+                        {{ cert.limit_start|date:"Y/m/d" }} 〜 {{ cert.limit_end|date:"Y/m/d" }}
+                    </a>
+                </td>
               <td>{{ cert.care_level }}</td>
               <td>{% if cert.is_active %}<span class="status-active">適用中</span>{% else %}過去{% endif %}</td>
             </tr>

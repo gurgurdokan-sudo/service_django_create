@@ -126,22 +126,17 @@ class PlanForm(forms.ModelForm):
                 self.fields[field_name].widget.attrs['class'] = f'form-control {field_name}'
 
 
-class CertificateForm(forms.ModelForm):
+class CertificateBaseForm(forms.ModelForm):
     """  認定情報from """
     class Meta:
         model = Certificate
-        fields = ['care_level', 'limit_amount_type', 'public_assistance_flag', 'benefit_limit_flag',
+        fields = ['care_level', 'limit_amount_type', 'benefit_limit_flag',
                   'limit_amount_value', 'benefit_rate', 'limit_start', 'limit_end']
         widgets = {
             'limit_start': forms.DateInput(attrs={'type': 'date'}),
             'limit_end': forms.DateInput(attrs={'type': 'date'}),
         }
 
-    public_assistance_flag = forms.BooleanField(
-        label='生活保護受給',
-        required=False,
-        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
-    )
 
     def clean(self):
         cleaned = super().clean()
@@ -172,7 +167,6 @@ class CertificateForm(forms.ModelForm):
 
         # 4. 期間重複・更新の検証
         user = getattr(self.instance, "user", None)
-        insured_number = getattr(self.instance, "insured_number", None)
 
         # 対象ユーザーの既存レコードを抽出
         existing_qs = Certificate.objects.all()
@@ -180,7 +174,7 @@ class CertificateForm(forms.ModelForm):
             existing_qs = existing_qs.filter(user=user,insured_number=user.insured_number)
             logger.info(f'{user=}に紐づいた 介護認定={existing_qs.count()}件')
 
-        if not self.instance.pk:
+        if self.instance.pk:
             existing_qs = existing_qs.exclude(pk=self.instance.pk)
 
         # A) 期間が少しでも重複しているレコードを取得
@@ -231,6 +225,15 @@ class CertificateForm(forms.ModelForm):
             if field.required:
                 field.widget.attrs['required'] = True
 
+
+class CertificateForm(CertificateBaseForm):
+    class Meta(CertificateBaseForm.Meta):
+        pass
+    public_assistance_flag = forms.BooleanField(
+        label='生活保護受給',
+        required=False,
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
+    )
 
 class PublicAssistanceForm(forms.ModelForm):
     this_year = date.today().year
