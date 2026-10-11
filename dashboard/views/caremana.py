@@ -1,8 +1,9 @@
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
 from django.shortcuts import render,redirect,get_object_or_404
 from django.contrib import messages
 
-from dashboard.models import CareManager
+from dashboard.models import CareManager, UseUser
 from dashboard.forms import CareManagerForm
 from dashboard.utils import BreadcrumbUtil
 
@@ -12,12 +13,11 @@ from employees.permissions import delete_permission_required, has_delete_permiss
 def care_mana_list(request):
     crumbs = [("ケアマネジャー一覧", None)]
     can_delete = has_delete_permission(request.user)
-    caremanagers = CareManager.objects.all()
-    # caremanagers.users = [User.objects.filter(care_manager=caremanager) for caremanager in caremanagers]
+    care_managers = CareManager.objects.prefetch_related('useuser_set').order_by('name')
     return render(request, 'dashboard/care_manager_list.html', {
-        'caremanagers': caremanagers,
+        'care_managers': care_managers,
         'breadcrumbs': BreadcrumbUtil.create(crumbs),
-        'can_delete':can_delete,
+        'can_delete': can_delete,
     })
 
 def care_mana_update(request, caremanager_id):
@@ -59,37 +59,61 @@ def care_mana_delete(request, caremanager_id):
 # ケアマネジャー情報1 (利用者登録フローの途中)
 @login_required
 def care_mana_create(request):
-    crumbs = [
-        ("ケアマネジャー一覧", "dashboard:care_mana_list"),
-        ("ケアマネジャー登録", None)
-    ]
+    user_id = request.POST.get('user_id') or request.GET.get('user_id')
+    target_user = get_object_or_404(UseUser, id=user_id) if user_id else None
+
+    if target_user:
+        crumbs = [
+            (f"{target_user.name} 様 詳細", "dashboard:detail", [target_user.id]),
+            ("ケアマネジャー設定", None),
+        ]
+        title = f'{target_user.name} 様 ケアマネジャー設定'
+    else:
+        crumbs = [
+            ("ケアマネジャー一覧", "dashboard:care_mana_list"),
+            ("ケアマネジャー登録", None),
+        ]
+        title = 'ケアマネジャー登録'
+
     care_managers = CareManager.objects.all()
     for cm in care_managers:
-        if len(cm.office_name) >= 8:
-            select_office_name = f'{cm.office_name[:5]}...'
-        else:
-            select_office_name = cm.office_name
-        cm.select = f'{cm.name}({select_office_name})'
+        office = cm.office_name or ''
+        short = f'{office[:5]}...' if len(office) >= 8 else office
+        cm.select = f'{cm.name}({short})'
 
+    form = CareManagerForm()
     if request.method == 'POST':
         if 'skip' in request.POST:
+            # 既存のケアマネジャーを選んだ場合
             selected_id = request.POST.get('existing_manager')
-            if selected_id:
-                return redirect('dashboard:create',cm_id= selected_id)
-            else:
+            if not selected_id:
                 messages.error(request, '既存マネジャーを選択してください')
-        form = CareManagerForm(request.POST)
-        if form.is_valid():
-            care_mana = form.save(commit=False)
-            care_mana.name = care_mana.name.replace('　', ' ')
-            care_mana.save()
-            return redirect('dashboard:create',cm_id=care_mana.id)  # user作成画面へ遷移
+            else:
+                cm = get_object_or_404(CareManager, id=selected_id)
+                if target_user:
+                    target_user.care_manager = cm
+                    target_user.save(update_fields=['care_manager'])
+                    messages.success(request, f'{target_user.name} 様のケアマネジャーを {cm.name} に設定しました')
+                    return redirect('dashboard:detail', user_id=target_user.id)
+                return redirect('dashboard:create', cm_id=cm.id)
+        else:
+            # 新しいケアマネジャーを登録する場合
+            form = CareManagerForm(request.POST)
+            if form.is_valid():
+                care_mana = form.save(commit=False)
+                care_mana.name = care_mana.name.replace('　', ' ')
+                care_mana.save()
+                if target_user:
+                    target_user.care_manager = care_mana
+                    target_user.save(update_fields=['care_manager'])
+                    messages.success(request, f'{target_user.name} 様のケアマネジャーを登録しました')
+                    return redirect('dashboard:detail', user_id=target_user.id)
+                return redirect('dashboard:create', cm_id=care_mana.id)  # 利用者作成画面へ
 
-    else:
-        form = CareManagerForm()
     return render(request, 'dashboard/care_manager_form.html', {
         'form': form,
-        'title': 'ケアマネジャー登録',
-        'caremanagers': care_managers,
-        'breadcrumbs': BreadcrumbUtil.create(crumbs)
+        'title': title,
+        'care_managers': care_managers,
+        'target_user': target_user,
+        'breadcrumbs': BreadcrumbUtil.create(crumbs),
     })

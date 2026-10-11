@@ -77,6 +77,9 @@
           <div class="detail-item"><label>電話/FAX</label> {{ user.care_manager.tel|default:"未設定" }} / {{ user.care_manager.fax|default:"未設定" }}</div>
         {% else %}
           <p class="text-danger">ケアマネジャーが設定されていません</p>
+          <a class="btn btn-primary" href='{% url "dashboard:care_mana_create" %}?user_id={{ user.id }}'>
+            ケアマネジャーを設定
+          </a>
         {% endif %}
       </div>
     </div>

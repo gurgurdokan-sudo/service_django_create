@@ -14,25 +14,24 @@ logger = logging.getLogger(__name__)
 
 #利用者一覧
 def user_list(request):
-    users = UseUser.objects.all()
+    users = UseUser.objects.select_related('care_manager').prefetch_related('certificates')
     today = date.today()
     this_month = (today.year, today.month)
-    next_ = today + relativedelta(months = 1)
+    next_ = today + relativedelta(months=1)
     next_month = (next_.year, next_.month)
+
     alerts = []
     for user in users:
-        if not hasattr(user, 'care_manager'):
-            alerts.append(f"""
-            {user.name} 様のケアマネジャーが紐づいてません
-            詳細画面でケアマネジャーを設定し直してください
-            """)
+        if user.care_manager_id is None:
+            alerts.append(f'{user.name} 様のケアマネジャーが紐づいていません。詳細画面で設定してください')
 
         certificate = user.current_certificate
         if certificate is None:
-            alerts.append(f'{user.name} 様の有効な介護認定がありません')
+            alerts.append(f'{user.name} 様の有効な介護認定がありません。詳細画面で介護認定を設定してください')
             continue
+
         changed_at = certificate.care_level_changed_at
-        if changed_at is None: # 以前の介護認定なし
+        if changed_at is None:  # 以前の介護認定なし
             continue
         changed_month = (changed_at.year, changed_at.month)
         if changed_month == this_month:
@@ -40,12 +39,10 @@ def user_list(request):
         elif changed_month == next_month:
             alerts.append(f'{user.name} 様の介護認定が来月で切り替わります')
 
-    context = {
+    return render(request, 'dashboard/user_list.html', {
         'users': users,
-        'alerts': alerts
-    }
-    return render(request, 'dashboard/user_list.html', context=context)
-
+        'alerts': alerts,
+    })
 #新規作成2
 def user_create(request, cm_id):
     crumbs = [
