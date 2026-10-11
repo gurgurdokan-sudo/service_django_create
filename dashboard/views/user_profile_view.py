@@ -1,6 +1,6 @@
-from datetime import date
-from dateutil.relativedelta import relativedelta
+from datetime import date, timedelta
 
+from dateutil.relativedelta import relativedelta
 from django.contrib import messages
 from django.urls import reverse
 from django.shortcuts import render, redirect, get_object_or_404
@@ -8,16 +8,43 @@ from django.shortcuts import render, redirect, get_object_or_404
 from dashboard.forms import UserForm, PublicAssistanceForm
 from dashboard.models import UseUser, CareManager, PublicAssistance
 from dashboard.utils import BreadcrumbUtil
-
 from employees.permissions import delete_permission_required
-
 import logging
 logger = logging.getLogger(__name__)
 
 #利用者一覧
 def user_list(request):
     users = UseUser.objects.all()
-    return render(request, 'dashboard/user_list.html', {'users': users})
+    today = date.today()
+    this_month = (today.year, today.month)
+    next_ = today + relativedelta(months = 1)
+    next_month = (next_.year, next_.month)
+    alerts = []
+    for user in users:
+        if not hasattr(user, 'care_manager'):
+            alerts.append(f"""
+            {user.name} 様のケアマネジャーが紐づいてません
+            詳細画面でケアマネジャーを設定し直してください
+            """)
+
+        certificate = user.current_certificate
+        if certificate is None:
+            alerts.append(f'{user.name} 様の有効な介護認定がありません')
+            continue
+        changed_at = certificate.care_level_changed_at
+        if changed_at is None: # 以前の介護認定なし
+            continue
+        changed_month = (changed_at.year, changed_at.month)
+        if changed_month == this_month:
+            alerts.append(f'{user.name} 様の介護認定が今月で切り替わります')
+        elif changed_month == next_month:
+            alerts.append(f'{user.name} 様の介護認定が来月で切り替わります')
+
+    context = {
+        'users': users,
+        'alerts': alerts
+    }
+    return render(request, 'dashboard/user_list.html', context=context)
 
 #新規作成2
 def user_create(request, cm_id):
@@ -96,6 +123,7 @@ def public_assistance_create(request,user_id):
         'is_from_service' : is_from_service,
         })
 #消去
+
 @delete_permission_required
 def user_delete(request, user_id):
     target = get_object_or_404(UseUser, id=user_id)

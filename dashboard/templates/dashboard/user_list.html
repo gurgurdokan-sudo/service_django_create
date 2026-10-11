@@ -5,6 +5,7 @@
 {% endblock %}
 {% block body %}
 <div class="container">
+  {% include "dashboard/components/messages.html" %}
   <div id="bread" data-items='[{"label": "ホーム", "url": ""}]'></div>
   <div class="header-container">
     <h1 class="page-title">利用者一覧</h1>
@@ -15,8 +16,23 @@
     </div>
     <label><a href="{% url 'dashboard:care_mana_create' %}" class="btn btn-create">新規作成</a></label>
   </div>
-
-  {% include "dashboard/components/messages.html" %}
+  <div id="alert" class="alert callout callout-info alert-dismissible fade show my-3 shadow-sm" role="alert">
+    <div class="d-flex align-items-center">
+      <i class="fa-solid fa-circle-info fa-lg me-2"></i>
+      <div>
+        <strong>お知らせ・注意事項:</strong>
+        <div class="alert-body">
+          {% for alert in alerts %}
+            <p class="alert-text">{{ alert }}</p>
+          {% empty %}
+            <p class="alert-text alert-text-empty">特になし</p>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    <button class="btn-close" type="button" data-bs-dismiss="alert" aria-label="Close" onclick="closeAlert()">
+    </button>
+  </div>
 
   <table class="data-table">
     <tr>
@@ -53,5 +69,11 @@
 </div>
 {% endblock %}
 {% block script %}
-<script src="{% static 'dashboard/js/checked.js' %}"></script>
+    <script src="{% static 'dashboard/js/checked.js' %}"></script>
+    <script>
+    const closeAlert = () => {
+        const alert = document.getElementById('alert');
+        alert.classList.add('d-none');
+    }
+    </script>
 {% endblock script %}

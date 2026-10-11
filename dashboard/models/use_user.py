@@ -3,7 +3,7 @@ from django.utils import timezone
 from datetime import date
 
 class UseUser(models.Model):
-    '''被保険者の情報を管理するモデル'''
+    """被保険者の情報を管理するモデル"""
 
     class Meta:
         verbose_name_plural = "利用者"

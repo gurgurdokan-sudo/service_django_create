@@ -16,7 +16,7 @@ def has_delete_permission(user):
 
 
 def delete_permission_required(view_func):
-    '''関数ベースの削除ビューに付けるデコレーター'''
+    """関数ベースの削除ビューに付けるデコレーター"""
     @wraps(view_func)
     def wrapper(request, *args, **kwargs):
         if not has_delete_permission(request.user):

@@ -288,7 +288,27 @@ label:has(+ select[required])::after,
     font-size: 1rem;
     vertical-align: middle;
 }
+#alert {
+    font-family: "Meiryo", "メイリオ", "Hiragino Sans", "ヒラギノ角ゴ Pro W3", sans-serif;
+}
+#alert .alert-title {
+    font-size: 0.95rem;
+    color: #084298;
+}
 
+#alert .alert-text {
+    width: 100%;
+    margin: 0;           /* pタグのデフォルト下余白をリセット */
+    padding: 2px 0;      /* 複数件ある場合に適度な上下行間を確保 */
+    color: #d32f2f;      /* 警告用の赤色 */
+    font-size: 0.9rem;
+    line-height: 1.5;
+    word-break: break-word; /* 長い文章の折り返し */
+}
+#alert .alert-text-empty {
+    color: #6c757d;      /* 灰色にして不要な赤強調を回避（お好みで#d32f2fに変更可能） */
+    font-style: italic;
+}
 
 /* --- Djangoのエラーリスト --- */
 .errorlist {
