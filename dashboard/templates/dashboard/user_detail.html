@@ -134,7 +134,9 @@
           <tbody>
             {% for pa in public_assistance %}
             <tr class="{% if pa.is_active %}fw-bold{% else %}status-expired{% endif %}">
-              <td>{{ pa.start_date|date:"Y年m月" }}分</td>
+              <td>
+                  <a class="link-name" href="{% url 'dashboard:public_assistance_edit' user.id pa.id %}">{{ pa.start_date|date:"Y年m月" }}分</a>
+              </td>
               <td>{{ pa.hogo_number }}</td>
               <td>{{ pa.recipient_number }}</td>
               <td>{% if pa.is_active %}<span class="status-active">有効</span>{% else %}無効{% endif %}</td>

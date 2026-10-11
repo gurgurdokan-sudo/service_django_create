@@ -124,6 +124,34 @@ def public_assistance_create(request,user_id):
         'linking': linking,
     })
 
+def public_assistance_edit(request, user_id, public_assistance_id):
+    user = get_object_or_404(UseUser,id = user_id)
+    public_assistance = get_object_or_404(PublicAssistance,id = public_assistance_id)
+    crumbs = [
+        # ("利用者一覧", "dashboard:user_list"),
+        (f"{user.name} 様", "dashboard:detail", [user_id]),  # 詳細へ
+        ("生活保護情報の登録", None)
+    ]
+    form = PublicAssistanceForm(request.POST or None,instance=public_assistance)
+    if request.method == 'POST' :
+        action = request.POST.get('action')
+        if action == 'release':
+            # 「解除」リクエストの処理
+            public_assistance.delete()
+            messages.success(request, f"{user.name}様 の生活保護情報を消去しました")
+            return redirect('dashboard:detail', user_id )
+        if form.is_valid():
+            form.save(user=user)
+            messages.success(request, f"{user.name}様 の生活保護情報を更新しました")
+            return redirect('dashboard:detail', user_id )
+    return render(request, 'dashboard/public_assistance_form.html', {
+        'user': user,
+        'form': form,
+        'title': f'{user.name}様 生活保護',
+        'edit': True,
+        'breadcrumbs': BreadcrumbUtil.create(crumbs),
+    })
+
 #消去
 @delete_permission_required
 def user_delete(request, user_id):
