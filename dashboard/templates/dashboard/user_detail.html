@@ -71,8 +71,8 @@
       <div class="section-title user-select-none"><h3>連絡先（ケアマネジャー）</h3></div>
       <div class="detail-card">
         {% if user.care_manager %}
-          <div class="detail-item"><label>担当者</label> {{ user.care_manager.name }} </div>
-          <div class="detail-item"><label>事務所番号</label> {{ user.care_manager.care_management_office_number }} </div>
+          <div class="detail-item"><label>担当者</label>{{ user.care_manager.name }}</div>
+          <div class="detail-item"><label>事務所番号</label>{{ user.care_manager.care_management_office_number }}</div>
           <div class="detail-item"><label>事業所</label><span> {{ user.care_manager.office_name }}</span></div>
           <div class="detail-item"><label>電話/FAX</label> {{ user.care_manager.tel|default:"未設定" }} / {{ user.care_manager.fax|default:"未設定" }}</div>
         {% else %}
