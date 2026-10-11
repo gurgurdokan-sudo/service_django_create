@@ -7,6 +7,9 @@ from dashboard.models.const import MEDIA_TYPE_INTERNET, get_claim_profile
 import logging
 logger = logging.getLogger(__name__)
 
+# 摘要欄など「""」と出力したい空欄の目印（CsvExporter がそのまま書き出す）
+QUOTED_EMPTY = '""'
+
 
 class ClaimBuilder:
     # 共通編 p.7-8 レコード種別
@@ -23,7 +26,7 @@ class ClaimBuilder:
     PUBLIC_CLAIM = 2                # 2:公費請求
     LAW_NUMBER_WELFARE = 12         # 法別番号 12:生活保護
     OLD_MEASURE_NONE = ''           # 旧措置入所者特例：様式第二は設定不要
-    STOP_REASON_NONE = 1            # 中止理由 1:非該当（様式第二は必須）
+    STOP_REASON_NONE = ''           # 中止理由：月途中中止時のみ設定（解説書 p.6 様式第二は○）
 
     def __init__(self, office, year, month, create_year=None, create_month=None):
         self.office = office
@@ -77,6 +80,21 @@ class ClaimBuilder:
     def _service_item_code(code):
         """サービス項目コード（4桁）。"781344" のような6桁が来ても末尾4桁にする"""
         return str(code)[-4:].zfill(4)
+
+    def _limit_units(self):
+        """限度額管理対象単位数＝基本サービス＋単位数加算・減算（5612等の負値も含める）"""
+        units = sum(int(p.unit) * int(p.get_total_count("actual")) for p in self.plans)
+        for item in self.record.all_addons.values():
+            addon = item['addon']
+            if not addon or addon.insurance_type == 'self_pay' or addon.type == 'rate':
+                continue
+            if addon.unit is not None:
+                units += int(addon.unit) * len(item['days'])
+        return units
+
+    def _rate_units(self):
+        """処遇改善加算などの率加算：限度額管理対象単位数×率を四捨五入（get_unit 側で ROUND_HALF_UP）"""
+        return self.default_addon.get_unit(self.limit_units) if self.default_addon else 0
 
     @staticmethod
     def _ins_units(r):
@@ -160,7 +178,7 @@ class ClaimBuilder:
         pub = (
             [pa.hogo_number, pa.recipient_number] if pa else ['', '']
         )
-        pub1_totals = [ins_units, r.public_amount or 0, 0, '', '', ''] if pa else [''] * 6
+        pub1_totals = [ins_units, r.public_amount or 0, 0] if pa else [0, 0, 0]
 
         return self._data_prefix(self.USER_RECORD_BASIC) + [
             self.target_year_month,                      # 3 サービス提供年月
@@ -180,18 +198,23 @@ class ClaimBuilder:
             self.user.care_manager.care_management_office_number,  # 20 居宅介護支援事業所番号
             '',                                          # 21 開始年月日（月途中開始時のみ）
             '',                                          # 22 中止年月日（月途中中止時のみ）
-            self.STOP_REASON_NONE,                       # 23 中止理由 1:非該当
-            '', '', '', '', '',                          # 24-28 入所・退所関係（様式第二は不要、追加）
+            self.STOP_REASON_NONE,                       # 23 中止理由（通常は空欄）
+            '', '',                                      # 24-25 入所（院）年月日・退所（院）年月日
+            0, 0,                                        # 26-27 入所（院）実日数・外泊日数（現行ソフトに合わせ0）
+            '',                                          # 28 退所（院）後の状態
             self._rate_code(cert.benefit_rate),          # 29 保険給付率
-            100 if pa else '',                           # 30 公費1給付率
-            '', '',                                      # 31-32 公費2・3給付率
+            100 if pa else 0,                            # 30 公費1給付率
+            0, 0,                                        # 31-32 公費2・3給付率
             ins_units,                                   # 33 保険 サービス単位数
             r.benefit_amount,                            # 34 保険 請求額
             self._ins_user_share(r),                     # 35 保険 利用者負担額
             '', '', '',                                  # 36-38 緊急時・特定診療・特定入所者
-            *pub1_totals,                                # 39-44 公費1 合計
-            '', '', '', '', '', '',                      # 45-50 公費2 合計
-            '', '', '', '', '', '',                      # 51-56 公費3 合計
+            *pub1_totals,                                # 39-41 公費1 単位数・請求額・本人負担額
+            '', '', '',                                  # 42-44 公費1 緊急時・特定診療・特定入所者
+            0, 0, 0,                                     # 45-47 公費2 単位数・請求額・本人負担額
+            '', '', '',                                  # 48-50 公費2 緊急時・特定診療・特定入所者
+            0, 0, 0,                                     # 51-53 公費3 単位数・請求額・本人負担額
+            '', '', '',                                  # 54-56 公費3 緊急時・特定診療・特定入所者
         ]
 
     # ---------- 02 明細情報（2+18=20列） ----------
@@ -209,7 +232,7 @@ class ClaimBuilder:
             pub_count, 0, 0,                             # 11-13 公費1-3 対象日数・回数
             subtotal,                                    # 14 サービス単位数
             pub_units, 0, 0,                             # 15-17 公費1-3 対象サービス単位数
-            '',                                          # 18 摘要（"\"\"" ではなく空文字）
+            QUOTED_EMPTY,                                # 18 摘要（現行ソフトに合わせ "" を出力）
         ]
 
     def _build_user_claim_details(self):
@@ -234,7 +257,7 @@ class ClaimBuilder:
             rows.append(self._detail_row(addon.code, int(addon.unit), count, int(addon.unit) * count))
 
         if self.default_addon:                           # 処遇改善加算などの率加算
-            units = self.default_addon.get_unit(self.record.service_units)
+            units = self._rate_units()                   # 減算後の単位数に率を掛ける
             if units > 0:
                 if units > 9999:
                     logger.warning(f'02の単位数欄は4桁です: {units}')
@@ -245,7 +268,12 @@ class ClaimBuilder:
     def _build_user_claim_total(self):
         r, pa = self.record, self.public
         ins_units = self._ins_units(r)
-        rate_units = self.default_addon.get_unit(r.service_units) if self.default_addon else 0
+        rate_units = self._rate_units()
+        if self.limit_units + rate_units != r.total_units:
+            logger.warning(
+                f'10の単位数が月次記録と一致しません: insured_number={self.user.insured_number} '
+                f'計算={self.limit_units + rate_units} 記録={r.total_units}（ServiceSheetCalculatorの修正を確認）'
+            )
         pub1 = [ins_units, r.public_amount or 0, 0] if pa else [0, 0, 0]
 
         return self._data_prefix(self.USER_RECORD_TOTAL) + [
@@ -255,10 +283,10 @@ class ClaimBuilder:
             self.user.insured_number,                    # 6 被保険者番号
             self.office.service_type_code,               # 7 サービス種類コード
             r.actual_count,                              # 8 サービス実日数
-            r.service_units,                             # 9 計画単位数
-            r.service_units,                             # 10 限度額管理対象単位数
+            self.limit_units,                            # 9 計画単位数（減算込み）
+            self.limit_units,                            # 10 限度額管理対象単位数（減算込み）
             rate_units,                                  # 11 限度額管理対象外単位数
-            '', '',                                      # 12-13 短期入所 計画日数・実日数
+            0, 0,                                        # 12-13 短期入所 計画日数・実日数
             ins_units,                                   # 14 保険 単位数合計
             self.unit_price_code,                        # 15 保険 単位数単価（追加）
             r.benefit_amount,                            # 16 保険 請求額
@@ -278,6 +306,7 @@ class ClaimBuilder:
         self.user = record.user
         self.public = self.user.get_public_assistance(self.year, self.month)
         self.default_addon = self.office.default_service
+        self.limit_units = self._limit_units()
         if not self.user.care_manager:
             raise ValueError(f'ケアマネジャーが設定されていない利用者={self.user.name}')
 
