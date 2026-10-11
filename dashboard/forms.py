@@ -1,5 +1,6 @@
 from datetime import date
 
+from dateutil.relativedelta import relativedelta
 from django import forms
 from django.db import transaction
 from django.forms.utils import ErrorList
@@ -240,7 +241,7 @@ class PublicAssistanceForm(forms.ModelForm):
     YEAR_CHOICES = [(y, f"{y}年") for y in range(this_year - 1, this_year + 1)]
     MONTH_CHOICES = [(m, f"{m}月") for m in range(1, 13)]
     start_year = forms.ChoiceField(choices=YEAR_CHOICES, label="開始年")
-    start_month = forms.ChoiceField(choices=MONTH_CHOICES, label="開始月", widget=forms.Select(attrs={'class': 'm-3'}))
+    start_month = forms.ChoiceField(choices=MONTH_CHOICES, label="開始月", widget=forms.Select(attrs={'class': 'ms-3'}))
 
     class Meta:
         model = PublicAssistance
@@ -253,6 +254,8 @@ class PublicAssistanceForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         for field_name, field in self.fields.items():
             field.widget.attrs['class'] = f'form-control {field_name}'
+            if field_name == 'start_month':
+                field.widget.attrs['class'] = f'form-control {field_name} ms-3'
             if field.required:
                 field.widget.attrs['required'] = True
 
@@ -266,19 +269,24 @@ class PublicAssistanceForm(forms.ModelForm):
             self.add_error('recipient_number', '受給者番号は10桁の数字で入力してください')
 
     @transaction.atomic
-    def save(self, user=None, commit=True):
+    def save(self, user, commit=True):
         instance = super().save(commit=False)
-        y = int(self.cleaned_data.get('start_year'))
-        m = int(self.cleaned_data.get('start_month'))
+
+        try:
+            y = int(self.cleaned_data.get('start_year'))
+            m = int(self.cleaned_data.get('start_month'))
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ValueError("適用開始年月が正しくありません") from exc
         start_date = date(y, m, 1)
+        end_date = start_date + relativedelta(months=+1) - relativedelta(days=1)
         #  同じ月の既存レコードがあれば上書きのため削除
         PublicAssistance.objects.filter(user=user, start_date=start_date).delete()
 
-        if user:
-            instance.user = user
+        instance.user = user
+        instance.start_date = start_date
+        instance.end_date = end_date
         if commit:
             instance.save()
-
         target = instance.user
         PublicAssistance.objects.filter(user=target).update(is_active=False)
 

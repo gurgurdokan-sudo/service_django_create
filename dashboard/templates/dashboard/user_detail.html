@@ -145,6 +145,13 @@
           </tbody>
         </table>
       </div>
+    {% else %}
+      <div class="section-title">
+        <h3>生活保護情報</h3>
+      </div>
+      <a class="btn btn-primary" href="{% url 'dashboard:public_assistance_create' user.id %}?linking=True">
+        利用者に生活保護を設定する
+      </a>
     {% endif %}
       <div class="section-title">
     <h3>サービス提供表作成実績</h3>

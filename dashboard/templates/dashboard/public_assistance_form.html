@@ -11,6 +11,7 @@
     <div id="bread" data-items="{{ breadcrumbs }}"></div>
     <form method="post" id="public_assistance_Form" action="{{ request.get_full_path }}" novalidate>
       {% csrf_token %}
+      <input type="hidden" name="linking" value="{{ linking }}">
       {# 保護番号 #}
       <div class="label-input-err">
         <div class="label-input">
@@ -47,8 +48,8 @@
 
       <div class="d-flex gap-2 mt-4">
         <button class="btn btn-primary" type="submit" name="action" value="save">保存して進む</button>
-
-        {% if is_from_service %}
+        {% if linking %}
+        {% elif is_from_service %}
           <button form="releaseForm" class="btn btn-outline-danger" type="submit" name="action" value="save" onclick="return confirm('設定を解除して提供表に戻りますか？')">生活保護を解除して戻る</button>
         {% else %}
           <button form="releaseForm"  class="btn btn-outline-danger" type="submit" name="reset" value="save" onclick="return confirm('設定を解除して提供表に戻りますか？')">生活保護を設定しない</button>

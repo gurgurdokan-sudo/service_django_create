@@ -74,53 +74,57 @@ def public_assistance_create(request,user_id):
     q_year = request.POST.get("year") or request.GET.get("year")
     q_month = request.POST.get("month") or request.GET.get("month")
     is_from_service = bool(q_year and q_month)
-
+    linking = request.POST.get("linking") or request.GET.get("linking")
     crumbs =[
         # ("利用者一覧", "dashboard:user_list"),
         (f"{user.name} 様", "dashboard:detail", [user_id]), #詳細へ
         ("生活保護情報の登録", None)
     ]
+    try:
+        y = int(q_year) if q_year else date.today().year
+        m = int(q_month) if q_month else date.today().month
+    except ValueError:
+        y, m = date.today().year, date.today().month
+    initial_data = {
+        'start_year': y,
+        'start_month': m,
+        'hogo_number': latest_pa.hogo_number if latest_pa else '',
+        'recipient_number': latest_pa.recipient_number if latest_pa else '',
+        'linking': linking,
+    }
+    form = PublicAssistanceForm(request.POST or None,initial=initial_data)
 
     if request.method == 'POST':
         action = request.POST.get('action')
         logger.info(f'{action} ==========================================')
-        try:
-            y = int(q_year) if q_year else date.today().year
-            m = int(q_month) if q_month else date.today().month
-        except ValueError:
-            y, m = date.today().year, date.today().month
+        # form.instance.user = user
         if action == 'release':
             # 「解除」リクエストの処理
             user.public_assistance.filter(is_active=True).update(is_active=False)
             url = reverse('dashboard:service', args=[user_id])
             return redirect(f'{url}?year={y}&month={m}')
-        else:
-            form = PublicAssistanceForm(request.POST)
-            if form.is_valid():
-                form.save(user=user,commit=False)
-                messages.success(request, f"{user.name}様 の生活保護登録")
-                if is_from_service:
-                    url = reverse('dashboard:service', args=[user_id])
-                    return redirect(f'{url}?year={y}&month={m}')
-                else:
-                    return redirect('dashboard:user_list')
-    else: # GETリクエスト
-        initial_data = {
-            'start_year': latest_pa.start_date.year if latest_pa else None,
-            'start_month': latest_pa.start_date.month if latest_pa else None,
-            'hogo_number': latest_pa.hogo_number if latest_pa else '',
-            'recipient_number': latest_pa.recipient_number if latest_pa else '',
-        }
-        form = PublicAssistanceForm(initial = initial_data)
+
+        elif form.is_valid():
+            form.save(user=user)
+            messages.success(request, f"{user.name}様 の生活保護登録")
+            if is_from_service:
+                url = reverse('dashboard:service', args=[user_id])
+                return redirect(f'{url}?year={y}&month={m}')
+            elif linking:
+                return redirect('dashboard:detail', user_id)
+            else:
+                return redirect('dashboard:user_list')
+
     return render(request, 'dashboard/public_assistance_form.html',{
         'form': form,
         'user': user,
         'title': f'{user.name}様 生活保護登録',
         'breadcrumbs': BreadcrumbUtil.create(crumbs),
         'is_from_service' : is_from_service,
-        })
-#消去
+        'linking': linking,
+    })
 
+#消去
 @delete_permission_required
 def user_delete(request, user_id):
     target = get_object_or_404(UseUser, id=user_id)
