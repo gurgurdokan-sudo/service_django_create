@@ -177,8 +177,8 @@ class CertificateForm(forms.ModelForm):
         # 対象ユーザーの既存レコードを抽出
         existing_qs = Certificate.objects.all()
         if user:
-            logger.info(f'{user=}に紐づいた')
             existing_qs = existing_qs.filter(user=user,insured_number=user.insured_number)
+            logger.info(f'{user=}に紐づいた 介護認定={existing_qs.count()}件')
 
         if not self.instance.pk:
             existing_qs = existing_qs.exclude(pk=self.instance.pk)
