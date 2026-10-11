@@ -155,7 +155,7 @@ def user_detail(request, user_id):
     certificates = user.certificates.order_by("-is_active","-limit_start")[:5]
     public_assistance = user.public_assistance.order_by("-is_active","-end_date")
 
-    logger.info(f'{certificates}\n{public_assistance}')
+    logger.info(f'\n介護認定={certificates}\n生活保護={public_assistance}')
     labels = {f.name: f.verbose_name for f in user._meta.fields}
     crumbs = [
         # ("利用者一覧", "dashboard:user_list"),

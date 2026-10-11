@@ -3,6 +3,8 @@ from datetime import date
 from django import forms
 from django.db import transaction
 from django.forms.utils import ErrorList
+from django.contrib import messages
+from django.db.models import Q
 from dashboard.models import UseUser, ServicePlan, Certificate, CareManager, Office, PublicAssistance
 import logging
 
@@ -176,26 +178,30 @@ class CertificateForm(forms.ModelForm):
         # 対象ユーザーの既存レコードを抽出
         existing_qs = Certificate.objects.all()
         if user:
+            logger.info(f'{user=}に紐づいた')
             existing_qs = existing_qs.filter(user=user)
         elif insured_number:
+            logger.info(f'{insured_number=}に紐づいた')
             existing_qs = existing_qs.filter(insured_number=insured_number)
 
-        if self.instance.pk:
+        if not self.instance.pk:
             existing_qs = existing_qs.exclude(pk=self.instance.pk)
 
         # A) 期間が少しでも重複しているレコードを取得
-        # 条件: (既存start <= 今回end) AND (既存end >= 今回start)
+        # 条件: (既存start <= 今回end) OR (既存end >= 今回start)
         overlapping_qs = existing_qs.filter(
-            limit_start__lte=limit_end, limit_end__gte=limit_start
+            Q(limit_start__lte=limit_end) |
+            Q(limit_end__gte=limit_start)
         )
-
         if overlapping_qs.exists():
+            logger.info(f'{overlapping_qs=}期間が同じ')
             # 重複している既存データの中に「同じ介護度」がある場合はNG
             if overlapping_qs.filter(care_level=care_level).exists():
-                self.add_error(
-                    "care_level",
-                    "同じ介護度で期間が重複する認定情報が既に存在します",
-                )
+                logger.warning('同じ介護レベルでの期間重複')
+                # self.add_error(
+                #     "care_level",
+                #     "同じ介護度で期間が重複する認定情報が既に存在します",
+                # )
             # ※ 介護度が異なる場合は「区分変更」とみなして許容（エラーにしない）
 
         return cleaned
@@ -204,7 +210,7 @@ class CertificateForm(forms.ModelForm):
         instance = super().save(commit=False)
         if user:
             instance.user = user
-            instance.insured_number = self.instance.insured_number
+            instance.insured_number = user.insured_number
         old_cert = Certificate.objects.filter(user=user, is_active=True).first()
         if old_cert:
             old_cert.is_active = False
@@ -232,7 +238,7 @@ class PublicAssistanceForm(forms.ModelForm):
     YEAR_CHOICES = [(y, f"{y}年") for y in range(this_year - 1, this_year + 1)]
     MONTH_CHOICES = [(m, f"{m}月") for m in range(1, 13)]
     start_year = forms.ChoiceField(choices=YEAR_CHOICES, label="開始年")
-    start_month = forms.ChoiceField(choices=MONTH_CHOICES, label="開始月")
+    start_month = forms.ChoiceField(choices=MONTH_CHOICES, label="開始月", widget=forms.Select(attrs={'class': 'm-3'}))
 
     class Meta:
         model = PublicAssistance
