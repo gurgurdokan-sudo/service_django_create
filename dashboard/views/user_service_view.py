@@ -1,4 +1,6 @@
 from datetime import date
+
+from django.db.models import QuerySet
 from django.shortcuts import render,redirect, get_object_or_404
 from django.utils import timezone
 from django.contrib import messages
@@ -25,8 +27,7 @@ def build_user_service_context(user_id, year, month):
     default = AddOnService.objects.get(pk=office.default_service.pk)
 
     target = (UseUser.objects.select_related('care_manager').get(id=user_id))
-    monthly_record = target.get_monthly_record(year, month)
-    plans = ServicePlan.objects.filter(user = target,year = year,month = month,)
+    plans:QuerySet = ServicePlan.objects.filter(user = target,year = year,month = month,)
     addons = []
     for p in plans:
         summary = p.get_addon_summary
@@ -42,15 +43,22 @@ def build_user_service_context(user_id, year, month):
                 "days": days,
                 "total": len(days),
             })
-    print(addons)
     logger.info(f'{year}-{month}のサービス提供票のplansを取得')
 
     user_codes = plans.values_list("service_code",flat=True) #userチェック済みのサービスコード
-    all_plans = (
-        ServiceMaster.objects
-        .filter(care_level=target.get_certificate(year, month))
-        .exclude(service_code__in = user_codes)
-        )
+    certificate = target.get_certificate(year, month)
+    if certificate:
+        c_list = [certificate.care_level]
+        if certificate.care_level_changed_at is None:
+            c_list.append(target.care_level)
+        service_masters =(
+            ServiceMaster.objects
+            .filter(care_level__in=c_list)
+            .exclude(service_code__in = user_codes)
+            )
+    else:
+        service_masters = ServiceMaster.objects.all()
+        logger.error('介護認定の取得に失敗')
     logger.info(f'{user_codes}以外のplansを取得')
 
     addon_service = AddOnService.objects.all()
@@ -70,7 +78,7 @@ def build_user_service_context(user_id, year, month):
         'current_month': now.month,
 
         # 画面用　batchアラート
-        'monthly_record': monthly_record, # サービス提供票の確定状態
+        'monthly_record': target.get_monthly_record(year, month), # サービス提供票の確定状態
         'public_assistance':target.get_public_assistance(year,month),
         # 画面用　Flag
         'confirmed': record.confirmed if record else False,
@@ -79,7 +87,7 @@ def build_user_service_context(user_id, year, month):
         'month_range': range(1, 13),
         # 画面用　モーダルに出すPlan/Addon
         'addon_service': addon_service,
-        'service': all_plans,  # userの対象全プラン
+        'service_masters': service_masters,  # userの対象全プラン
     }
 
 def _is_future_month_not_plan(user, year, month, prev=False):
@@ -138,7 +146,7 @@ def user_service(request,user_id):
     ]
     context['breadcrumbs'] = BreadcrumbUtil.create(crumbs)
     logger.info(f'======{user.name} 様 提供表確定 {context["confirmed"]}======')
-    print(context,flush=True)
+    print(context['service_masters'],flush=True)
     return render(request,'dashboard/user_service.html',context)
 
 #一括前月モード

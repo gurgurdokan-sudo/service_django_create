@@ -3,7 +3,6 @@ from datetime import date
 from django import forms
 from django.db import transaction
 from django.forms.utils import ErrorList
-from django.contrib import messages
 from django.db.models import Q
 from dashboard.models import UseUser, ServicePlan, Certificate, CareManager, Office, PublicAssistance
 import logging
@@ -214,8 +213,9 @@ class CertificateForm(forms.ModelForm):
         if old_cert:
             old_cert.is_active = False
             old_cert.save()
+            # 以前の介護認定がない時は変更日を入れない
+            instance.care_level_changed_at = self.cleaned_data['limit_start']
         instance.is_active = True
-        instance.care_level_changed_at = self.cleaned_data['limit_start']
         if commit:
             instance.save()
         return instance
