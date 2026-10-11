@@ -92,7 +92,7 @@ class ServicePlan(models.Model):
 
     start_day = models.IntegerField(null=True, blank=True, default=1)
     end_day = models.IntegerField(verbose_name="介護認定情報が月の中で変わる時に代わる日を記録", null=True, blank=True)
-    cert = models.ForeignKey('Certificate', null=True, blank=True, on_delete=models.PROTECT)
+    cert = models.ForeignKey('Certificate', null=True, blank=True, on_delete=models.CASCADE)
 
     @property
     def stay_time_category(self):
