@@ -121,9 +121,10 @@ def _record_model_update(user, year, month, res):
         user=user, 
         date=target_date
     )
-    
+
     # 計算結果をモデルのフィールドに保存
     record.total_units = res['total_units']                         # 10割分
+    record.total_cost = res['total_cost']                           # 総費用
     record.benefit_amount = res['benefit_amount']                   # 保険請求額
     record.public_amount = res['public_amount']                     # 公費請求額
     record.user_share_amount = res['user_share_amount']             # 利用者負担額
