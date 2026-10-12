@@ -1,7 +1,8 @@
-import React from 'react'
-import ReactDOM from 'react-dom/client'
-import CreatedServiceList from './pages/CreatedServiceList' 
+import { createRoot } from 'react-dom/client';
+import ServiceSummaryPanel from './components/ServiceSummaryPanel.jsx';
 
-ReactDOM.createRoot(document.getElementById('root')).render(
-  <CreatedServiceList />
-)
+const rootElement = document.getElementById('react-summary-root');
+
+if (rootElement) {
+  createRoot(rootElement).render(<ServiceSummaryPanel />);
+}

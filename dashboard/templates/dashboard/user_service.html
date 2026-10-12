@@ -210,7 +210,7 @@
   </div>
   {% include "dashboard/components/service_modal.html" %}
   </div>
-
+  <div id="react-summary-root"></div>
   <ul>
   {#  Excelテスト表示行  #}
     {% for plan in plans %}
@@ -231,12 +231,12 @@
   {% if plans %}
     <input type="button" id="btn-excel" class="btn btn-success
     {% if confirmed %} not-disabled {% endif %}
-    " value="Excelを作成" onclick="toExcel({{user.id}})">
+    " value="Excelを作成" onclick="toExcel({{ user.id }})">
   {% endif %}
   <input type="button" id="btn-export" class="btn btn-primary
   {% if not confirmed %}
   not-disabled
-  {% endif %}" value="Excelを出力" onclick="exportExcel({{user.id}})">
+  {% endif %}" value="Excelを出力" onclick="exportExcel({{ user.id }})">
 
   <!-- ローディングモーダル -->
   <div class="modal fade" id="loadingModal" tabindex="-1" aria-hidden="true">
@@ -257,6 +257,7 @@
 {% endblock %}
 
 {% block script %}
+<script type="module" src="{% static 'serviceSummaryPanel.js' %}"></script>
 <script src="{% static 'dashboard/js/edit.js' %}?v=1"></script>
 <script src="{% static 'dashboard/js/modal_logic.js' %}?v=1"></script>
 <script src="{% static 'dashboard/js/main.js' %}?v=1"></script>
