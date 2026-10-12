@@ -179,10 +179,10 @@ class CertificateBaseForm(forms.ModelForm):
             existing_qs = existing_qs.exclude(pk=self.instance.pk)
 
         # A) 期間が少しでも重複しているレコードを取得
-        # 条件: (既存start <= 今回end) OR (既存end >= 今回start)
+        # 条件: (既存end <= 今回end) OR (既存start <= 今回start)
         overlapping_qs = existing_qs.filter(
             Q(limit_end__gte=limit_end)
-            # | Q(limit_end__gte=limit_start)
+            | Q(limit_start__gte=limit_start)
         )
         if overlapping_qs.exists():
             logger.info(f'{overlapping_qs=}期間が同じ')
