@@ -31,7 +31,11 @@ class ServiceSheetCalculator:
         self._calculate_base_and_addons()
 
     def _calculate_base_and_addons(self):
+        actual_days = set()
         for plan in self.plans:
+            for day, info in plan.actual_dict.items():
+                if info.get('main') == '1':
+                    actual_days.add(str(day))
             count:int = int(plan.get_total_count('actual'))
             unit:int = int(plan.unit)
             subtotal:int = count * unit
@@ -53,17 +57,18 @@ class ServiceSheetCalculator:
                                         'code': addon_code_str
                                          })
                 self.total_act_price_unit += add_total
+        self.actual_days = len(actual_days)
 
     def get_results(self):
-        # 1. デフォルト加算（四捨五入は get_unit に任せる）
-        def_unit = 0
-        if self.office.default_service:
-            def_unit = self.office.default_service.get_unit(self.total_act_price_unit)
-        def_total_cost = _yen(def_unit, self.office.unit_price)  # 表示用
-
-        # 2. 限度額振り分け
+        # 1. 限度額振り分け
         within_units = min(self.total_act_price_unit, self.max_payment)
         over_units = max(0, self.total_act_price_unit - self.max_payment)
+
+        # 2. デフォルト加算
+        def_unit = 0
+        if self.office.default_service:
+            def_unit = self.office.default_service.get_unit(within_units)
+        def_total_cost = _yen(def_unit, self.office.unit_price)
 
         # 3. 金額算出：単位を合計してから円にする
         total_cost = _yen(within_units + def_unit, self.office.unit_price)
@@ -85,7 +90,7 @@ class ServiceSheetCalculator:
         return {
             'is_hogo': self.is_hogo,
             'pa_data': self.pa_data,
-            'actual_count': self.total_act_price_unit,
+            'actual_count': self.actual_days, # 日数
             'within_units': within_units,
             'over_units': over_units,
             'total_cost': total_cost,     # 費用合計(10割)
@@ -95,7 +100,9 @@ class ServiceSheetCalculator:
             'def_unit': def_unit,
             'def_total_cost': def_total_cost,
             'plan_items': self.plan_items,
-            'addon_items': self.addon_items
+            'addon_items': self.addon_items,
+            'total_units': self.total_act_price_unit + def_unit,
+            'service_units': self.total_act_price_unit,
         }
 
 def format_comma(value, default=""):

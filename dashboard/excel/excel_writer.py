@@ -123,17 +123,17 @@ def _record_model_update(user, year, month, res):
     )
     
     # 計算結果をモデルのフィールドに保存
-    record.total_cost = res['total_cost'] # 10割分
-    record.benefit_amount = res['benefit_amount'] # 保険請求額
-    record.public_amount = res['public_amount']  # 公費請求額
-    record.user_share_amount = res['user_share_amount']  # 利用者負担額
-    record.within_units = res['within_units'] # 10割分の単位数
-    record.over_units = res['over_units'] # 超過分の単位数
+    record.total_units = res['total_units']                         # 10割分
+    record.benefit_amount = res['benefit_amount']                   # 保険請求額
+    record.public_amount = res['public_amount']                     # 公費請求額
+    record.user_share_amount = res['user_share_amount']             # 利用者負担額
+    record.within_units = res['within_units']                       # 10割分の単位数
+    record.over_units = res['over_units']                           # 超過分の単位数
 
     # CSV出力用のフィールドも更新
-    record.actual_count = res['actual_count']  # 実績日数
-    record.service_units = sum(item['unit'] for item in res['plan_items'])  # サービス＋加算などの単位数合計
-    record.addon_units = sum(item['unit'] for item in res['addon_items'])  # 加算単位数
+    record.actual_count = res['actual_count']                       # 実績日数
+    record.service_units = res['service_units']                     # サービス＋加算などの単位数合計
+    record.addon_units = sum(item['subtotal'] for item in res['addon_items'])  # 加算単位数
     record.claim_units = record.service_units + record.addon_units  # 請求
 
     record.confirmed = True
