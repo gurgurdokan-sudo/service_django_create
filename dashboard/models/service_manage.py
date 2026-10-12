@@ -237,30 +237,30 @@ class ServicePlan(models.Model):
             if addon and addon.id == addon_id:
                 return len(addon.get('days'))
         return 0
-    @property
-    def total_insurance_actual_units(self) -> int:
-        """請求データ様にPlanに紐づく合計単位を返す"""
-        date_data = self.actual_dict
-        total_units = 0
-        # プランに含まれる全加算IDを抽出
-        all_addon_ids = set()
-        for day_info in date_data.values():
-            all_addon_ids.update(day_info.get("addon", []))
-
-        addon_master = {
-            a.id: a.unit for a in AddOnService.objects.filter(id__in=all_addon_ids)
-        }
-        # 日ごとにループ
-        for day_info in date_data.values():
-            # --- 基本サービス
-            if str(day_info.get("main")) == "1":
-                # self.unit は ServicePlan 作成時にマスタからコピーされた基本単位数
-                total_units += (self.unit or 0)
-                # --- 加算サービス
-                for addon_id in day_info.get("addon", []):
-                    # マスタから単位数を取得して加算
-                    total_units += addon_master.get(int(addon_id), 0)
-        return total_units
+    # @property
+    # def total_insurance_actual_units(self) -> int:
+    #     """請求データ様にPlanに紐づく合計単位を返す"""
+    #     date_data = self.actual_dict
+    #     total_units = 0
+    #     # プランに含まれる全加算IDを抽出
+    #     all_addon_ids = set()
+    #     for day_info in date_data.values():
+    #         all_addon_ids.update(day_info.get("addon", []))
+    #
+    #     addon_master = {
+    #         a.id: a.unit for a in AddOnService.objects.filter(id__in=all_addon_ids)
+    #     }
+    #     # 日ごとにループ
+    #     for day_info in date_data.values():
+    #         # --- 基本サービス
+    #         if str(day_info.get("main")) == "1":
+    #             # self.unit は ServicePlan 作成時にマスタからコピーされた基本単位数
+    #             total_units += (self.unit or 0)
+    #             # --- 加算サービス
+    #             for addon_id in day_info.get("addon", []):
+    #                 # マスタから単位数を取得して加算
+    #                 total_units += addon_master.get(int(addon_id), 0)
+    #     return total_units
 
     @property
     def get_insurance_addons(self):
