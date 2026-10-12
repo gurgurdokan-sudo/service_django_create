@@ -1,3 +1,5 @@
+from decimal import Decimal, ROUND_HALF_UP
+
 from django.db import models
 from .const import LEVEL_CHOICES, STAY_TIME_CHOICES, SERVICE_TYPE_CHOICES, UNIT_PRICE_TABLE, SERVICE_TYPE_CODE
 
@@ -61,14 +63,15 @@ class AddOnService(models.Model):
     def rate100(self):
         if self.rate:
             return (self.rate * 100).normalize()
+        return None
+
     def full_code(self) ->str:
         return f'{self.service_type_code}{self.code}'
     def get_unit(self, service_units):
         if service_units <= 0 or self.rate is None:
             return 0
-        else:
-            rate = float(self.rate)
-            return int(rate * service_units)
+        value = Decimal(service_units) * Decimal(str(self.rate))
+        return int(value.quantize(Decimal('1'), rounding=ROUND_HALF_UP))
     def __str__(self):
         return self.service_name+' ('+self.type+')'
 class Municipality(models.Model):

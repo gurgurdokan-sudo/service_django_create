@@ -1,5 +1,5 @@
 from dashboard.models import AddOnService
-
+from decimal import Decimal, ROUND_DOWN
 
 class ServiceSheetCalculator:
     def __init__(self, context):
@@ -55,26 +55,22 @@ class ServiceSheetCalculator:
                 self.total_act_price_unit += add_total
 
     def get_results(self):
-        # 1. デフォルト加算計算
+        # 1. デフォルト加算（四捨五入は get_unit に任せる）
         def_unit = 0
-        def_total_cost = 0
-        if self.office.default_service: #todo デフォルトの加算はパーセントrateが前提
-            rate = float(self.office.default_service.rate)
-            def_unit = int(self.total_act_price_unit * rate)
-            def_total_cost = int(def_unit * self.unit_price)
+        if self.office.default_service:
+            def_unit = self.office.default_service.get_unit(self.total_act_price_unit)
+        def_total_cost = _yen(def_unit, self.office.unit_price)  # 表示用
 
         # 2. 限度額振り分け
         within_units = min(self.total_act_price_unit, self.max_payment)
         over_units = max(0, self.total_act_price_unit - self.max_payment)
 
-        # 3. 金額算出 (10割分)
-        total_cost = int(within_units * self.unit_price) + def_total_cost
-        over_cost = int(over_units * self.unit_price)
+        # 3. 金額算出：単位を合計してから円にする
+        total_cost = _yen(within_units + def_unit, self.office.unit_price)
+        over_cost = _yen(over_units, self.office.unit_price)
 
-        # 4. 請求の内訳計算 (生保対応)
-        # 保険請求分 (9割〜7割)
-        benefit_amount = int(total_cost * self.benefit_rate)
-        # 本来の利用者負担分 (1割〜3割)
+        # 4. 保険請求分
+        benefit_amount = _yen(total_cost, self.benefit_rate)
         raw_user_share = total_cost - benefit_amount
 
         if self.is_hogo:
@@ -111,3 +107,7 @@ def format_comma(value, default=""):
     except (ValueError, TypeError):
         return default
 
+
+def _yen(value, multiplier):
+    """金額：1円未満切り捨て（floatを使わない）"""
+    return int((Decimal(value) * Decimal(str(multiplier))).quantize(Decimal('1'), rounding=ROUND_DOWN))
