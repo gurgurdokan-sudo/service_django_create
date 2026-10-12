@@ -4,11 +4,13 @@
 {% block css %}
   <link rel="stylesheet" href="{% static 'dashboard/css/style.css' %}">
 <style>
-  .summary-table { table-layout: fixed; width: 100%; max-width: 1800px; }
+  #service-summary-root{width: 100%; max-width: 1500px;min-width: 1000px;overflow: hidden;}
+  .summary-table { table-layout: fixed; width: 100%; max-width: 1500px; }
   .summary-col-name     { width: 40%; }
   .summary-col-price    { width: 20%; }
   .summary-col-count    { width: 20%; }
   .summary-col-subtotal { width: 20%; }
+  .kon-dark { background-color: #2c3e50;max-width: 1500px; }
 </style>
 {% endblock css %}
 
@@ -216,42 +218,12 @@
     </table>
   </div>
   {% include "dashboard/components/service_modal.html" %}
-<div
-  id="service-summary-root"
-  data-user-id="{{ user.id }}"
-  data-year="{{ dis_year }}"
-  data-month="{{ dis_month }}"
->
-    {{ user.id }}
-    {{ dis_year }}
-    {{ dis_month }}
-</div>
-  <ul>
-  {#  Excelテスト表示行  #}
-    {% for plan in plans %}
-    <li>{{ plan.service_name }}: {{ plan.unit }}単位</li>
-    <dd>サービスコード: {{ office.service_type_code }}{{ plan.service_code }}</dd>
-
-      {% for value in plan.get_addon_summary.values %}
-        <li>{{ value.addon.service_name }}:
-          {% if value.addon.insurance_type == 'insurance' %} {#  国保に請求の加算  #}
-            <dd>{{ value.addon.unit|default:value.addon.price }} (単位/円)</dd>
-          {% elif value.addon.insurance_type == 'self_pay' %} {#  自費を表示  #}
-            <dd>サービスコード: {{ value.addon.full_code }}</dd>
-          {% endif %}
-        </li>
-      {% endfor %}
-    {% endfor %}
-  </ul>
-  {% if plans %}
-    <input type="button" id="btn-excel" class="btn btn-success
-    {% if confirmed %} not-disabled {% endif %}
-    " value="Excelを作成" onclick="toExcel({{ user.id }})">
-  {% endif %}
-  <input type="button" id="btn-export" class="btn btn-primary
-  {% if not confirmed %}
-  not-disabled
-  {% endif %}" value="Excelを出力" onclick="exportExcel({{ user.id }})">
+  <div
+      id="service-summary-root"
+      data-user-id="{{ user.id }}"
+      data-year="{{ dis_year }}"
+      data-month="{{ dis_month }}"
+    ></div>
 
   <!-- ローディングモーダル -->
   <div class="modal fade" id="loadingModal" tabindex="-1" aria-hidden="true">
@@ -278,8 +250,6 @@
   <script type="module" src="{% static 'react/serviceSummaryPanel.js' %}"></script>
 {% endif %}
 {#<script type="module" src="{% static 'dashboard/js/serviceSummaryPanel.js' %}"></script>#}
-{#C:\Users\P2025088\PycharmProjects\service_django_create\frontend\src\components\ServiceSummaryPanel.jsx#}
-{#<script type="module" src="../../src/components/ServiceSummayPanel.jsx"></script>#}
 <script src="{% static 'dashboard/js/edit.js' %}?v=1"></script>
 <script src="{% static 'dashboard/js/modal_logic.js' %}?v=1"></script>
 <script src="{% static 'dashboard/js/main.js' %}?v=1"></script>

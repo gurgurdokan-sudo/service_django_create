@@ -42,20 +42,29 @@ class ServiceSheetCalculator:
             self.plan_items.append({'name': plan.service_name, 'code': f"{self.office.service_type_code}{plan.service_code}", 'unit': unit, 'count': count, 'subtotal': subtotal})
             self.total_act_price_unit += subtotal
             for value in plan.get_addon_summary.values():
-                addon_obj:AddOnService = value.get('addon')
-                add_total:int = int(addon_obj.unit) * len(value.get('days',[]))
+                addon_obj: AddOnService = value.get('addon')
 
-                if addon_obj.type == 'rate': # パーセント加算率などを除外
+                if addon_obj.type == 'rate':  # 処遇改善加算などの率加算は別で計算
                     continue
-                if addon_obj.insurance_type == 'self_pay': # 自費を除外
+                if addon_obj.insurance_type == 'self_pay':  # 自費は別で集計
                     continue
-                if add_total<= 0: # 例外 単位*実績回数(日付)が0になる事はない
+
+                add_count: int = len(value.get('days', []))
+                add_unit: int = int(addon_obj.unit)
+                add_total: int = add_unit * add_count
+
+                if add_total == 0:  # 0のときは載せない（減算のマイナスは残す）
                     continue
-                addon_code_str = f"{self.office.service_type_code}{addon_obj.code}"
+
                 self.addon_items.append({
-                                        'name': addon_obj.service_name,
-                                        'code': addon_code_str
-                                         })
+                    'id': addon_obj.id,
+                    'plan_id': plan.id,
+                    'name': addon_obj.service_name,
+                    'code': f"{self.office.service_type_code}{addon_obj.code}",
+                    'unit': add_unit,
+                    'count': add_count,
+                    'subtotal': add_total,
+                })
                 self.total_act_price_unit += add_total
         self.actual_days = len(actual_days)
 
