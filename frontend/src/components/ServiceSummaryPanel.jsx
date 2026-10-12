@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 
 /* eslint-disable no-console */
+// ---- 一旦このファイル内だけのログ（あとで src/lib/logger.js に移す） ----
 const DEBUG = import.meta.env.DEV || localStorage.getItem('LOG_LEVEL') === 'debug';
 const log = {
   debug: (...a) => DEBUG && console.debug('[ServiceSummary]', ...a),
@@ -15,7 +16,7 @@ const log = {
 };
 /* eslint-enable no-console */
 
-//ヘルパー
+// ---- ヘルパー ----
 const num = (v) => Number(v) || 0;
 const fmt = (v) => num(v).toLocaleString();
 // サーバー（get_total_count）と同じく '1' だけを数える
@@ -24,19 +25,27 @@ const countActual = (dict) => Object.values(dict || {}).filter((d) => d && Strin
 const insuranceTypeOf = (a) => a.insurance_type ?? a.addon?.insurance_type ?? 'insurance';
 const addonTypeOf = (a) => a.type ?? a.addon?.type;
 
-function SummaryTable({ title, badge, badgeClass, headers, rows, footer, emptyText }) {
+function SummaryTable({ title, badge, badgeClass, headers, rows, footer, emptyText, tableClass = '' }) {
   return (
-    <div className="mb-4">
+    <div className="summary-block mb-4">
       <div className="d-flex align-items-center mb-2">
         <span className={`badge me-2 ${badgeClass}`}>{badge}</span>
         <h6 className="fw-bold mb-0">{title}</h6>
       </div>
       <div className="table-responsive">
-        <table className="table table-sm table-bordered table-hover align-middle mb-0">
+        <table className={`summary-table ${tableClass} table table-sm table-bordered table-hover align-middle mb-0`}>
+          {/* 列幅はCSSで指定（国保・自費で共通のクラス） */}
+          <colgroup>
+            {headers.map((h) => (
+              <col key={h.col} className={`summary-col-${h.col}`} />
+            ))}
+          </colgroup>
           <thead className="table-light">
             <tr>
               {headers.map((h) => (
-                <th key={h.label} className={`text-nowrap ${h.className ?? 'text-center'}`}>{h.label}</th>
+                <th key={h.label} className={`summary-col-${h.col} text-nowrap ${h.className ?? 'text-center'}`}>
+                  {h.label}
+                </th>
               ))}
             </tr>
           </thead>
@@ -49,7 +58,9 @@ function SummaryTable({ title, badge, badgeClass, headers, rows, footer, emptyTe
               rows.map((r) => (
                 <tr key={r.key} className={r.rowClass}>
                   {r.cells.map((c, i) => (
-                    <td key={i} className={headers[i].className ?? 'text-center'}>{c}</td>
+                    <td key={i} className={`summary-col-${headers[i].col} ${headers[i].className ?? 'text-center'}`}>
+                      {c}
+                    </td>
                   ))}
                 </tr>
               ))
@@ -59,7 +70,7 @@ function SummaryTable({ title, badge, badgeClass, headers, rows, footer, emptyTe
             <tfoot className="table-group-divider">
               <tr className="fw-bold">
                 <td colSpan={headers.length - 1} className="text-end">{footer.label}</td>
-                <td className="text-end">{footer.value}</td>
+                <td className="summary-col-subtotal text-end">{footer.value}</td>
               </tr>
             </tfoot>
           )}
@@ -205,11 +216,12 @@ export default function ServiceSummaryPanel() {
               title="国保（介護保険）"
               badge="保険"
               badgeClass="bg-primary"
+              tableClass="summary-table--insurance"
               headers={[
-                { label: 'サービス名/加算', className: 'text-start' },
-                { label: '単位', className: 'text-end' },
-                { label: '実績 / 予定', className: 'text-center' },
-                { label: '小計', className: 'text-end' },
+                { label: 'サービス名/加算', col: 'name', className: 'text-center' },
+                { label: '単位', col: 'price', className: 'text-center' },
+                { label: '実績 / 予定', col: 'count', className: 'text-center' },
+                { label: '小計', col: 'subtotal', className: 'text-center' },
               ]}
               rows={insuranceTableRows}
               footer={{ label: '限度額管理対象 合計', value: `${fmt(insuranceUnits)} 単位` }}
@@ -219,11 +231,12 @@ export default function ServiceSummaryPanel() {
               title="自費（国保請求なし）"
               badge="自費"
               badgeClass="bg-secondary"
+              tableClass="summary-table--self-pay"
               headers={[
-                { label: '品目', className: 'text-start' },
-                { label: '単価', className: 'text-end' },
-                { label: '回数', className: 'text-center' },
-                { label: '小計', className: 'text-end' },
+                { label: '品目', col: 'name', className: 'text-center' },
+                { label: '単価', col: 'price', className: 'text-center' },
+                { label: '回数', col: 'count', className: 'text-center' },
+                { label: '小計', col: 'subtotal', className: 'text-center' },
               ]}
               rows={selfPayTableRows}
               footer={{ label: '自費 合計', value: `¥ ${fmt(selfPayTotal)}` }}
