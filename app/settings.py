@@ -30,6 +30,8 @@ SECRET_KEY = os.environ.get(
 # SECURITY WARNING: don't run with debug turned on in production!
 # 本番では環境変数 DJANGO_DEBUG=false を設定すること
 DEBUG = os.environ.get('DJANGO_DEBUG', 'true').lower() == 'true'
+# 開発中は Vite の開発サーバーから読み込む
+VITE_DEV = DEBUG
 
 # 本番では 'ドメイン名,IPアドレス' のようにカンマ区切りで指定
 ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', '*').split(',')
@@ -117,6 +119,7 @@ TEMPLATES = [
                 'django.contrib.messages.context_processors.messages',
                 'dashboard.context_processors.django_env',
                 'dashboard.context_processors.delete_permission',
+                'dashboard.context_processors.vite',
             ],
         },
     },

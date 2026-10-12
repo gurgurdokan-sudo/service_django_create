@@ -1,75 +1,191 @@
-document.addEventListener('DOMContentLoaded', () => {
-    let isFirstEdit = true;
-    const editableCells = document.querySelectorAll('.editable-cell');
+const DEBUG = true;
 
-    editableCells.forEach(cell => {
-        cell.addEventListener('click', async function() {
-            const status = document.getElementById('confirmed-status');
-            const confirmed = status.dataset.confirmed === "True";
+// oxlint の no-console をこの1か所だけで許可する
+function log(level, ...args) {
+  if (level === 'debug' && !DEBUG) return;
+  // oxlint-disable-next-line no-console
+  console[level === 'debug' ? 'log' : level](...args);
+}
 
-            if (confirmed) {
-                alert('確定済みのため編集できません');
-                return;
-            }
-            if(isFirstEdit) {
-                alert('編集を開始します');
-                isFirstEdit = false;
-            }
-            const planId = this.closest("tr").getAttribute("data-plan-id");
-            const rowType = this.parentElement.getAttribute('data-row-type');
-            const day = this.getAttribute('data-day');
-            const currentValue = this.innerText.trim();
+// 集計サマリーを画面（React）に渡す
+function dispatchSummary(summary) {
+  if (!summary) return;
 
-            // 値の切り替えロジック
-            let newValue = "";
-            if (rowType === 'schedule') {
-                newValue = (currentValue === "") ? "1" : (currentValue === "1" ? "x" : "");
-            } else {
-                newValue = (currentValue === "") ? "1" : "";
-            }
-            console.log(`${rowType}の編集, currentValue: ${currentValue}, newValue: ${newValue}`);
-            // UIを即座に更新（楽観的アップデート）
-            this.innerText = newValue;
+  window.dispatchEvent(
+    new CustomEvent('service-summary:update', { detail: summary })
+  );
 
-            // REST API へ送信
-            if (rowType === 'actual_addon') newValue = this.getAttribute('data-addon-name');
-            try {
-                console.log("Sending update:", { planId, day, newValue, rowType });
-                const total = parseInt(this.parentElement.querySelector('.total-cell').innerText.trim().replace(/[^0-9]/g, '')) || 0;
-                const response = await fetch(`/api/plan/${planId}/update/`, {
-                    method: "PATCH",
-                    headers: { 
-                        "Content-Type": "application/json",
-                        "X-CSRFToken": document.querySelector('[name=csrfmiddlewaretoken]').value
-                    },
-                    body: JSON.stringify({ 
-                        day:day,
-                        value: newValue,
-                        row_type: rowType,
-                        total: total // 現在の合計値を送信
-                    })
-                });
-                const data = await response.json();
-                // 応答がエラー（404や500）の場合は、JSONパース前にテキストとして確認
-                if (!response.ok) {
-                    // APIで拒否されたのでUIを元に戻す
-                    this.innerText = currentValue;
-                    alert(data.message || "編集できません");
+  // 確定状態をサーバーの値にそろえる
+  const status = document.getElementById('confirmed-status');
+  if (status && summary.record) {
+    status.dataset.confirmed = String(summary.record.confirmed);
+  }
+}
 
-                    return;
-                }
-                window.console.log(`total=${total}`)
-                // 合計値をAPIからの戻り値で更新
-                if (rowType === 'actual_addon') {
-                    const calendarRow = this.closest('.calendar-row');
-                    const totalCell = calendarRow?.querySelector('.total-cell');
-                    totalCell.innerText = data.total;
-                }else{    
-                    this.parentElement.querySelector('.total-cell').innerText = data.total;
-                }
-            } catch (err) {
-                alert("通信エラーが発生しました");
-            }
-        });
+// レスポンスをJSONとして読む。HTMLのエラー画面でも中身を返す
+async function readJsonResponse(response) {
+  const body = await response.text();
+  try {
+    return { json: body ? JSON.parse(body) : {}, body };
+  } catch {
+    return { json: null, body };
+  }
+}
+
+// 集計APIから最新のサマリーを取得する（初期表示用）
+async function refreshSummary() {
+  const root = document.querySelector('#service-summary-root');
+  const { userId, year, month } = root?.dataset ?? {};
+
+  if (!userId || !year || !month) {
+    log('warn', '集計APIを呼べません: data属性を確認', { userId, year, month });
+    return;
+  }
+
+  const url =
+    `/api/users/${encodeURIComponent(userId)}/summary/` +
+    `?year=${encodeURIComponent(year)}&month=${encodeURIComponent(month)}`;
+
+  try {
+    const response = await fetch(url, {
+      headers: { Accept: 'application/json' },
     });
-});
+    const { json, body } = await readJsonResponse(response);
+
+    if (!json) {
+      log('error', '集計APIの応答がJSONではありません', {
+        status: response.status,
+        url,
+        body: body.slice(0, 500),
+      });
+      return;
+    }
+
+    if (!response.ok || json.status !== 'ok') {
+      log('error', '集計の取得に失敗しました', { status: response.status, json });
+      return;
+    }
+
+    dispatchSummary(json.summary);
+  } catch (error) {
+    log('error', '集計APIへの通信に失敗しました', error);
+  }
+}
+
+// クリックしたときの次の値
+function getNextValue(rowType, currentValue) {
+  if (rowType === 'schedule') {
+    if (currentValue === '') return '1';
+    if (currentValue === '1') return 'x';
+    return '';
+  }
+  return currentValue === '' ? '1' : '';
+}
+
+// 送るデータを作る
+function buildPayload(cell, rowType, day, newValue) {
+  const payload = { day, row_type: rowType, value: newValue };
+
+  if (rowType === 'actual_addon') {
+    // addon_id を優先（無いときだけ名前で探される）
+    if (cell.dataset.addonId) payload.addon_id = cell.dataset.addonId;
+    payload.value = cell.dataset.addonName ?? '';
+  }
+  return payload;
+}
+
+function initializeEditPage() {
+  let isFirstEdit = true;
+  const status = document.getElementById('confirmed-status');
+
+  if (!status) {
+    log('warn', '#confirmed-status が見つかりません');
+  }
+
+  // 初期表示時にサマリーを取得
+  void refreshSummary();
+
+  document.querySelectorAll('.editable-cell').forEach((cell) => {
+    cell.addEventListener('click', async function () {
+      // 送信中なら何もしない（2回クリック対策）
+      if (this.dataset.busy === '1') return;
+
+      if (status?.dataset.confirmed?.toLowerCase() === 'true') {
+        alert('確定済みのため編集できません');
+        return;
+      }
+
+      if (isFirstEdit) {
+        alert('編集を開始します');
+        isFirstEdit = false;
+      }
+
+      const row = this.closest('tr');
+      const planId = row?.dataset.planId;
+      const rowType = this.parentElement?.dataset.rowType ?? row?.dataset.rowType;
+      const day = this.dataset.day;
+      const currentValue = this.innerText.trim();
+
+      if (!planId || !rowType || !day) {
+        log('error', '編集に必要な情報が見つかりません', { planId, rowType, day });
+        return;
+      }
+
+      const newValue = getNextValue(rowType, currentValue);
+      const totalCell =
+        this.closest('.calendar-row')?.querySelector('.total-cell') ??
+        this.parentElement?.querySelector('.total-cell');
+      const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+
+      // 保存前に画面を更新
+      this.dataset.busy = '1';
+      this.innerText = newValue;
+
+      try {
+        const response = await fetch(`/api/plan/${planId}/update/`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+            ...(csrfToken ? { 'X-CSRFToken': csrfToken } : {}),
+          },
+          body: JSON.stringify(buildPayload(this, rowType, day, newValue)),
+        });
+
+        const { json, body } = await readJsonResponse(response);
+
+        if (!response.ok || !json || json.status !== 'ok') {
+          this.innerText = currentValue;
+          log('error', '予定・実績の保存に失敗しました', {
+            status: response.status,
+            json,
+            body: body.slice(0, 500),
+          });
+          alert(json?.message || '編集を保存できませんでした');
+          return;
+        }
+
+        // 回数はサーバーが数え直した値を使う
+        if (json.total !== undefined && totalCell) {
+          totalCell.innerText = json.total;
+        }
+
+        // PATCHの返事に入っているサマリーをそのまま使う
+        dispatchSummary(json.summary);
+      } catch (error) {
+        log('error', '保存エラー', error);
+        this.innerText = currentValue;
+        alert('通信エラーが発生しました');
+      } finally {
+        delete this.dataset.busy;
+      }
+    });
+  });
+}
+
+// DOMの読み込み状態に応じて初期化
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initializeEditPage, { once: true });
+} else {
+  initializeEditPage();
+}

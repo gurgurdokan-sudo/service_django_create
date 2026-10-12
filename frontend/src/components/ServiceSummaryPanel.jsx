@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 
 /* eslint-disable no-console */
-// ---- 一旦このファイル内だけのログ（あとで src/lib/logger.js に移す） ----
 const DEBUG = import.meta.env.DEV || localStorage.getItem('LOG_LEVEL') === 'debug';
 const log = {
   debug: (...a) => DEBUG && console.debug('[ServiceSummary]', ...a),

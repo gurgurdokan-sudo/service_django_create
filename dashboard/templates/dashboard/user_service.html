@@ -3,6 +3,13 @@
 {% load get_item %}
 {% block css %}
   <link rel="stylesheet" href="{% static 'dashboard/css/style.css' %}">
+<style>
+  .summary-table { table-layout: fixed; width: 100%; max-width: 1800px; }
+  .summary-col-name     { width: 40%; }
+  .summary-col-price    { width: 20%; }
+  .summary-col-count    { width: 20%; }
+  .summary-col-subtotal { width: 20%; }
+</style>
 {% endblock css %}
 
 {% block body %}
@@ -209,8 +216,16 @@
     </table>
   </div>
   {% include "dashboard/components/service_modal.html" %}
-  </div>
-  <div id="react-summary-root"></div>
+<div
+  id="service-summary-root"
+  data-user-id="{{ user.id }}"
+  data-year="{{ dis_year }}"
+  data-month="{{ dis_month }}"
+>
+    {{ user.id }}
+    {{ dis_year }}
+    {{ dis_month }}
+</div>
   <ul>
   {#  Excelテスト表示行  #}
     {% for plan in plans %}
@@ -256,7 +271,15 @@
 {% endblock %}
 
 {% block script %}
-<script type="module" src="{% static 'dashboard/js/serviceSummaryPanel.js' %}"></script>
+{% if VITE_DEV %}
+  <script type="module" src="http://localhost:5173/@vite/client"></script>
+  <script type="module" src="http://localhost:5173/src/dev.js"></script>
+{% else %}
+  <script type="module" src="{% static 'react/serviceSummaryPanel.js' %}"></script>
+{% endif %}
+{#<script type="module" src="{% static 'dashboard/js/serviceSummaryPanel.js' %}"></script>#}
+{#C:\Users\P2025088\PycharmProjects\service_django_create\frontend\src\components\ServiceSummaryPanel.jsx#}
+{#<script type="module" src="../../src/components/ServiceSummayPanel.jsx"></script>#}
 <script src="{% static 'dashboard/js/edit.js' %}?v=1"></script>
 <script src="{% static 'dashboard/js/modal_logic.js' %}?v=1"></script>
 <script src="{% static 'dashboard/js/main.js' %}?v=1"></script>
