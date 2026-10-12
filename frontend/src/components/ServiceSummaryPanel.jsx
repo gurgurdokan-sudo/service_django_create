@@ -1,158 +1,266 @@
-import { useState, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+
+/* eslint-disable no-console */
+const DEBUG = import.meta.env.DEV || localStorage.getItem('LOG_LEVEL') === 'debug';
+const log = {
+  debug: (...a) => DEBUG && console.debug('[ServiceSummary]', ...a),
+  warn: (...a) => console.warn('[ServiceSummary]', ...a),
+  error: (...a) => console.error('[ServiceSummary]', ...a),
+  table: (label, rows) => {
+    if (!DEBUG) return;
+    console.groupCollapsed(`[ServiceSummary] ${label}`);
+    console.table(rows);
+    console.groupEnd();
+  },
+};
+/* eslint-enable no-console */
+
+//ヘルパー
+const num = (v) => Number(v) || 0;
+const fmt = (v) => num(v).toLocaleString();
+// サーバー（get_total_count）と同じく '1' だけを数える
+const countScheduled = (dict) => Object.values(dict || {}).filter((v) => String(v) === '1').length;
+const countActual = (dict) => Object.values(dict || {}).filter((d) => d && String(d.main) === '1').length;
+const insuranceTypeOf = (a) => a.insurance_type ?? a.addon?.insurance_type ?? 'insurance';
+const addonTypeOf = (a) => a.type ?? a.addon?.type;
+
+function SummaryTable({ title, badge, badgeClass, headers, rows, footer, emptyText }) {
+  return (
+    <div className="mb-4">
+      <div className="d-flex align-items-center mb-2">
+        <span className={`badge me-2 ${badgeClass}`}>{badge}</span>
+        <h6 className="fw-bold mb-0">{title}</h6>
+      </div>
+      <div className="table-responsive">
+        <table className="table table-sm table-bordered table-hover align-middle mb-0">
+          <thead className="table-light">
+            <tr>
+              {headers.map((h) => (
+                <th key={h.label} className={`text-nowrap ${h.className ?? 'text-center'}`}>{h.label}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.length === 0 ? (
+              <tr>
+                <td colSpan={headers.length} className="text-center text-muted py-3">{emptyText}</td>
+              </tr>
+            ) : (
+              rows.map((r) => (
+                <tr key={r.key} className={r.rowClass}>
+                  {r.cells.map((c, i) => (
+                    <td key={i} className={headers[i].className ?? 'text-center'}>{c}</td>
+                  ))}
+                </tr>
+              ))
+            )}
+          </tbody>
+          {rows.length > 0 && footer && (
+            <tfoot className="table-group-divider">
+              <tr className="fw-bold">
+                <td colSpan={headers.length - 1} className="text-end">{footer.label}</td>
+                <td className="text-end">{footer.value}</td>
+              </tr>
+            </tfoot>
+          )}
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function Row({ label, value, strong, className = '' }) {
+  return (
+    <div className={`d-flex justify-content-between mb-2 ${className}`}>
+      <span>{label}</span>
+      {strong ? <strong>{value}</strong> : <span>{value}</span>}
+    </div>
+  );
+}
 
 export default function ServiceSummaryPanel() {
-  // DjangoからJSONとして渡されたデータを取得
-  const initialPlans = window.initialPlans || [];
-  const initialAddons = window.initialAddons || [];
-  const initialMonthlyRecord = window.initialMonthlyRecord || {};
+  // DjangoからJSONとして渡されたデータ
+  const [plans, setPlans] = useState(() => window.initialPlans || []);
+  const [addons, setAddons] = useState(() => window.initialAddons || []);
+  const [record, setRecord] = useState(() => window.initialMonthlyRecord || null);
 
-  // 状態（必要に応じて将来的に画面側の入力変更と連動させることも可能）
-  const [plans, setPlans] = useState(initialPlans);
-  const [addons, setAddons] = useState(initialAddons);
-  const [record, setRecord] = useState(initialMonthlyRecord);
+  // 初期データの確認
+  useEffect(() => {
+    log.debug('初期データ', { plans: window.initialPlans, addons: window.initialAddons, record: window.initialMonthlyRecord });
+    if (!window.initialMonthlyRecord) log.warn('initialMonthlyRecord がありません（月次記録が未作成？）');
+  }, []);
 
-  // 1. 各基本プランの予定・実績合計回数を計算
-  const planSummaries = plans.map((plan) => {
-    // 予定回数の計算
-    const scheduleCount = plan.schedule_dict
-      ? Object.values(plan.schedule_dict).filter((v) => v !== '' && v != null).length
-      : 0;
-
-    // 実績回数の計算（mainのカウント）
-    const actualCount = plan.actual_dict
-      ? Object.values(plan.actual_dict).filter((d) => d && d.main !== '' && d.main != null).length
-      : 0;
-
-    const unit = plan.unit || 0;
-
-    return {
-      id: plan.id,
-      name: plan.service_name,
-      unit,
-      scheduleCount,
-      actualCount,
-      totalUnits: unit * actualCount,
+  // カレンダーの更新を受け取る（detail: { plans?, addons?, record? }）
+  useEffect(() => {
+    const onUpdate = (e) => {
+      const d = e.detail || {};
+      log.debug('service-summary:update 受信', d);
+      if (d.plans) setPlans(d.plans);
+      if (d.addons) setAddons(d.addons);
+      if ('record' in d) setRecord(d.record);
     };
-  });
+    window.addEventListener('service-summary:update', onUpdate);
+    return () => window.removeEventListener('service-summary:update', onUpdate);
+  }, []);
 
-  // 2. 加算の合計日数を計算
-  const addonSummaries = useMemo(() => {
-    // addonsが辞書またはリストの場合の安全な処理
-    const list = Array.isArray(addons) ? addons : Object.values(addons);
-    return list.map((a) => {
-      const daysCount = a.days ? a.days.length : a.total || 0;
-      return {
-        name: a.name,
-        count: daysCount,
-      };
+  // 1. 国保：基本プラン
+  const planRows = useMemo(() => {
+    const rows = plans.map((plan) => {
+      const unit = num(plan.unit);
+      const scheduleCount = countScheduled(plan.schedule_dict);
+      const actualCount = countActual(plan.actual_dict);
+      return { id: plan.id, name: plan.service_name, code: plan.service_code, unit, scheduleCount, actualCount, subtotal: unit * actualCount };
     });
+    log.table('国保：プラン', rows);
+    rows.filter((r) => r.actualCount > r.scheduleCount)
+      .forEach((r) => log.warn('実績が予定より多い', { planId: r.id, code: r.code, schedule: r.scheduleCount, actual: r.actualCount }));
+    return rows;
+  }, [plans]);
+
+  // 2. 加算を国保と自費に分ける
+  const { insuranceAddons, selfPayItems, rateAddons } = useMemo(() => {
+    const list = Array.isArray(addons) ? addons : Object.values(addons || {});
+    const ins = [];
+    const self = [];
+    const rate = [];
+    list.forEach((a, i) => {
+      const count = a.days ? a.days.length : num(a.total);
+      const base = { key: a.id ?? a.addon?.id ?? a.code ?? `${a.name}-${i}`, name: a.name ?? a.addon?.service_name, count };
+      if (insuranceTypeOf(a) === 'self_pay') {
+        const price = num(a.price ?? a.addon?.price);
+        self.push({ ...base, price, subtotal: price * count });
+      } else if (addonTypeOf(a) === 'rate') {
+        rate.push(base);                              // 処遇改善加算など：回数で数えない
+      } else {
+        const unit = num(a.unit ?? a.addon?.unit);
+        ins.push({ ...base, unit, subtotal: unit * count });
+      }
+    });
+    log.table('国保：加算', ins);
+    log.table('自費', self);
+    if (ins.some((r) => r.unit === 0)) {
+      log.warn('単位数が0の国保加算があります（addonsに unit が入っていない？）', ins);
+    }
+    return { insuranceAddons: ins, selfPayItems: self, rateAddons: rate };
   }, [addons]);
 
-  // 全プランの実績単位数の合計を簡易算出
-  const totalServiceUnits = planSummaries.reduce((sum, p) => sum + p.totalUnits, 0);
+  const insuranceUnits = planRows.reduce((s, p) => s + p.subtotal, 0) + insuranceAddons.reduce((s, a) => s + a.subtotal, 0);
+  const selfPayTotal = selfPayItems.reduce((s, i) => s + i.subtotal, 0);
+
+  // 画面の集計と月次記録がずれていないか（記録が古いと出る）
+  useEffect(() => {
+    if (!record) return;
+    if (record.service_units != null && num(record.service_units) !== insuranceUnits) {
+      log.warn('画面の単位数と月次記録が一致しません', { screen: insuranceUnits, record: record.service_units });
+    } else {
+      log.debug('単位数一致', insuranceUnits);
+    }
+  }, [record, insuranceUnits]);
+
+  const insuranceTableRows = [
+    ...planRows.map((p) => ({
+      key: `p-${p.id}`,
+      cells: [
+        <>{p.name}<div className="small text-muted">{p.code}</div></>,
+        `${fmt(p.unit)} 単位`,
+        <span className={p.actualCount === p.scheduleCount ? 'text-primary fw-bold' : 'text-danger fw-bold'}>
+          {p.actualCount} / {p.scheduleCount} 回
+        </span>,
+        `${fmt(p.subtotal)} 単位`,
+      ],
+    })),
+    ...insuranceAddons.map((a) => ({
+      key: `a-${a.key}`,
+      rowClass: 'table-info',
+      cells: [<>└ {a.name}</>, `${fmt(a.unit)} 単位`, `${a.count} 回`, `${fmt(a.subtotal)} 単位`],
+    })),
+    ...rateAddons.map((a) => ({
+      key: `r-${a.key}`,
+      rowClass: 'text-muted',
+      cells: [<>└ {a.name}（率加算）</>, '—', '—', '月次記録で計算'],
+    })),
+  ];
+
+  const selfPayTableRows = selfPayItems.map((i) => ({
+    key: `s-${i.key}`,
+    cells: [i.name, `¥ ${fmt(i.price)}`, `${i.count} 回`, `¥ ${fmt(i.subtotal)}`],
+  }));
 
   return (
     <div className="card mt-4 mb-4 shadow-sm">
       <div className="card-header bg-dark text-white d-flex justify-content-between align-items-center">
-        <h5 className="mb-0">📊 月間集計サマリー（リアルタイム試算）</h5>
-        <span className="badge bg-light text-dark">自動計算</span>
+        <h5 className="mb-0">月間集計サマリー</h5>
+        {record && (
+          <span className={`badge ${record.confirmed ? 'bg-success' : 'bg-warning text-dark'}`}>
+            {record.confirmed ? '確定済み' : '未確定'}
+          </span>
+        )}
       </div>
 
       <div className="card-body">
         <div className="row">
-          {/* 左側：プラン・加算別の実績回数・単位数 */}
+          {/* 左側：国保 / 自費 */}
           <div className="col-md-7 border-end">
-            <h6 className="text-secondary fw-bold mb-3">■ プラン別実績・単位数内訳</h6>
-            <div className="table-responsive">
-              <table className="table table-sm table-bordered align-middle">
-                <thead className="table-light">
-                  <tr>
-                    <th>サービス名</th>
-                    <th className="text-center">単価/単位</th>
-                    <th className="text-center">実績回数</th>
-                    <th className="text-end">小計単位</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {planSummaries.map((p, idx) => (
-                    <tr key={p.id ?? idx}>
-                      <td>{p.name}</td>
-                      <td className="text-center">{p.unit} 単位</td>
-                      <td className="text-center fw-bold text-primary">{p.actualCount} 回</td>
-                      <td className="text-end fw-bold">{p.totalUnits.toLocaleString()} 単位</td>
-                    </tr>
-                  ))}
-                  {planSummaries.length === 0 && (
-                    <tr>
-                      <td colSpan="4" className="text-center text-muted">
-                        プランデータがありません
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-
-            {addonSummaries.length > 0 && (
-              <>
-                <h6 className="text-secondary fw-bold mt-3 mb-2">■ 適用加算一覧</h6>
-                <ul className="list-group list-group-flush small">
-                  {addonSummaries.map((a, idx) => (
-                    <li
-                      key={idx}
-                      className="list-group-item d-flex justify-content-between align-items-center py-1"
-                    >
-                      <span className="text-danger fw-bold">{a.name}</span>
-                      <span>
-                        実績日数: <strong>{a.count}</strong> 日
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </>
-            )}
+            <SummaryTable
+              title="国保（介護保険）"
+              badge="保険"
+              badgeClass="bg-primary"
+              headers={[
+                { label: 'サービス名/加算', className: 'text-start' },
+                { label: '単位', className: 'text-end' },
+                { label: '実績 / 予定', className: 'text-center' },
+                { label: '小計', className: 'text-end' },
+              ]}
+              rows={insuranceTableRows}
+              footer={{ label: '限度額管理対象 合計', value: `${fmt(insuranceUnits)} 単位` }}
+              emptyText="プランデータがありません"
+            />
+            <SummaryTable
+              title="自費（国保請求なし）"
+              badge="自費"
+              badgeClass="bg-secondary"
+              headers={[
+                { label: '品目', className: 'text-start' },
+                { label: '単価', className: 'text-end' },
+                { label: '回数', className: 'text-center' },
+                { label: '小計', className: 'text-end' },
+              ]}
+              rows={selfPayTableRows}
+              footer={{ label: '自費 合計', value: `¥ ${fmt(selfPayTotal)}` }}
+              emptyText="自費の利用はありません"
+            />
           </div>
 
-          {/* 右側：MonthlyRecord モデルに基づく金額・単位のサマリー */}
+          {/* 右側：月次記録（DB）の値だけを表示 */}
           <div className="col-md-5">
-            <h6 className="text-secondary fw-bold mb-3">■ 請求・費用サマリー (ServiceMonthlyRecord)</h6>
-            <div className="p-3 bg-light rounded border">
-              <div className="d-flex justify-content-between mb-2">
-                <span>総単位数:</span>
-                <strong className="fs-6">{record.total_units || totalServiceUnits} 単位</strong>
-              </div>
-              <div className="d-flex justify-content-between mb-2">
-                <span>限度内単位数 / 超過:</span>
-                <span>
-                  {record.within_units || 0} / {record.over_units || 0} 単位
-                </span>
-              </div>
-
-              <hr className="my-2" />
-
-              <div className="d-flex justify-content-between mb-2">
-                <span>総費用:</span>
-                <strong>¥ {(record.total_cost || 0).toLocaleString()}</strong>
-              </div>
-              <div className="d-flex justify-content-between mb-2">
-                <span>国保給付費請求額:</span>
-                <strong className="text-success">¥ {(record.benefit_amount || 0).toLocaleString()}</strong>
-              </div>
-              <div className="d-flex justify-content-between mb-2">
-                <span>利用者負担額:</span>
-                <strong className="text-primary">¥ {(record.user_share_amount || 0).toLocaleString()}</strong>
-              </div>
-              {record.public_amount > 0 && (
-                <div className="d-flex justify-content-between mb-2">
-                  <span>公費請求額:</span>
-                  <span>¥ {record.public_amount.toLocaleString()}</span>
+            <h6 className="text-secondary fw-bold mb-3">請求・費用サマリー</h6>
+            {!record ? (
+              <div className="alert alert-secondary small mb-0">月次記録がまだありません（未計算）</div>
+            ) : (
+              <div className="p-3 bg-light rounded border">
+                <Row label="総単位数" value={`${fmt(record.total_units)} 単位`} strong />
+                <Row label="限度内 / 超過" value={`${fmt(record.within_units)} / ${fmt(record.over_units)} 単位`} />
+                <hr className="my-2" />
+                <Row label="総費用（10割）" value={`¥ ${fmt(record.total_cost)}`} strong />
+                <Row label="国保給付費請求額" value={<span className="text-success">¥ {fmt(record.benefit_amount)}</span>} strong />
+                {num(record.public_amount) > 0 && (
+                  <Row label="公費請求額" value={`¥ ${fmt(record.public_amount)}`} />
+                )}
+                <Row label="利用者負担額（保険分）" value={<span className="text-primary">¥ {fmt(record.user_share_amount)}</span>} strong />
+                <hr className="my-2" />
+                <Row label="自費請求額" value={`¥ ${fmt(selfPayTotal)}`} />
+                <Row
+                  label="利用者請求 合計"
+                  value={`¥ ${fmt(num(record.user_share_amount) + selfPayTotal)}`}
+                  strong
+                  className="fs-6"
+                />
+                <div className="d-flex justify-content-between text-muted small mt-3 pt-2 border-top">
+                  <span>実績日数</span>
+                  <span>{fmt(record.actual_count)} 日</span>
                 </div>
-              )}
-              <div className="d-flex justify-content-between text-muted small mt-3 pt-2 border-top">
-                <span>実績日数:</span>
-                <span>{record.actual_count || 0} 日</span>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </div>

@@ -2,7 +2,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from dashboard.models import ServicePlan, AddOnService, UseUser, ServiceMaster
-
+from dashboard.services.summary import build_service_summary
 import logging
 logger = logging.getLogger(__name__)
 
@@ -230,3 +230,11 @@ def delete_plan(request, plan_id):
         return Response(
             {"status": "error", "message": "ServicePlan not found"}, status=404
         )
+
+@api_view(['GET'])
+def service_summary(request, user_id):
+    user = get_object_or_404(UseUser, id=user_id)
+    year = int(request.GET['year'])
+    month = int(request.GET['month'])
+    return Response({'status': 'ok',
+                     'summary': build_service_summary(user, year, month, save=False)})
