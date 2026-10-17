@@ -10,8 +10,10 @@ admin.site.register(Municipality)
 admin.site.register(CareManager)
 admin.site.register(Certificate)
 admin.site.register(PublicAssistance)
-admin.site.register(OfficeMonthlyBilling)
 
+@admin.register(OfficeMonthlyBilling)
+class OfficeMonthlyBillingAdmin(admin.ModelAdmin):
+    readonly_fields = ("updated_at", )
 @admin.register(Office)
 class OfficeAdmin(admin.ModelAdmin):
     readonly_fields = ("id",)
