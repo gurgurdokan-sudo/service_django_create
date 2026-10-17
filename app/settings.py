@@ -82,6 +82,7 @@ ADMIN_REORDER = (
             'dashboard.PublicAssistance',
             'dashboard.ServicePlan',
             'dashboard.ServiceMonthlyRecord',
+            'dashboard.OfficeMonthlyBilling',
         )
     },
     #マスタデータ
@@ -133,7 +134,7 @@ AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
 AWS_STORAGE_BUCKET_NAME = os.environ.get('AWS_STORAGE_BUCKET_NAME')
 AWS_REGION = os.environ.get('AWS_REGION', 'ap-northeast-1')
 
-DJANGO_ENV = os.getenv("DJANGO_ENV", "dev")
+DJANGO_ENV = os.getenv("DJANGO_ENV", "")
 
 
 # Database
