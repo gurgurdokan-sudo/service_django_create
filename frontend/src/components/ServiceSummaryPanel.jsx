@@ -240,10 +240,10 @@ export default function ServiceSummaryPanel() {
               badge="保険"
               badgeClass="bg-primary"
               headers={[
-                { label: 'サービス名/加算', className: 'text-start' },
-                { label: '単位', className: 'text-end' },
+                { label: 'サービス名/加算', className: 'text-center' },
+                { label: '単位', className: 'text-center' },
                 { label: '実績 / 予定', className: 'text-center' },
-                { label: '小計', className: 'text-end' },
+                { label: '小計', className: 'text-center' },
               ]}
               rows={[...planRows, ...addonRows, ...rateRows]}
               footer={{ label: '国保 合計', value: `${fmt(insuranceUnits)} 単位` }}
@@ -254,10 +254,10 @@ export default function ServiceSummaryPanel() {
               badge="自費"
               badgeClass="bg-secondary"
               headers={[
-                { label: '品目', className: 'text-start' },
-                { label: '単価', className: 'text-end' },
+                { label: '内容', className: 'text-center' },
+                { label: '単価', className: 'text-center' },
                 { label: '回数', className: 'text-center' },
-                { label: '小計', className: 'text-end' },
+                { label: '小計', className: 'text-center' },
               ]}
               rows={selfPayRows}
               footer={{ label: '自費 合計', value: `¥ ${fmt(selfPayTotal)}` }}
