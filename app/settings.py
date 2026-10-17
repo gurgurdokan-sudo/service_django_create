@@ -106,7 +106,8 @@ LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/users/'
 LOGOUT_REDIRECT_URL = '/login/'
 
-ROOT_URLCONF = 'app.urls'
+MEDIA_ROOT = BASE_DIR / "service_sheets_export"
+MEDIA_URL = "/media/"
 
 TEMPLATES = [
     {
@@ -198,7 +199,7 @@ STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
 
-    
+
 # settings.py
 
 import os
