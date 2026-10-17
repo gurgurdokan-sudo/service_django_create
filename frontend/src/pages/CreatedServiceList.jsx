@@ -1,93 +1,222 @@
-// @ts-nocheck
-import { useEffect, useState } from "react";
-import React from "react";
+import React, { useCallback, useEffect, useState } from "react";
+
+const CSV_CREATE_URL = "/dashboard/create_kokuho_csv/";
+
+const toMonthKey = (year, month) =>
+  `${year}-${String(month).padStart(2, "0")}`;
+
+const formatNumber = (value) =>
+  Number(value ?? 0).toLocaleString("ja-JP");
 
 export default function ClaimMonthly() {
   const today = new Date();
-  const initialYear = today.getFullYear();
-  const initialMonth = today.getMonth() + 1;
+  const currentYear = today.getFullYear();
+  const currentMonth = today.getMonth() + 1;
 
-  const [selectedYearMonth, setSelectedYearMonth] = useState(`${initialYear}-${initialMonth}`);
+  const [selectedYearMonth, setSelectedYearMonth] = useState(() =>
+    toMonthKey(currentYear, currentMonth)
+  );
   const [monthlyData, setMonthlyData] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+  const [isCreatingCsv, setIsCreatingCsv] = useState(false);
+  const [csvError, setCsvError] = useState("");
 
-  const handleYearMonthChange = (offset) => {
-    const [year, month] = selectedYearMonth.split("-").map(Number);
-    if (today.getFullYear() === year && today.getMonth() + 1 === month && offset > 0) {
-      return;
-    }
-    const newDate = new Date(year, month - 1 , 1);
-    const nextYear = newDate.getFullYear();
-    const nextMonth = newDate.getMonth() + 1 + offset;
-    if (nextMonth === 0) {
-      setSelectedYearMonth(`${nextYear}-${12}`);
-    } else {
-      setSelectedYearMonth(`${nextYear}-${nextMonth}`);
-    }
-  };
-  const generateYearMonthOptions = () => {
-    const options = [];
-    const startYear = today.getFullYear() - 1;
-    const endYear = today.getFullYear() + 1;
+  const fetchMonthlyData = useCallback(async () => {
+    setIsLoading(true);
+    setLoadError("");
+    setMonthlyData(null);
 
-    for (let y = startYear; y <= endYear; y++) {
-      for (let m = 1; m <= 12; m++) {
-        options.push({
-          value: `${y}-${m}`,
-          label: `${y}年 ${m}月`
-        });
-      }
-    }
-    return options;
-  };
-
-  const fetchMonthlyData = async () => {
     try {
       const [year, month] = selectedYearMonth.split("-").map(Number);
-      const response = await fetch(`/created_service_list/api/?year=${year}&month=${month}`);
+      const response = await fetch(
+        `/created_service_list/api/?year=${year}&month=${month}`,
+        { headers: { Accept: "application/json" } }
+      );
+
+      if (!response.ok) {
+        throw new Error(`月次データの取得に失敗しました（${response.status}）`);
+      }
+
       const data = await response.json();
-
       setMonthlyData(data);
-      console.log("APIレスポンス:", data);
-    } catch (e) {
-      console.error("データ取得エラー:", e);
+    } catch (error) {
+      setLoadError(error.message || "月次データの取得に失敗しました");
+    } finally {
+      setIsLoading(false);
     }
-  };
-
-  const handleCreateCsv = () => {
-    const [year, month] = selectedYearMonth.split("-");
-    window.location.href = `/dashboard/create_kokuho_csv/?year=${year}&month=${month}`;
-  };
-
-
+  }, [selectedYearMonth]);
   useEffect(() => {
     fetchMonthlyData();
-  }, [selectedYearMonth]);
+  }, [fetchMonthlyData]);
+
+  if (isLoading && !monthlyData) {
+    return <div className="container">読み込み中...</div>;
+  }
 
   if (!monthlyData) {
-    return <div>読み込み中...</div>;
+    return (
+      <div className="container">
+        <p className="check-message warning-message">
+          {loadError || "月次データを表示できませんでした。"}
+        </p>
+        <button
+          type="button"
+          className="btn btn-outline"
+          onClick={fetchMonthlyData}
+        >
+          再読み込み
+        </button>
+      </div>
+    );
   }
 
   const { summary, amounts, checks, records, csv } = monthlyData;
 
+  const checkItems = Array.isArray(checks.items) ? checks.items : [];
+  const hasBlockingError = checkItems.some(
+    (item) => item.status === "error"
+  );
+
+  const targetUsers = Number(summary.target_users ?? 0);
+  const confirmedCount = Number(summary.confirmed_count ?? 0);
+  const unconfirmedCount = Number(summary.unconfirmed_count ?? 0);
+
+  const canCreateCsv =
+    targetUsers > 0 &&
+    confirmedCount === targetUsers &&
+    unconfirmedCount === 0 &&
+    !hasBlockingError;
+
+  const isCsvIssued = csv.is_issued ?? csv.status === "created";
+  const csvHistory = Array.isArray(csv.history) ? csv.history : [];
+
+  const handleYearMonthChange = (offset) => {
+    const [year, month] = selectedYearMonth.split("-").map(Number);
+    const next = new Date(year, month - 1 + offset, 1);
+    const earliest = new Date(currentYear - 1, 0, 1);
+    const latest = new Date(currentYear, currentMonth - 1, 1);
+
+    if (next < earliest || next > latest) {
+      return;
+    }
+
+    setSelectedYearMonth(toMonthKey(next.getFullYear(), next.getMonth() + 1));
+  };
+
+  const generateYearMonthOptions = () => {
+    const options = [];
+
+    for (let year = currentYear - 1; year <= currentYear; year += 1) {
+      const lastMonth = year === currentYear ? currentMonth : 12;
+
+      for (let month = 1; month <= lastMonth; month += 1) {
+        options.push({
+          value: toMonthKey(year, month),
+          label: `${year}年 ${month}月`,
+        });
+      }
+    }
+
+    return options;
+  };
+
+  const checkStatusLabel = (status) => {
+    if (status === "ok") return "OK";
+    if (status === "error") return "要修正";
+    return "要確認";
+  };
+
+
+  const handleCreateCsv = async () => {
+    if (!canCreateCsv || isCreatingCsv) return;
+
+    if (
+      isCsvIssued &&
+      !window.confirm("CSVは作成済みです。再作成しますか？")
+    ) {
+      return;
+    }
+
+    setIsCreatingCsv(true);
+    setCsvError("");
+
+    try {
+      const [year, month] = selectedYearMonth.split("-").map(Number);
+      const response = await fetch(
+        `${CSV_CREATE_URL}?year=${year}&month=${month}`
+      );
+
+      if (!response.ok) {
+        throw new Error(`CSV作成に失敗しました（${response.status}）`);
+      }
+
+      const contentType = response.headers.get("content-type") || "";
+
+      // 作成APIがJSONでダウンロードURLを返す場合
+      if (contentType.includes("application/json")) {
+        const result = await response.json();
+        const downloadUrl = result.file_url || result.download_url;
+
+        if (!downloadUrl) {
+          throw new Error(result.error || "CSVのダウンロードURLがありません");
+        }
+
+        window.location.assign(downloadUrl);
+      } else {
+        // CSVファイルを直接返す場合
+        if (contentType.includes("text/html")) {
+          throw new Error("CSVではなくHTMLが返りました。URLやログイン状態を確認してください。");
+        }
+
+        const blob = await response.blob();
+        const objectUrl = window.URL.createObjectURL(blob);
+        const link = document.createElement("a");
+
+        link.href = objectUrl;
+        link.download = `kokuho_${year}_${String(month).padStart(2, "0")}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+
+        setTimeout(() => window.URL.revokeObjectURL(objectUrl), 1000);
+      }
+
+      await fetchMonthlyData();
+    } catch (error) {
+      setCsvError(error.message || "CSV作成に失敗しました");
+    } finally {
+      setIsCreatingCsv(false);
+    }
+  };
+
+  const claimStatus =
+    targetUsers === 0
+      ? { label: "対象者なし", className: "status-warning" }
+      : hasBlockingError
+        ? { label: "要修正", className: "status-warning" }
+        : unconfirmedCount > 0
+          ? { label: "確認中", className: "status-warning" }
+          : { label: "OK", className: "status-ok" };
+
   return (
     <div className="container">
-
       {/* =========================
           1. ページヘッダー
       ========================= */}
       <div className="page-header">
         <div>
-          <h2>国保連請求（月次）</h2>
-          <p className="page-description">
-            月単位で請求対象者・確定状況・請求金額を確認し、国保連CSVを作成します。
-          </p>
+          <h2>国保連請求</h2>
+          <span className={`status-badge ${claimStatus.className}`}>
+            {claimStatus.label}
+          </span>
+
         </div>
 
-        <div className="month-selector" style={{display:"flex", alignItems:"center",gap:"8px"}}>
+        <div className="month-selector" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <button className="btn btn-outline" onClick={() => handleYearMonthChange(-1)}>&lt;</button>
           <select
             value={selectedYearMonth}
-            disabled={today.getFullYear() === parseInt(selectedYearMonth.split("-")[0]) && today.getMonth() + 1 === parseInt(selectedYearMonth.split("-")[1])}
             onChange={(e) => setSelectedYearMonth(e.target.value)}
           >
             {generateYearMonthOptions().map((opt) => (
@@ -106,30 +235,33 @@ export default function ClaimMonthly() {
       <section className="card">
         <div className="section-title">
           <h2>請求状況</h2>
-          <span className={`status-badge ${summary.unconfirmed_count > 0 ? "status-warning" : "status-ok"}`}>
-            {summary.unconfirmed_count > 0 ? "確認中" : "OK"}
+          <span className={`status-badge ${claimStatus.className}`}>
+            {claimStatus.label}
           </span>
         </div>
 
         <div className="summary-grid">
           <div className="summary-item">
             <span className="label">請求対象者</span>
-            <strong>{summary.target_users}<span>人</span></strong>
+            <strong>
+              {formatNumber(targetUsers)}
+              <span>人</span>
+            </strong>
           </div>
 
           <div className="summary-item">
             <span className="label">サービス提供表</span>
-            <strong>{summary.confirmed_count} / {summary.target_users}<span>人 確定</span></strong>
+            <strong>{formatNumber(summary.confirmed_count)} / {formatNumber(summary.target_users)}<span>人 確定</span></strong>
           </div>
 
           <div className="summary-item warning">
             <span className="label">未確定</span>
-            <strong>{summary.unconfirmed_count}<span>人</span></strong>
+            <strong>{formatNumber(summary.unconfirmed_count)}<span>人</span></strong>
           </div>
 
           <div className="summary-item">
             <span className="label">国保連請求総額</span>
-            <strong>{summary.total_claim_amount.toLocaleString()}<span>円</span></strong>
+            <strong>{formatNumber(summary.total_claim_amount)}<span>円</span></strong>
           </div>
         </div>
 
@@ -152,22 +284,22 @@ export default function ClaimMonthly() {
         <div className="amount-grid">
           <div className="amount-item">
             <span>総費用</span>
-            <strong>{amounts.total_cost.toLocaleString()}円</strong>
+            <strong>{formatNumber(amounts.total_cost)}円</strong>
           </div>
 
           <div className="amount-item">
             <span>保険請求額</span>
-            <strong>{amounts.benefit_amount.toLocaleString()}円</strong>
+            <strong>{formatNumber(amounts.benefit_amount)}円</strong>
           </div>
 
           <div className="amount-item">
             <span>公費請求額</span>
-            <strong>{amounts.public_amount.toLocaleString()}円</strong>
+            <strong>{formatNumber(amounts.public_amount)}円</strong>
           </div>
 
           <div className="amount-item">
             <span>利用者負担額</span>
-            <strong>{amounts.user_share_amount.toLocaleString()}円</strong>
+            <strong>{formatNumber(amounts.user_share_amount)}円</strong>
           </div>
         </div>
       </section>
@@ -178,15 +310,16 @@ export default function ClaimMonthly() {
       <section className="card">
         <div className="section-title">
           <h2>請求チェック</h2>
-          <span className="check-count">{checks.total_items}項目中 {checks.ok_items}項目OK</span>
+          <span className="check-count">{checkItems.length}項目中{" "}
+            {checkItems.filter(i => i.status === "ok").length}項目OK</span>
         </div>
 
         <div className="check-list">
-          {checks.items.map((item, idx) => (
-            <div key={idx} className={`check-row ${item.status}`}>
-              <span className="check-icon">{item.status === "ok" ? "✓" : "!"}</span>
+          {checkItems.map((item, idx) => (
+            <div key={`${item.label}-${idx}`} className={`check-row ${item.status}`}>
+              <span className="check-icon">{item.status === "ok" ? "✓" : item.status === "error" ? "×" : "！"}</span>
               <span>{item.label}</span>
-              <strong>{item.value}</strong>
+              <strong>{item.value || checkStatusLabel(item.status)}</strong>
             </div>
           ))}
         </div>
@@ -226,10 +359,10 @@ export default function ClaimMonthly() {
                       {r.confirmed ? "✓" : "!"}
                     </span>
                   </td>
-                  <td>{r.total_cost.toLocaleString()}円</td>
-                  <td>{r.benefit_amount.toLocaleString()}円</td>
-                  <td>{r.public_amount.toLocaleString()}円</td>
-                  <td>{r.user_share_amount.toLocaleString()}円</td>
+                  <td>{formatNumber(r.total_cost)}円</td>
+                  <td>{formatNumber(r.benefit_amount)}円</td>
+                  <td>{formatNumber(r.public_amount)}円</td>
+                  <td>{formatNumber(r.user_share_amount)}円</td>
                 </tr>
               ))}
             </tbody>
@@ -251,15 +384,21 @@ export default function ClaimMonthly() {
             <strong>{csv.status === "not_created" ? "未作成" : "作成済み"}</strong>
           </div>
 
-          <button 
-            type="button" 
-            className="csv-button" 
-            disabled={summary.unconfirmed_count > 0}
+          <button
+            type="button"
+            className={`btn ${canCreateCsv ? "btn-success" : "btn-danger"}`}
+            disabled={!canCreateCsv || isCreatingCsv}
             onClick={handleCreateCsv}
           >
-            国保連CSVを作成
+            {isCreatingCsv ? "作成中..." : isCsvIssued ? "国保連CSVを再作成" : "国保連CSVを作成"}
           </button>
         </div>
+        {csvError && (
+          <div className="check-message warning-message">
+            <strong>CSV作成エラー</strong>
+            <p>{csvError}</p>
+          </div>
+        )}
 
         <p className="csv-note">
           ※ 全対象者のサービス提供表が確定し、請求チェックがすべてOKになった後にCSVを作成できます。
@@ -273,13 +412,19 @@ export default function ClaimMonthly() {
         <div className="section-title">
           <h2>CSV作成履歴</h2>
         </div>
-
-        {csv.history.length === 0 ? (
-          <div className="empty-history">この月のCSV作成履歴はありません。</div>
+        {csvHistory.length === 0 ? (
+          <div className="empty-history">
+            この月のCSV作成履歴はありません。
+          </div>
         ) : (
           <ul>
-            {csv.history.map((h, idx) => (
-              <li key={idx}>{h}</li>
+            {csvHistory.map((item, index) => (
+              <li key={`${item.generated_at || "csv"}-${index}`}>
+                {item.generated_at || "作成日時なし"}
+                {item.file_url && (
+                  <a href={item.file_url}> ダウンロード</a>
+                )}
+              </li>
             ))}
           </ul>
         )}

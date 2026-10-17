@@ -41,7 +41,6 @@ urlpatterns = [
     path('user/<int:user_id>/service_act/',service_act, name='service_act'),
     path('user/<int:user_id>/create_plan/', create_plan, name='createPlan'),
     path('created_service_list/', created_service_list, name='created_service_list'),
-    path('created_service_list/api/', created_service_list_api, name='created_service_list_api'),
     path('care_managers/', care_mana_list, name='care_mana_list'),
     path('caremanagers/<int:caremanager_id>/update/', care_mana_update, name='care_mana_update'),
     path('caremanagers/<int:caremanager_id>/delete/', care_mana_delete, name='care_mana_delete'),
@@ -49,6 +48,7 @@ urlpatterns = [
     path('dashboard/create_kokuho_csv/', create_kokuho_csv, name='create_kokuho_csv'),
 
 # API
+    path('created_service_list/api/', created_service_list_api, name='created_service_list_api'),
     path("api/plan/<int:plan_id>/update/", api.update_schedule, name="update_schedule"),
     path("api/plan/<int:user_id>/create/", api.create_plan, name="api_create_plan"),
     path("api/plan/<int:plan_id>/delete/", api.delete_plan, name="api_delete_plan"),
