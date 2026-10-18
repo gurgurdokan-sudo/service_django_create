@@ -21,13 +21,13 @@ def office_setting(request):
         logger.error('事務所に紐づかないStaff')
         return redirect('dashboard:user_list')
     if request.method == 'POST':
-        form = officeSettigForm(request.POST)
+        form = OfficeSettingForm(request.POST)
         if form.is_valid():
             office = form.save(commit=False)
             # office. = request.staff
             office.save()
             return redirect('dashboard:user_settig')
-    else: form = officeSettigForm(instance=office)
+    else: form = OfficeSettingForm(instance=office)
     return render(request, 'dashboard/office_settig.html', {
         'display_labels': display_labels,
         'form': form

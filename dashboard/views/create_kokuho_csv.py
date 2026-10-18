@@ -16,8 +16,9 @@ logger = logging.getLogger(__name__)
 FILE_NAME = '国保請求'
 def create_kokuho_csv(request):
     try:
-        year = int(request.GET.get("year"))
-        month = int(request.GET.get("month"))
+        year = request.POST.get("year") or request.GET.get("year")
+        month = request.POST.get("month") or request.GET.get("month")
+        year, month = int(year), int(month)
         target_date = date(year, month, 1)
     except (TypeError, ValueError):
         return HttpResponse("請求年月が不正です", status=400)
@@ -27,7 +28,7 @@ def create_kokuho_csv(request):
     # Export前にModelを作成
     monthly_records = ServiceMonthlyRecord.objects.filter(
             office=office,
-            date__yaer=year,
+            date__year=year,
             date__month=month,
         )
     if not monthly_records.exists(): # ボタン非活性で阻害だが念のため
@@ -35,14 +36,23 @@ def create_kokuho_csv(request):
     if monthly_records.filter(confirmed=False).exists():
         return HttpResponse("未確定のサービス提供表があります", status=400)
 
-    records = ClaimBuilder(office=office, year=year, month=month).build()
-    csv_path = CsvExporter.export(records, year, month)
+    try:
     
-    # ClaimValidatorを修正したら、CSV出力前に有効化する
-    # try:
-    #     ClaimValidator().validate(records)
-    # except ValueError as error:
-    #     return HttpResponse(str(error), status=400)
+        records = ClaimBuilder(office=office, year=year, month=month).build()
+        # ClaimValidatorをCSV出力前確認
+        is_valid, error_list = ClaimValidator().validate(records)
+        for err in error_list:
+            logger.error(err)
+        if not is_valid:
+            return HttpResponse(
+                "CSVの検証に失敗しました:\n" + "\n".join(error_list),
+                status=400,
+                content_type="text/plain; charset=utf-8",
+            )
+    except ValueError as error:
+        return HttpResponse(str(error), status=400)
+    
+    csv_path = CsvExporter.export(records, year, month)
 
     totals = monthly_records.filter(confirmed=True).aggregate(
         benefit=Sum("benefit_amount"),
@@ -52,19 +62,19 @@ def create_kokuho_csv(request):
 
     office_monthly_billing, _ = OfficeMonthlyBilling.objects.update_or_create(
             office=office,
-            year=year, month=month,
+            billing_month=target_date,
             defaults={
                 'total_amount': total_amount,  # 合計値を設定する
                 'csv_generated_at':timezone.now()
                 }
         )
     with open(csv_path, "rb") as csv_file:
-        billing.kokuhoren_csv.save(
+            office_monthly_billing.kokuhoren_csv.save(
             Path(csv_path).name,
             File(csv_file),
             save=False,
         )
 
-    billing.save()
+    office_monthly_billing.save()
 
     return FileResponse(open(csv_path, "rb"), as_attachment=True, filename=f"kokuho_{year}_{month}.csv")
