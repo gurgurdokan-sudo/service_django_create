@@ -13,7 +13,11 @@ async function deletePlan(planId) {
     const confirmed = status.dataset.confirmed === "True";
 
     if (confirmed) {
-        console.log('確定済みのため消去できません');
+        Swal.fire({
+            icon: 'warning',
+            title: '確定済み',
+            text: '確定済みのため消去できません'
+        });
         return;
     }
     if (!confirm("このサービス予定および実績データをすべて削除しますか？\n(この操作は取り消せません)")) {
@@ -29,15 +33,30 @@ async function deletePlan(planId) {
         });
 
         if (response.ok) {
-            alert("削除しました");
+            await Swal.fire({
+                icon: 'success',
+                title: '削除完了',
+                text: '削除しました',
+                timer: 1500,
+                showConfirmButton: false
+            });
+
             location.reload(); // 画面を更新して行を消す
         } else {
             const data = await response.json();
-            alert("削除に失敗しました: " + (data.message || "Unknown error"));
+            Swal.fire({
+                icon: 'error',
+                title: '削除失敗',
+                text: '削除に失敗しました: ' + (data.message || "Unknown error")
+            });
         }
     } catch (error) {
         console.error("Delete Plan Error:", error);
-        alert("通信エラーが発生しました");
+        Swal.fire({
+            icon: 'error',
+            title: '通信エラー',
+            text: '通信エラーが発生しました'
+        });
     }
 }
 
@@ -45,9 +64,18 @@ async function deletePlan(planId) {
  * 加算行削除
  */
 async function deleteAddon(planId, addonName) {
-    if (!confirm(`「${addonName}」をこのプランの実績からすべて削除しますか？`)) {
-        return;
-    }
+    const result = await Swal.fire({
+        title: '加算の削除',
+        text: `「${addonName}」をこのプランの実績からすべて削除しますか？`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: '削除する',
+        cancelButtonText: 'キャンセル',
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6'
+    });
+    // キャンセル時
+    if (!result.isConfirmed) return;
 
     try {
         const response = await fetch(`/api/plan/${planId}/update/`, {
@@ -73,7 +101,10 @@ async function deleteAddon(planId, addonName) {
     }
 }
 
-function nextMonth(userId,action) {
+/**
+ * 月の切り替え
+ */
+async function nextMonth(userId,action) {
     let dis_year = parseInt(document.getElementById('dis_year').value);
     let dis_month = parseInt(document.getElementById('dis_month').value);
     console.log(`${action}${dis_year}${dis_month}`);
@@ -83,7 +114,10 @@ function nextMonth(userId,action) {
         try{
         if (action === 'current'){
             if ( nowYear === dis_year && nowMonth === dis_month){
-                alert("既に今月を表示");
+                Swal.fire({
+                    icon: 'info',
+                    text: '既に今月を表示しています'
+                });
                 return;
             }
             window.location.href = `/user/${userId}/service/?year=${nowYear}&month=${String(nowMonth).padStart(2, '0')}`;            
@@ -115,9 +149,17 @@ function nextMonth(userId,action) {
             console.log(`${action}が押されました`)
         }
     } catch(error){
-        alert(`${error}errorが発生`);
+        Swal.fire({
+            icon: 'error',
+            title: 'エラー',
+            text: `${error} エラーが発生しました`
+        });
     }
 }
+
+/**
+ * 予定道りschedule = 実績
+ */
 function toAct(userId) {
     const btn = document.getElementById('copyPlannedToActual');
     btn.disabled = true;
@@ -127,11 +169,24 @@ function toAct(userId) {
     console.log(`${thisYear} ${thisMonth} 予定で実績を作成`)
     window.location.href = `/user/${userId}/service_act?year=${thisYear}&month=${String(thisMonth).padStart(2,'0')}`
 }
-function toExcel(userId){
+/**
+ * Excel作成（実績確定）
+ */
+async function toExcel(userId){
     const btn = document.getElementById('btn-excel');
-    if (!confirm("実績を確定します。\n実績が変更出来なくなります。\nよろしいですか？")) {
-        return;
-    }
+        const result = await Swal.fire({
+        title: '実績の確定',
+        html: '実績を確定します。<br><b>確定後は実績が変更できなくなります。</b><br>よろしいですか？',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: '確定して作成',
+        cancelButtonText: 'キャンセル',
+        confirmButtonColor: '#28a745',
+        cancelButtonColor: '#6c757d'
+    });
+    // キャンセル時
+    if (!result.isConfirmed) return;
+
     btn.disabled =true;
     btn.style.opacity = 0.5;
     const modal = new bootstrap.Modal(document.getElementById('loadingModal'));
