@@ -108,6 +108,7 @@ LOGOUT_REDIRECT_URL = '/login/'
 
 MEDIA_ROOT = BASE_DIR / "service_sheets_export"
 MEDIA_URL = "/media/"
+ROOT_URLCONF = "app.urls"
 
 TEMPLATES = [
     {

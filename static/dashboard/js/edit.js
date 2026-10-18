@@ -111,12 +111,28 @@ function initializeEditPage() {
       if (this.dataset.busy === '1') return;
 
       if (status?.dataset.confirmed?.toLowerCase() === 'true') {
-        alert('確定済みのため編集できません');
+        await Swal.fire({
+          icon: 'warning',
+          title: '確定済み',
+          text: '確定済みのため編集できません',
+          confirmButtonColor: '#3085d6',
+        });
         return;
       }
 
       if (isFirstEdit) {
-        alert('編集を開始します');
+        const result = await Swal.fire({
+            text: '編集を開始しますか？',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: '編集する',
+            cancelButtonText: 'キャンセル',
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33'
+        });
+        // キャンセルされたら中断
+        if (!result.isConfirmed) return;
+        
         isFirstEdit = false;
       }
 
@@ -161,7 +177,11 @@ function initializeEditPage() {
             json,
             body: body.slice(0, 500),
           });
-          alert(json?.message || '編集を保存できませんでした');
+          await Swal.fire({
+            icon: 'error',
+            title: '保存エラー',
+            text: json?.message || '編集を保存できませんでした',
+          });
           return;
         }
 
@@ -175,7 +195,11 @@ function initializeEditPage() {
       } catch (error) {
         log('error', '保存エラー', error);
         this.innerText = currentValue;
-        alert('通信エラーが発生しました');
+        await Swal.fire({
+          icon: 'error',
+          title: '通信エラー',
+          text: '通信エラーが発生しました。ネットワーク状況を確認してください。',
+        });
       } finally {
         delete this.dataset.busy;
       }

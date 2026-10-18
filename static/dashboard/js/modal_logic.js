@@ -1,3 +1,8 @@
+const hideAllBasicRows = () => {
+    document.querySelectorAll('.basic-row').forEach(row => {
+        row.style.display = 'none';
+    });
+};
 document.addEventListener('DOMContentLoaded', () => {
     const modalOverlay = document.getElementById('serviceModalOverlay');
     const openBtn = document.getElementById('openServiceModal');
@@ -7,8 +12,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (openBtn) {
         openBtn.addEventListener('click', () => {
             modalOverlay.style.display = 'flex';
+            hideAllBasicRows(); // モーダルを開くたびに初期化（非表示）
         });
     }
+
     const hideModal = () => {
         modalOverlay.style.display = 'none';
     };
@@ -41,11 +48,33 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnFilterBasic = document.getElementById('btn_filter_service');
     if (btnFilterBasic) {
         btnFilterBasic.addEventListener('click', () => {
+            // 選択されていたラジオボタンも解除
+            document.querySelectorAll('input[name="selected_basic"]').forEach(radio => {
+                radio.checked = false;
+            });
             const start = document.getElementById('modal_start_time').value;
             const end = document.getElementById('modal_end_time').value;
             const [h1, m1] = start.split(':').map(Number);
             const [h2, m2] = end.split(':').map(Number);
             const diffHours = ((h2 * 60 + m2) - (h1 * 60 + m1)) / 60;
+            if (diffHours <= 0) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: '時間の指定が不正です',
+                    text: '終了時間は開始時間より後の時間を設定してください。'
+                });
+                hideAllBasicRows();
+                return;
+            }
+            if (!start || !end || end === '00:00') {
+                Swal.fire({
+                    icon: 'warning',
+                    title: '時間が未入力です',
+                    text: '開始時間と終了時間を正しく設定してから検索してください。'
+                });
+                hideAllBasicRows(); // 一覧は隠したままにする
+                return;
+            }
 
             let targetCategory = "";
             if (diffHours < 0) targetCategory = "error";
@@ -56,20 +85,55 @@ document.addEventListener('DOMContentLoaded', () => {
             else if (diffHours < 7) targetCategory = "6以上-7未満";
             else if (diffHours < 8) targetCategory = "7以上-8未満";
             else if (diffHours < 9) targetCategory = "8以上-9未満";
-
+           
+            let matchCount = 0;
             document.querySelectorAll('.basic-row').forEach(row => {
-                const stayTime = row.getAttribute('data-stay-time');
-                row.style.display = stayTime.includes(targetCategory) ? '' : 'none';
+                const stayTime = row.getAttribute('data-stay-time') || '';
+                if (stayTime.includes(targetCategory)) {
+                    row.style.display = '';
+                    matchCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+            if (matchCount === 0) {
+                Swal.fire({
+                    icon: 'info',
+                    text: '該当する時間のサービスが見つかりませんでした。'
+                });
+            }
+            document.getElementById('btn_reset_basic')?.addEventListener('click', () => {
+                hideAllBasicRows();
+                const startInput = document.getElementById('modal_start_time');
+                const endInput = document.getElementById('modal_end_time');
+                if (startInput) startInput.value = '';
+                if (endInput) endInput.value = '';
+
+                // 選択されていたラジオボタンも解除
+                document.querySelectorAll('input[name="selected_basic"]').forEach(radio => {
+                    radio.checked = false;
+                });
             });
         });
     }
     const btnFilterAddon = document.getElementById('btn_filter_addon');
-    if(btnFilterAddon){
-        btnFilterAddon.addEventListener('click',()=>{
-            const keyword = document.getElementById('addon_keyword').value;
-            document.querySelectorAll('.addon-row').forEach(row=>{
-            const name = row.getAttribute('data-name') || '';
-            row.style.display = name.includes(keyword) ? '' : 'none';
+    if (btnFilterAddon) {
+        btnFilterAddon.addEventListener('click', () => {
+            // 選択されていたラジオボタンも解除
+            document.querySelectorAll('input[name="selected_addon"]').forEach(radio => {
+                radio.checked = false;
+            });
+            const keyword = document.getElementById('addon_keyword').value.trim();
+
+            document.querySelectorAll('.addon-row').forEach(row => {
+                const name = row.dataset.addonName || row.getAttribute('data-addon-name') || '';
+
+                // キーワードが含まれているか判定
+                if (name.includes(keyword)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
             });
         });
     }
@@ -81,16 +145,37 @@ document.addEventListener('DOMContentLoaded', () => {
     // ここからフォーム送信処理
     if (serviceBtn) {
         serviceBtn.addEventListener('click', async (e) => {
-            const selected_basic = document.querySelector('input[name="selected_basic"]:checked');
-            const selected_addon = document.querySelector('input[name="selected_addon"]:checked');
-            const selected = selected_basic || selected_addon;
-            if (!selected) return alert("サービスを選択してください");
+            const selectedBasic = document.querySelector('input[name="selected_basic"]:checked');
+            const selectedAddon = document.querySelector('input[name="selected_addon"]:checked');
+            const selected = selectedBasic || selectedAddon;
+            if (!selected){
+                 return Swal.fire({
+                    icon: 'warning',
+                    text: 'サービスを選択してください'
+                });;
+            }
             const userId = document.getElementById('userid').getAttribute("data-user-id");
             const startTime = document.getElementById('modal_start_time').value;
             const endTime = document.getElementById('modal_end_time').value;
-            if (selected_basic) {
-                if (endTime === '00:00') return alert('時間を設定してください。');
-                if (!confirm(`開始: ${startTime}\n終了: ${endTime}\nこの内容でサービスを追加しますか？`)) return;
+            if (selectedBasic) {
+                if (endTime === '00:00'){
+                    return Swal.fire({
+                        icon: 'warning',
+                        text: '時間を設定してください。'
+                    });
+                }
+                const result = await Swal.fire({
+                    title: 'サービスプランの追加',
+                    html: `開始: <b>${startTime}</b><br />終了: <b>${endTime}</b><br /><br />この内容でサービスを追加しますか？`,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: '追加する',
+                    cancelButtonText: 'キャンセル',
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33'
+                });
+                // キャンセルされたら中断
+                if (!result.isConfirmed) return;
                 // API送信
                     const [year,month] = document.getElementById('month_selector').value.split('-');
                     
@@ -101,7 +186,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             "X-CSRFToken": document.querySelector('[name=csrfmiddlewaretoken]').value
                         },
                         body: JSON.stringify({
-                            selected_service: selected_basic.value.split('_')[1],
+                            selected_service: selectedBasic.value.split('_')[1],
                             start_time: startTime,
                             end_time: endTime,
                             year: year,
@@ -116,11 +201,33 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
             const planId = document.getElementById('main_plan_select').value;
-            if (selected_addon && !planId ) {
-                return alert("加算を紐付ける予定サービスを選択してください");
+            if (selectedAddon && !planId ) {
+                 return Swal.fire({
+                    icon: 'warning',
+                    text: '加算を紐付ける予定サービスを選択してください'
+                });
             }
-            if(selected_addon){
-                if (!confirm("この内容で登録しますか？")) return;
+            if(selectedAddon){
+               // 1. 親の tr から加算名を取得
+                const addonRow = selectedAddon.closest('tr');
+                const addonName = addonRow ? addonRow.dataset.addonName : '選択した加算';
+                window.console.log(`${addonName}を選択しました`)
+                // 2. SweetAlert2 で確認ダイアログを表示
+                const result = await Swal.fire({
+                    title: '加算の登録',
+                    text: `<b>${addonName}を</b><br />登録しますか？`,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: '登録する',
+                    cancelButtonText: 'キャンセル',
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33'
+                });
+
+                // キャンセルされたら処理を中断
+                if (!result.isConfirmed) return;
+
+
                 // API送信
                 const response = await fetch(`/api/plan/${planId}/update/`, {
                     method: "PATCH",
@@ -129,8 +236,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         "X-CSRFToken": document.querySelector('[name=csrfmiddlewaretoken]').value
                     },
                     body: JSON.stringify({
-                        addon_id: selected_addon.value.split('_')[1],
-                        days: [1,2,3,4,5,6,7], // mainのscheに合わせる
+                        addon_id: selectedAddon.value.split('_')[1],
+                        days: [1,], // mainのscheに合わせる
                         row_type: 'actual_full',
                     })
                 });
@@ -138,7 +245,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (response.ok) {
                     location.reload(); // 成功したらリロードして新しい行を表示
                 }else{
-                    window.console.log('NG')
+                    Swal.fire({
+                        icon: 'error',
+                        text: '更新に失敗しました'
+                    });
                 }
                 return;
             }
