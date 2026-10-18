@@ -12,9 +12,13 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 import os
 from pathlib import Path
-import dotenv
-dotenv.load_dotenv()  # .envファイルの内容を環境変数に読み込む
-
+DJANGO_ENV = os.getenv("DJANGO_ENV", "dev")
+try:
+    if DJANGO_ENV == 'dev':
+        import dotenv
+        dotenv.load_dotenv()  # .envファイルの内容を環境変数に読み込む
+except Exception:
+    print('がありません')
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -138,7 +142,6 @@ AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
 AWS_STORAGE_BUCKET_NAME = os.environ.get('AWS_STORAGE_BUCKET_NAME')
 AWS_REGION = os.environ.get('AWS_REGION', 'ap-northeast-1')
 
-DJANGO_ENV = os.getenv("DJANGO_ENV", "dev")
 
 
 # Database

@@ -9,3 +9,4 @@ boto3
 python-dateutil
 django-modeladmin-reorder
 pydantic
+dotenv
