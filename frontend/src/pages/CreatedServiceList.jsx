@@ -393,7 +393,7 @@ export default function ClaimMonthly() {
                   </td>
                   <td>
                     <span className={`table-status ${r.confirmed ? "confirmed" : "unconfirmed"}`}>
-                      {r.confirmed ? "✓" : "!"}
+                      {r.confirmed ? "✓" : "! "}
                     </span>
                   </td>
                   <td>{formatNumber(r.total_cost)}円</td>

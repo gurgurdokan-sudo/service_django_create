@@ -1,9 +1,10 @@
 from django.db import models
 
-def kokuhoren_csv_path(office, filename):
-    """国保連CSVの保存先パスを生成: uploads/service_sheets_export/事業所ID/年/月/ファイル名"""
-    return f"service_sheets_export/{office.name}/{office.billing_month.strftime('%Y/%m')}/{filename}"
-
+def kokuhoren_csv_path(instance, filename):
+    return (
+        f"kokuhoren/{instance.office_id}/"
+        f"{instance.billing_month:%Y/%m}/{filename}"
+    )
 
 class OfficeMonthlyBilling(models.Model):
     """事業所 月次請求モデル"""
