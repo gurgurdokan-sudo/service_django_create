@@ -225,7 +225,23 @@
       data-year="{{ dis_year }}"
       data-month="{{ dis_month }}"
     ></div>
+  <div class="d-flex justify-content-end gap-2 mt-4 mb-5" style="max-width: 1500px;">
+    {% if plans %}
+      <button type="button" id="btn-excel" 
+              class="btn btn-success {% if not confirmed %}disabled{% endif %}" 
+              onclick="toExcel({{user.id}})">
+        <i class="bi bi-file-earmark-spreadsheet me-1" aria-hidden="true"></i>
+        Excelを作成
+      </button>
+    {% endif %}
 
+    <button type="button" id="btn-export" 
+            class="btn btn-primary {% if not confirmed %}disabled{% endif %}" 
+            onclick="exportExcel({{user.id}})">
+      <i class="bi bi-download me-1" aria-hidden="true"></i>
+      Excelを出力
+    </button>
+  </div>
   <!-- ローディングモーダル -->
   <div class="modal fade" id="loadingModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
