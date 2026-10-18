@@ -9,6 +9,9 @@
 <div class="container">
   <div id="bread" data-items='{{ breadcrumbs|safe }}'></div>
   <body>
+    <form id="csrf-token-form" hidden>
+      {% csrf_token %}
+    </form>
     <div id="root"></div>
   </body>
 </div>

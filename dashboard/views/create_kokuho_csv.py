@@ -1,9 +1,11 @@
+import json
 from datetime import date
 from pathlib import Path
 from django.core.files import File
 from django.db.models import Sum
 from django.utils import timezone
 from django.http import FileResponse, HttpResponse
+from django.views.decorators.http import require_POST
 
 from dashboard.kokuho.exporter import CsvExporter
 from dashboard.kokuho.builder import ClaimBuilder
@@ -13,11 +15,14 @@ from dashboard.models import OfficeMonthlyBilling, Office, ServiceMonthlyRecord
 import logging
 logger = logging.getLogger(__name__)
 
-FILE_NAME = '国保請求'
+@require_POST
 def create_kokuho_csv(request):
     try:
-        year = request.POST.get("year") or request.GET.get("year")
-        month = request.POST.get("month") or request.GET.get("month")
+        request_body = json.loads(request.body)
+        if not isinstance(request_body, dict):
+            raise ValueError("JSONの形式が不正です")
+        year = request_body.get('year')
+        month = request_body.get('month')
         year, month = int(year), int(month)
         target_date = date(year, month, 1)
     except (TypeError, ValueError):

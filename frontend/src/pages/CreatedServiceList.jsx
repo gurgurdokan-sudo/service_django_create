@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-
+import Swal from "sweetalert2";
 const CSV_CREATE_URL = "/dashboard/create_kokuho_csv/";
 
 const toMonthKey = (year, month) =>
@@ -126,16 +126,32 @@ export default function ClaimMonthly() {
     if (status === "error") return "要修正";
     return "要確認";
   };
-
-
-  const handleCreateCsv = async () => {
+  const getCsrfToken = () =>
+    document.querySelector(
+      '#csrf-token-form [name="csrfmiddlewaretoken"]'
+    )?.value ?? "";
+    
+  const handleCreateCsv = async (event) => {
+    event.preventDefault();
+      event.preventDefault();
     if (!canCreateCsv || isCreatingCsv) return;
 
-    if (
-      isCsvIssued &&
-      !window.confirm("CSVは作成済みです。再作成しますか？")
-    ) {
-      return;
+    if (isCsvIssued) {
+      const result = await Swal.fire({
+        title: "CSVの再作成",
+        text: "CSVは作成済みです。再作成しますか？",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "再作成する",
+        cancelButtonText: "キャンセル",
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+      });
+
+      // キャンセルされたら中断
+      if (!result.isConfirmed) {
+        return;
+      }
     }
 
     setIsCreatingCsv(true);
@@ -143,14 +159,23 @@ export default function ClaimMonthly() {
 
     try {
       const [year, month] = selectedYearMonth.split("-").map(Number);
-      const response = await fetch(
-        `${CSV_CREATE_URL}?year=${year}&month=${month}`
-      );
+
+      // POST送信
+      const response = await fetch(CSV_CREATE_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": getCsrfToken() || "", // Django必須のCSRFトークン
+        },
+        body: JSON.stringify({
+          year: year,
+          month: month,
+        }),
+      });
 
       if (!response.ok) {
         throw new Error(`CSV作成に失敗しました（${response.status}）`);
       }
-
       const contentType = response.headers.get("content-type") || "";
 
       // 作成APIがJSONでダウンロードURLを返す場合
@@ -183,8 +208,20 @@ export default function ClaimMonthly() {
       }
 
       await fetchMonthlyData();
+      Swal.fire({
+        icon: "success",
+        title: "作成完了",
+        text: "国保連CSVを作成しました。",
+        timer: 2000,
+        showConfirmButton: false,
+      });
     } catch (error) {
       setCsvError(error.message || "CSV作成に失敗しました");
+      Swal.fire({
+        icon: "error",
+        title: "エラー",
+        text: error.message || "CSV作成に失敗しました",
+      });
     } finally {
       setIsCreatingCsv(false);
     }
@@ -383,15 +420,19 @@ export default function ClaimMonthly() {
             <span className="label">現在の状態</span>
             <strong>{csv.status === "not_created" ? "未作成" : "作成済み"}</strong>
           </div>
-
+          <form onSubmit={handleCreateCsv}>
           <button
-            type="button"
+            type="submit"
             className={`btn ${canCreateCsv ? "btn-success" : "btn-danger"}`}
             disabled={!canCreateCsv || isCreatingCsv}
-            onClick={handleCreateCsv}
           >
-            {isCreatingCsv ? "作成中..." : isCsvIssued ? "国保連CSVを再作成" : "国保連CSVを作成"}
+            {isCreatingCsv
+              ? "作成中..."
+              : isCsvIssued
+                ? "国保連CSVを再作成"
+                : "国保連CSVを作成"}
           </button>
+        </form>
         </div>
         {csvError && (
           <div className="check-message warning-message">
