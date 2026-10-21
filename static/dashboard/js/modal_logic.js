@@ -215,7 +215,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // 2. SweetAlert2 で確認ダイアログを表示
                 const result = await Swal.fire({
                     title: '加算の登録',
-                    text: `<b>${addonName}を</b><br />登録しますか？`,
+                    html: `<b>${addonName}を</b><br />登録しますか？`,
                     icon: 'question',
                     showCancelButton: true,
                     confirmButtonText: '登録する',

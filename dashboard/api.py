@@ -420,8 +420,9 @@ def service_summary(request, user_id):
 @api_view(['GET'])
 def validate_monthly_record(request, user_id):
     try:
-        year = int(request.GET["year"])
-        month = int(request.GET["month"])
+        year = int(request.GET.get("year",2000))
+        month = int(request.GET.get("month",10))
+        logger.info(f"{year}{month}")
         if not 1 <= month <= 12:
             raise ValueError
     except (KeyError, TypeError, ValueError):
