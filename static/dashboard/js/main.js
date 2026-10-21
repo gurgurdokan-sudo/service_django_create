@@ -219,3 +219,64 @@ function animateProgressBar(){
         bar.style.width = progress + "%";
     }, 60); // 60msごとに更新
 }
+document.addEventListener('DOMContentLoaded', () => {
+    const btnValidate = document.getElementById('btn_validate');
+
+    if (btnValidate) {
+        btnValidate.addEventListener('click', async () => {
+            const userId = document.getElementById('userid').dataset.userId;
+            const year = document.getElementById('dis_year').value;
+            const month = document.getElementById('dis_month').value;
+
+            try {
+                // チェック中はローディング
+                Swal.fire({
+                    title: 'チェック中...',
+                    text: '算定ルールを検証しています',
+                    allowOutsideClick: false,
+                    didOpen: () => { Swal.showLoading(); }
+                });
+
+                const response = await fetch(`/api/user/${userId}/validate/?year=${year}&month=${month}`);
+                const data = await response.json();
+
+                if (data.status === "ok") {
+                    // エラーなし
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'チェック完了',
+                        text: '算定ルール上のエラーは見つかりませんでした。',
+                        confirmButtonColor: '#2c3e50'
+                    });
+                } else {
+                    let htmlContent = '<div style="text-align:left; font-size: 0.9rem; max-height: 300px; overflow-y: auto;">';
+
+                    if (data.errors && data.errors.length > 0) {
+                        htmlContent += '<h5 style="color:#d32f2f; font-weight:bold;"> エラー（修正必須）</h5><ul style="color:#d32f2f;">';
+                        data.errors.forEach(err => { htmlContent += `<li>${err}</li>`; });
+                        htmlContent += '</ul>';
+                    }
+
+                    if (data.warnings && data.warnings.length > 0) {
+                        htmlContent += '<h5 style="color:#f39c12; font-weight:bold; margin-top:15px;"> 確認（必要に応じて）</h5><ul>';
+                        data.warnings.forEach(warn => { htmlContent += `<li>${warn}</li>`; });
+                        htmlContent += '</ul>';
+                    }
+
+                    htmlContent += '</div>';
+
+                    Swal.fire({
+                        icon: data.errors.length > 0 ? 'error' : 'warning',
+                        title: '入力チェック結果',
+                        html: htmlContent,
+                        width: '600px',
+                        confirmButtonColor: '#2c3e50'
+                    });
+                }
+            } catch (error) {
+                console.error(error);
+                Swal.fire('通信エラー', 'チェック処理に失敗しました', 'error');
+            }
+        });
+    }
+});

@@ -133,6 +133,15 @@ class ServicePlan(models.Model):
             return False
         return True
 
+    @property
+    def count_actual_main_days(self):
+        actual_data = self.actual_dict or {}
+        return sum(
+            1
+            for info in actual_data.values()
+            if isinstance(info, dict) and info.get("main") == "1"
+        )
+
     def get_total_count(self, row_type) ->  int:  # scheduleなら予定の回数、actualなら実績の回数、addonなら全ての加算回数
         total = 0
         if row_type == "schedule":

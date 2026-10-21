@@ -53,4 +53,5 @@ urlpatterns = [
     path("api/plan/<int:user_id>/create/", api.create_plan, name="api_create_plan"),
     path("api/plan/<int:plan_id>/delete/", api.delete_plan, name="api_delete_plan"),
     path("api/users/<user_id>/summary/", api.service_summary, name="service_summary"),
+    path("api/user/<user_id>/validate/", api.validate_monthly_record, name="validate_monthly_record"),
 ]
