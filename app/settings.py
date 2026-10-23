@@ -146,7 +146,7 @@ AWS_REGION = os.environ.get('AWS_REGION', 'ap-northeast-1')
 
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
-if DJANGO_ENV == 'dev':
+if DJANGO_ENV != 'dev':
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',

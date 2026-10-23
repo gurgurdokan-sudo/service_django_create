@@ -75,10 +75,13 @@ def create_service_sheet(context):
 # ローカル保存処理
         if settings.DJANGO_ENV == 'dev':
             filepath, filename = get_service_sheet_path(user, year, month)
+            logger.info("MEDIA_ROOT=%r, file_path=%r, absolute=%r",
+                        settings.MEDIA_ROOT, filepath, os.path.abspath(filepath))
             wb.save(filepath)
 
 # s3の場合保存処理
         else:
+            logger.info("s3の処理開始 year=%d, month=%d, 利用者名=%s", year, month, user.username)
             buffer = io.BytesIO()
             wb.save(buffer)
             buffer.seek(0)
@@ -106,7 +109,7 @@ def write_billing_line(ws, row, item, office_number, office_names):
     ws[f'AC{row}'] = format_comma(item['subtotal'])
 
 def _auto_newline(text, ws, cell, line=10):
-    '''セル内で自動改行するためのヘルパー関数'''
+    """セル内で自動改行するためのヘルパー"""
     text = str(text)
     wrapped = "\n".join(textwrap.wrap(text, line))
     ws[cell] = wrapped

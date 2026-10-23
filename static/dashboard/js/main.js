@@ -256,10 +256,13 @@ async function toExcel(userId){
             cancelButtonColor: '#6c757d'
         });
         // キャンセル時
-        if (!result.isConfirmed) return;
-        started = true;
-        modal.show();
-        animateProgressBar();
+        if (!result.isConfirmed){
+            return;
+        }else{
+            animateProgressBar();
+            started = true;
+            modal.show();
+        }
     const createParams = new URLSearchParams({
       year: thisYear,
       month: String(thisMonth).padStart(2, "0"),
