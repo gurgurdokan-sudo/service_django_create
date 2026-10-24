@@ -15,7 +15,7 @@ from dashboard.models import (
     )
 from dashboard.forms import PlanForm
 from dashboard.utils import BreadcrumbUtil
-
+from dashboard.services import addon_patterns as patterns
 import logging
 logger = logging.getLogger(__name__)
 
@@ -40,6 +40,12 @@ def create_plan(request,user_id):
                     )
     if request.method=='POST' and form.is_valid():
         weekdays = form.cleaned_data['weekdays']
+        use_previous_pattern  = form.cleaned_data['use_previous_addon_pattern']
+        addon_ids = (
+            patterns.build_service_addon_record(user, year, month)
+            if use_previous_pattern
+            else []
+        )
 
         try:
             with transaction.atomic():
@@ -58,17 +64,23 @@ def create_plan(request,user_id):
                     certs_to_save = [{'cert': current_cert, 'start_day':1}]
 
                 # ServiceMonthlyRecord の作成
-                record = ServiceMonthlyRecord.objects.get_or_create(
+                monthly_record,created = ServiceMonthlyRecord.objects.get_or_create(
                     user=user,
                     office=Office.objects.get(id=1), #todo: 事業所を選択できるようにする
                     date=date(year, month, 1),
                     defaults={
                         'weekday_pattern': [int(i) for i in weekdays],
                         'start_time': form.cleaned_data['start_time'],
-                        'end_time': form.cleaned_data['end_time']
+                        'end_time': form.cleaned_data['end_time'],
+                        'addon_pattern': addon_ids
                     }
                 )
-
+                if use_previous_pattern and not created:
+                    monthly_record.addon_pattern = addon_ids
+                    monthly_record.save(update_fields=["addon_pattern"])
+                if weekdays and not created:
+                    monthly_record.weekday_pattern = [int(i) for i in weekdays]
+                    monthly_record.save(update_fields=["addon_pattern"])
                 # 認定情報ごとに ServicePlan を作成（1行 or 2行）
                 for item in certs_to_save:
                     cert = item['cert']
@@ -78,19 +90,18 @@ def create_plan(request,user_id):
                     plan.pk = None # ループ内で新規登録
                     plan.user = user
                     plan.care_level = cert.care_level # どの介護度用の行か保存
-
+                    # ServiceMonthlyRecord を関連付け
+                    plan.monthly_record = monthly_record
                     # スケジュール生成
                     start_day = item.get('start_day', 1)
                     # その月の末日を取得
                     _, last_day = calendar_module.monthrange(year, month)
                     plan.end_day = item.get('end_day', last_day)
-
+                    plan.save()
                     # 初期のスケジュールを前回データの週で作成
-                    plan.build_schedule(weekdays, start_day=plan.start_day, end_day=plan.end_day)
-
+                    plan.build_schedule(weekdays, start_day=start_day, end_day=plan.end_day)
                     plan.cert =  item.get('cert', certs_to_save[0])
                     plan.apply_service_master(target_care_level=cert.care_level)
-                    plan.monthly_record = record[0]  # ServiceMonthlyRecord を関連付け
                     plan.save()
 
 
@@ -115,13 +126,14 @@ def create_plan(request,user_id):
             return redirect("dashboard:user_list")
     #GETリクエスト
     messages.success(request, f'{year}年 {month}月分の適用曜日と時間を登録してください')
-    prev:ServicePlan|None = _previous_record(user, year, month)
+    prev: ServiceMonthlyRecord|None = _previous_record(user, year, month)
     initial = {
         'year':year,
         'month':month,
         'start_time':prev.start_time if prev else '09:00',
         'end_time':prev.end_time if prev else '17:00',
         'weekdays':prev.weekday_pattern if prev else [],
+        'use_previous_addon_pattern': True if prev else False,
         'from_list':from_list
     }
     form = PlanForm(initial=initial,user_id=user_id)

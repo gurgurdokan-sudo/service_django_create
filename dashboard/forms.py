@@ -101,6 +101,11 @@ class PlanForm(forms.ModelForm):
         choices=WEEKDAY_CHOICES,
         label="通う曜日"
     )
+    use_previous_addon_pattern = forms.BooleanField(
+        required=False,
+        widget=forms.CheckboxInput,
+        label="前回の加算パターンを使用する"
+    )
 
     class Meta:
         model = ServicePlan
@@ -122,8 +127,10 @@ class PlanForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         if user_id:
             self.user_id = user_id
-        for field_name in self.fields:
-            if field_name != 'weekdays':
+        for field_name,field in self.fields.items():
+            if isinstance(field.widget, forms.CheckboxInput):
+                field.widget.attrs['class'] = f'form-check-input ms-5 {field_name}'
+            elif field_name != 'weekdays':
                 self.fields[field_name].widget.attrs['class'] = f'form-control {field_name}'
 
 
