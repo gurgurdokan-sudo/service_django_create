@@ -140,7 +140,7 @@ def create_plan(request,user_id):
 def _previous_record(user, year, month) -> ServiceMonthlyRecord | None:
     target_date = date(year, month, 1)
     return (
-        user.monthly_records.objects.filter(date__lt=target_date)
+        user.monthly_records.filter(date__lt=target_date)
         .order_by("-date")
         .first()
     )
