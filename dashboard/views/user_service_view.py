@@ -7,13 +7,13 @@ from django.contrib import messages
 from django.urls import reverse
 
 from dashboard.utils import BreadcrumbUtil
-from dashboard.models import(
+from dashboard.models import (
     UseUser,
-    ServicePlan, 
+    ServicePlan,
     ServiceMaster,
     AddOnService,
     Office,
-    ServiceMonthlyRecord,
+    ServiceMonthlyRecord, Certificate,
 )
 from dashboard.calendar_table import get_month_days
 now = timezone.now()
@@ -23,10 +23,10 @@ logger = logging.getLogger(__name__)
 
 def build_user_service_context(user_id, year, month):
     """画面やExcelに渡すcontextを組み立てる"""
-    office = Office.objects.filter(id=1).first() #todoログインユーザー事務所
+    office:Office = Office.objects.filter(id=1).first() #todoログインユーザー事務所
     default = AddOnService.objects.get(pk=office.default_service.pk)
 
-    target = (UseUser.objects.select_related('care_manager').get(id=user_id))
+    target:UseUser = (UseUser.objects.select_related('care_manager').get(id=user_id))
     plans:QuerySet = ServicePlan.objects.filter(user = target,year = year,month = month,)
     addons = []
     for p in plans:
@@ -45,25 +45,33 @@ def build_user_service_context(user_id, year, month):
             })
     logger.info(f'{year}-{month}のサービス提供票のplansを取得')
 
-    user_codes = plans.values_list("service_code",flat=True) #userチェック済みのサービスコード
-    certificate = target.get_certificate(year, month)
+    user_codes = plans.values_list("service_code",flat=True)#userチェック済みのサービスコード
+    certificate:Certificate = target.get_certificate(year, month)
     if certificate:
         c_list = [certificate.care_level]
         if certificate.care_level_changed_at is None:
             c_list.append(target.care_level)
         service_masters =(
             ServiceMaster.objects
-            .filter(care_level__in=c_list)
+            .filter(care_level__in = c_list)
             .exclude(service_code__in = user_codes)
             )
+        print(service_masters,flush=True)
     else:
-        service_masters = ServiceMaster.objects.all()
+        service_masters = None
         logger.error('介護認定の取得に失敗')
     logger.info(f'{user_codes}以外のplansを取得')
+    excluded_addon_ids = {
+        item["id"]
+        for item in addons
+        if item.get("id") is not None
+    }
+    if office.default_service:
+        excluded_addon_ids.add(office.default_service.pk)
 
-    addon_service = AddOnService.objects.all()
+    addon_service = AddOnService.objects.exclude(pk__in=excluded_addon_ids)
     logger.info(f'{year}-{month}のサービス提供票の確認状態を取得')
-    record = ServiceMonthlyRecord.objects.filter(user=target, date=date(year, month, 1)).first()
+    record:ServicePlan = ServiceMonthlyRecord.objects.filter(user=target, date=date(year, month, 1)).first()
 
     return {
         'office': office,
@@ -131,13 +139,13 @@ def user_service(request,user_id):
 #「今月の生保データ」が未登録なのに、「前月は生保だった」場合、先に生保登録へ誘導
     if _is_future_month_not_pa(user, dis_year, dis_month):
         messages.error(request, f'前月が生活保護受給のため、{dis_month}月分の情報を先に登録してください')
-        url = reverse('dashboard:public_assistance_create', args=[user.id] )
+        url = reverse('dashboard:public_assistance_create', args=[user.id])
         return redirect(f'{url}?year={dis_year}&month={dis_month}&from_list={from_list}')
 
 # 過去月のプラン作成 ではなく、プラン未作成なら作成画面にリダイレクトする
     if _is_future_month_not_plan(user_id,dis_year, dis_month):
         request.check_flag = True
-        url = reverse('dashboard:createPlan', args=[user_id] )
+        url = reverse('dashboard:createPlan', args=[user_id])
         return redirect(f'{url}?year={dis_year}&month={dis_month}&from_list={from_list}')
 
     logger.info(f'{dis_year}-{dis_month}のサービス提供票に遷移')
@@ -176,7 +184,7 @@ def service_act(request, user_id):
     col = get_month_days(year=year, month=month)
     user = get_object_or_404(UseUser, id=user_id)
 
-    query_plans = ServicePlan.objects.filter(
+    query_plans:QuerySet[ServicePlan] = ServicePlan.objects.filter(
         user=user,
         year=year,
         month=month

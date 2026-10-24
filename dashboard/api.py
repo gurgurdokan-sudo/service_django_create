@@ -220,7 +220,8 @@ def _handle_actual_full(request, plan):
     addon_id = str(addon_obj.id)
     data = _normalize_keys(plan.actual_json)
     changed = False
-
+    if not target_days:
+        return _error("加算を追加できる対象日がありません。予定日や認定期間を確認してください。",409,)
     for day_key in target_days:
         day_data = _get_day(data, day_key)
         if addon_id in day_data["addon"]:

@@ -51,7 +51,7 @@ class UseUser(models.Model):
 
     @property
     def current_certificate(self):
-        """今日時点で有効な認定情報を返す"""
+        """今日時点での認定情報を返す"""
         today = timezone.now().date()
         return self.certificates.filter(
             limit_start__lte=today,
