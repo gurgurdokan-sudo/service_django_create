@@ -329,7 +329,7 @@ class ServicePlan(models.Model):
         self.save(update_fields=["actual_json"])
     def apply_service_master(self, target_care_level=None):
         level = target_care_level or self.user.care_level
-        service = ServiceMaster.objects.filter(
+        service: ServiceMaster = ServiceMaster.objects.filter(
             care_level=level,
             stay_time_category=self.stay_time_category
         ).first()

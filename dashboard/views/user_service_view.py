@@ -27,7 +27,8 @@ def build_user_service_context(user_id, year, month):
     default = AddOnService.objects.get(pk=office.default_service.pk)
 
     target:UseUser = (UseUser.objects.select_related('care_manager').get(id=user_id))
-    plans:QuerySet = ServicePlan.objects.filter(user = target,year = year,month = month,)
+    plans: QuerySet[ServicePlan] =\
+        ServicePlan.objects.filter(user = target,year = year,month = month,)
     addons = []
     for p in plans:
         summary = p.get_addon_summary
@@ -178,22 +179,19 @@ def prev_month_plan(request, user_id):
 
 #予定通り
 def service_act(request, user_id):
+    user = get_object_or_404(UseUser, id=user_id)
     year = int(request.GET.get('year', now.year))
     month = int(request.GET.get('month', now.month))
 
     col = get_month_days(year=year, month=month)
-    user = get_object_or_404(UseUser, id=user_id)
 
-    query_plans:QuerySet[ServicePlan] = ServicePlan.objects.filter(
-        user=user,
-        year=year,
-        month=month
-    )
+    query_plans: QuerySet[ServicePlan] =\
+        ServicePlan.objects.filter(user=user, year=year, month=month)
 
     for plan in query_plans:
         schedule = plan.schedule_dict      # {"1": "1", "5": "1", ...}
         actual = plan.actual_dict          # {"1": {"main": "", "addon": []}, ...}
-
+        actual_addon = plan.add_addon_pattern_to_actual(plan.schedule_json)
         for day in col:
             day_str = str(day['day'])
             if schedule.get(day_str) == '1':
