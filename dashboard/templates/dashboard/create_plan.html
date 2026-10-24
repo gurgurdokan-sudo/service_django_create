@@ -5,114 +5,117 @@
 {% endblock %}
 {% block body %}
   {% include 'dashboard/components/messages.html' %}
-<div id="bread" data-items="{{ breadcrumbs }}"></div>
-<!---- home>>Planがないユーザー ---->
-<h2 class="page-title">{{ user.name }} さんのサービス提供計画作成</h2>
-<div class=detail-card>
-<form method="post" id="planForm" class="plan-form" action="{{ request.get_full_path }}"  novalidate>
-  {% csrf_token %}
-  <input type="hidden" value="{{ from_list }}" />
-  <p>
-    <label>{{ form.year.label }}</label>
-    {{ form.year }}
-  </p>
+    <div id="bread" data-items="{{ breadcrumbs }}"></div>
+    <!---- home>>Planがないユーザー ---->
+    <h2 class="page-title">{{ user.name }} さんのサービス提供計画作成</h2>
+    <div class=detail-card>
+      <form method="post" id="planForm" class="plan-form" action="{{ request.get_full_path }}" novalidate>
+        {% csrf_token %}
+        <input type="hidden" name="from_list" value="{{ from_list|default:'' }}">
 
-  <p>
-    <label>{{ form.month.label }}</label>
-    {{ form.month }}
-  </p>
-  <p>
-    <label>{{ form.start_time.label }}</label>
-    {{ form.start_time|default_if_none:"09:00" }}
-  </p>
+        <p>
+            <label>{{ form.year.label }}</label>
+            {{ form.year }}
+        </p>
 
-  <p>
-    <label>{{ form.end_time.label }}</label>
-    {{ form.end_time|default_if_none:"17:00" }}
-  </p>
-  <p>
-    <label>適応のプラン</label>
-    <span id="this-plan">該当サービスなし</span>
-  </p>  
-  <p class="weekday-row">
-    <label>{{ form.weekdays.label }}</label>
-    <span class="weekday-inputs">{{ form.weekdays }}</span>
-  </p>
-  <button class="btn btn-primary" type="submit" name="action" value="save" onclick="">保存</button>
-</form>
-</div>
+        <p>
+            <label>{{ form.month.label }}</label>
+            {{ form.month }}
+        </p>
+        <p>
+            <label>{{ form.start_time.label }}</label>
+            {{ form.start_time|default_if_none:"09:00" }}
+        </p>
+
+        <p>
+            <label>{{ form.end_time.label }}</label>
+            {{ form.end_time|default_if_none:"17:00" }}
+        </p>
+        <p>
+            <label>適応のプラン</label>
+            <span id="this-plan">該当サービスなし</span>
+        </p>
+        <p class="weekday-row">
+            <label>{{ form.weekdays.label }}</label>
+            <span class="weekday-inputs">{{ form.weekdays }}</span>
+        </p>
+        <button class="btn btn-primary" type="submit" name="action" value="save" onclick="">保存</button>
+      </form>
+    </div>
 {% endblock body %}
 {% block script %}
 {{ all_plans|json_script:"all-plans" }}
 <script>
-let isDirty = false;
-const backDestination = "{% url 'dashboard:user_list' %}";
+    let isDirty = false;
+    const backDestination = "{% url 'dashboard:user_list' %}";
 
-  document.addEventListener('DOMContentLoaded', () => {
-    const allPlansJson = document.getElementById("all-plans").textContent;
-    const allPlans = JSON.parse(allPlansJson || '[]');
-    const thisPlanLabel = document.getElementById('this-plan');
-    const startTimeInput = document.getElementById('id_start_time');
-    const endTimeInput = document.getElementById('id_end_time');
-    const form = document.getElementById('planForm');
+    document.addEventListener('DOMContentLoaded', () => {
+        const allPlansJson = document.getElementById("all-plans").textContent;
+        const allPlans = JSON.parse(allPlansJson || '[]');
+        const thisPlanLabel = document.getElementById('this-plan');
+        const startTimeInput = document.getElementById('id_start_time');
+        const endTimeInput = document.getElementById('id_end_time');
+        const form = document.getElementById('planForm');
 
-    if (!form || !startTimeInput || !endTimeInput) return;
+        if (!form || !startTimeInput || !endTimeInput) return;
 
-    const calcHours = (start, end) => {
-      if (!start || !end) return 0;
-      const [sh, sm] = start.split(':').map(Number);
-      const [eh, em] = end.split(':').map(Number);
-      const diffMinutes = (eh * 60 + em) - (sh * 60 + sm);
-      return diffMinutes / 60;
-    }
+        const calcHours = (start, end) => {
+            if (!start || !end) return 0;
+            const [sh, sm] = start.split(':').map(Number);
+            const [eh, em] = end.split(':').map(Number);
+            const diffMinutes = (eh * 60 + em) - (sh * 60 + sm);
+            return diffMinutes / 60;
+        }
 
-    const getCategory = (hours) => {
-      if (hours <= 0) return null;
-      if (hours < 3) return '<3';
-      if (hours < 4) return '3-4';
-      if (hours < 5) return '4-5';
-      if (hours < 6) return '5-6';
-      if (hours < 7) return '6-7';
-      if (hours < 8) return '7-8';
-      if (hours < 9) return '8-9';
-      return '9-10'; 
-    }
+        const getCategory = (hours) => {
+            if (hours <= 0) return null;
+            if (hours < 3) return '<3';
+            if (hours < 4) return '3-4';
+            if (hours < 5) return '4-5';
+            if (hours < 6) return '5-6';
+            if (hours < 7) return '6-7';
+            if (hours < 8) return '7-8';
+            if (hours < 9) return '8-9';
+            return '9-10';
+        }
 
-    const updatePlan = () => {
-      const hours = calcHours(startTimeInput.value, endTimeInput.value);
-      const category = getCategory(hours);
-      const service = allPlans.find(p => p.stay_time_category === category);
+        const updatePlan = () => {
+            const hours = calcHours(startTimeInput.value, endTimeInput.value);
+            const category = getCategory(hours);
+            const service = allPlans.find(p => p.stay_time_category === category);
 
-      if (service) {
-        thisPlanLabel.textContent = `${service.service_name} (${service.unit}単位)`;
-        thisPlanLabel.style.color = "blue";
-        thisPlanLabel.style.fontWeight = "bold";
-      } else {
-        thisPlanLabel.textContent = hours > 0 ? "該当マスタなし" : "時間入力なし";
-        thisPlanLabel.style.color = "red";
-      }
-    }
+            if (service) {
+                thisPlanLabel.textContent = `${service.service_name} (${service.unit}単位)`;
+                thisPlanLabel.style.color = "blue";
+                thisPlanLabel.style.fontWeight = "bold";
+            } else {
+                thisPlanLabel.textContent = hours > 0 ? "該当マスタなし" : "時間入力なし";
+                thisPlanLabel.style.color = "red";
+            }
+        }
 
-    form.addEventListener('input', () => {
-      isDirty = true;
-      updatePlan(); 
+        form.addEventListener('input', () => {
+            isDirty = true;
+            updatePlan();
+        });
+
+        form.addEventListener('submit', (e) => {
+            isDirty = false;
+            const btn = form.querySelector('button[value="save"]');
+            if (btn) {
+                setTimeout(() => {
+                    btn.disabled = true;
+                }, 1);
+            }
+        });
+
+        updatePlan();
     });
 
-    form.addEventListener('submit', (e) => {
-　　　　　isDirty = false;
-        const btn = form.querySelector('button[value="save"]');
-      if (btn) {
-        setTimeout(() => { btn.disabled = true; }, 1);
-      }
+    window.addEventListener('beforeunload', (e) => {
+        if (isDirty) {
+            e.preventDefault();
+        }
     });
-
-    updatePlan();
-  });
-
-  window.addEventListener('beforeunload', (e) => {
-    if (isDirty) {
-      e.preventDefault();
-    }
-  });  
 </script>
 {% endblock script %}
