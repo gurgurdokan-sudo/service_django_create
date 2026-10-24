@@ -40,7 +40,7 @@
       <th class="user-select-none">要介護度</th>
       <th class="user-select-none">名前(詳細)</th>
       <th class="user-select-none">被保険者証の情報</th>
-      <th class="user-select-none">編集</th>
+      <th class="user-select-none text-center">編集</th>
       <th class="user-select-none">サービス提供票</th>
     </tr>
     {% for user in users %}
@@ -48,7 +48,7 @@
       <td class="badge user-select-none">{{ user.care_level }}</td>
       <td><a href="{% url 'dashboard:detail' user.id %}" class="link-name">{{ user.name }}</a></td>
       <td><a href="{% url 'dashboard:certificate_update' user.id %}" class="btn btn-cert">認定情報作成</a></td>
-      <td><a href="{% url 'dashboard:update' user.id %}" class="btn btn-edit">編集</a></td>
+      <td class="d-flex justify-content-center"><a href="{% url 'dashboard:update' user.id %}" class="btn btn-edit">編集</a></td>
       <td>
         <a class="btn linkSwitch"
           href="{% url 'dashboard:service' user.id %}?from_list=1"
