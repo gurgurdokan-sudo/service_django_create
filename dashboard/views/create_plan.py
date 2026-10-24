@@ -3,7 +3,6 @@ import calendar as calendar_module
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from django.utils import timezone
 from django.urls import reverse
 
 from dashboard.models import (
@@ -21,12 +20,23 @@ logger = logging.getLogger(__name__)
 
 def create_plan(request,user_id):
     user = UseUser.objects.get(id=user_id)
-
-    if request.method == 'POST':
-        form = PlanForm(request.POST,user_id=user_id)
+    try:
+        year = int(request.POST.get('year') or request.GET.get('year'))
+        month = int(request.POST.get('month') or request.GET.get('month'))
+    except ValueError:
+        year = date.today().year
+        month = date.today().month
+    form = PlanForm(request.POST or None,user_id=user_id)
+    from_list =request.GET.get('from_list') or request.POST.get('from_list')
+    if from_list != "0":
+        crumbs = [(f"{user.name}様 サービス提供表計画作成", None)]
+    else:
+        crumbs = [
+            (f"{user.name}様 サービス提供表作成画面(今月)",'dashboard:service',[user_id]),
+            (f"{user.name}様 サービス提供表作成画面{year}年 {month:02}月", None)
+        ]
+    try:
         if form.is_valid():
-            year = int(request.POST.get('year'))
-            month = int(request.POST.get('month'))
             weekdays = form.cleaned_data['weekdays']
 
             # その月の「区分変更日」があるかチェック
@@ -47,7 +57,7 @@ def create_plan(request,user_id):
             # ServiceMonthlyRecord の作成
             date_obj = date(year, month, 1)
             record = ServiceMonthlyRecord.objects.get_or_create(
-                user=user, 
+                user=user,
                 office=Office.objects.get(id=1), #todo: 事業所を選択できるようにする
                 date=date_obj,
                 defaults={
@@ -66,7 +76,7 @@ def create_plan(request,user_id):
                 plan.pk = None # ループ内で新規登録
                 plan.user = user
                 plan.care_level = cert.care_level # どの介護度用の行か保存
-                
+
                 # スケジュール生成
                 start_day = item.get('start_day', 1)
                 # その月の末日を取得
@@ -85,45 +95,38 @@ def create_plan(request,user_id):
                 plan.save()
 
 
-            if len(certs_to_save) > 1:
+            if change_cert: # 介護適用が変更月
                 messages.success(request, f'サービス提供表の計画を作成しました。\n{change_cert.limit_start.day}日から介護度が変更されます。')
             else:
                 messages.success(request, 'サービス提供表の計画を作成しました')
             url = reverse('dashboard:service', args=[user_id])
             return redirect(f'{url}?year={year}&month={month}')
-    else: #GETリクエスト
-        user = get_object_or_404(UseUser, id=user_id)
-        now = timezone.now()
-        year = int(request.GET.get('year',now.year))
-        month = int(request.GET.get('month',now.month))
-        messages.success(request, f'{month}月分の適用曜日と時間を登録してください')
-        prev = _previous_record(user)
-        form = PlanForm({
-            'year':year,
-            'month':month,
-            'start_time':prev.start_time if prev else '09:00',
-            'end_time':prev.end_time if prev else '17:00',
-            'weekdays':prev.weekday_pattern if prev else []},
-            user_id=user_id
-            )
-        plans = ServicePlan.objects.filter(user = user,year = year,month = month,)
-        user_code = plans.values_list("service_code",flat=True) #userチェック済みのサービスコード
-        all_plans = list(ServiceMaster.objects #todo関数化
-            .exclude(service_code__in = user_code)
-            .filter(care_level = user.care_level)
-            .values()
-        )
-        logger.info(f'{year}-{month}を作成する為のフォームを表示')
-        crumbs = [
-            (f"{user.name}様 サービス提供表作成{year}-{int(month)-1}", ),
-            (f"{user.name}様 サービス提供表計画作成", None)
-        ]
-        
-        context={'year':year,'month':month,'user':user,'form': form,'all_plans':all_plans, 'breadcrumbs': BreadcrumbUtil.create(crumbs)}
-        return render(request,'dashboard/create_plan.html', context )
-  
-    messages.error(request,f'error')
-    return redirect('dashboard:user_list')
+        else: #GETリクエスト
+            messages.success(request, f'{year}年 {month}月分の適用曜日と時間を登録してください')
+            prev:ServicePlan|None = _previous_record(user)
+            initial = {
+                'year':year,
+                'month':month,
+                'start_time':prev.start_time if prev else '09:00',
+                'end_time':prev.end_time if prev else '17:00',
+                'weekdays':prev.weekday_pattern if prev else [],
+                'from_list':from_list
+            }
+            form = PlanForm(initial=initial,user_id=user_id)
+            plans = ServicePlan.objects.filter(user = user,year = year,month = month,)
+            user_code = plans.values_list("service_code",flat=True) #userチェック済みのサービスコード
+            all_plans = list(ServiceMaster.objects #todo モデルに問い合わせるReact化
+                             .exclude(service_code__in = user_code)
+                             .filter(care_level = user.care_level)
+                             .values()
+                             )
+            logger.info(f'{year}-{month}を作成する為のフォームを表示')
 
-def _previous_record(user):
+            context={'year':year,'month':month,'user':user,'form': form,'all_plans':all_plans, 'breadcrumbs': BreadcrumbUtil.create(crumbs)}
+            return render(request,'dashboard/create_plan.html', context )
+    except Exception:
+        messages.error(request,f'error')
+        return redirect('dashboard:user_list')
+
+def _previous_record(user) -> ServicePlan:
     return ServiceMonthlyRecord.objects.filter(user=user).order_by('-date').first()

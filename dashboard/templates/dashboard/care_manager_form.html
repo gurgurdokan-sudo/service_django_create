@@ -5,7 +5,7 @@
 <link rel="stylesheet" href="{% static 'dashboard/css/temp.css' %}">
 {% endblock %}
 {% block body %}
-<h2>{{ title|default:'ケアマネジャー登録' }}</h2>
+<h2 class="page-title">{{ title|default:'ケアマネジャー登録' }}</h2>
 <div class="detail-card">
   <div id="bread" data-items="{{ breadcrumbs }}"></div>
   {# 同じフォームでケアマネジャーのプロフィール/利用者プロフィール/認定情報 #}

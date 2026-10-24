@@ -7,11 +7,11 @@
   {% include 'dashboard/components/messages.html' %}
 <div id="bread" data-items="{{ breadcrumbs }}"></div>
 <!---- home>>Planがないユーザー ---->
-<h2>{{ user.name }} さんのサービス提供計画作成</h2>
+<h2 class="page-title">{{ user.name }} さんのサービス提供計画作成</h2>
 <div class=detail-card>
 <form method="post" id="planForm" class="plan-form" action="{{ request.get_full_path }}"  novalidate>
   {% csrf_token %}
- 
+  <input type="hidden" value="{{ from_list }}" />
   <p>
     <label>{{ form.year.label }}</label>
     {{ form.year }}

@@ -2,21 +2,17 @@ import uuid
 from datetime import date
 from django.contrib.messages.middleware import MessageMiddleware
 from django.contrib.sessions.middleware import SessionMiddleware
-from django.contrib.auth import login
 from django.urls import reverse
-from urllib3 import request
 
 from dashboard.models import (
     UseUser, ServiceMonthlyRecord, Office, Municipality, Certificate, ServicePlan, CareManager
 )
-from dashboard.forms import PlanForm
-from dashboard.tests.base import BaseTestCase
 from django.test import RequestFactory, TestCase
 
 from dashboard.views.create_plan import create_plan
 
 
-class CertificateChengeWithPlnaCreateTest(TestCase):
+class CertificateChangeWithPlanCreateTest(TestCase):
     def setUp(self):
         self.factory = RequestFactory()
         # 市町村

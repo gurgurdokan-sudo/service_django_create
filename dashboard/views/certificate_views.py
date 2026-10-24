@@ -15,7 +15,7 @@ def certificate_update(request, user_id):
     instance = user.certificates.filter(is_active=True).first()
 
     if request.method == 'POST':
-        form = CertificateForm(request.POST)
+        form = CertificateBaseForm(request.POST)
 
         if form.is_valid():
             limit_start = form.cleaned_data.get('limit_start')
@@ -30,7 +30,7 @@ def certificate_update(request, user_id):
                 return redirect('dashboard:detail', user_id=user.id)
 
     else:
-        form = CertificateForm(instance=instance)  # 初期値として最初の認定情報を使用
+        form = CertificateBaseForm(instance=instance)  # 初期値として最初の認定情報を使用
     crumbs = [
         # ("利用者一覧", "dashboard:user_list"),
         (f"{user.name} 様 詳細", "dashboard:detail", [user.id]),
@@ -57,7 +57,7 @@ def certificate_create(request, user_id):
     ]
 
     if request.method == 'POST':
-        form = CertificateBaseForm(request.POST)
+        form = CertificateForm(request.POST)
         form.instance.user = user
         if form.is_valid():
             form.save(user=user)

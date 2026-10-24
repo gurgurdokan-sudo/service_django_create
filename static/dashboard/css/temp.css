@@ -71,28 +71,119 @@
 }
 /* --- 詳細の曜日関連 --- */
 .weekday-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+    display: flex;
+    align-items: center;
+    gap: 18px;
 }
-.weekday-row label{
-    width: 100% !important;
+
+/* 項目名のラベルだけに適用 */
+.weekday-row > label {
+    width: 230px !important;
+    flex-shrink: 0;
     border: none;
 }
-#id_weekdays{
-  display: flex;
-  gap: 10px;
-  padding: 0;
-  margin: 0;
-  list-style: none;
-  box-sizing: revert !important;
+
+/* 曜日一覧 */
+#id_weekdays {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 0;
+    margin: 0;
+    list-style: none;
 }
-#id_weekdays label{
-    width: 30px;
-    border: 2px solid #666;
-    box-sizing: revert !important;
+
+#id_weekdays > li,
+#id_weekdays > div {
+    margin: 0;
+    padding: 0;
+    list-style: none;
 }
-/*  */
+
+/* 曜日ボタン */
+#id_weekdays label {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 46px !important;
+    height: 38px;
+    margin: 0;
+    padding: 0;
+
+    color: #495057;
+    background-color: #f8f9fa;
+    border: 1px solid #adb5bd;
+    border-radius: 6px;
+
+    font-size: 0.85rem;
+    font-weight: 600;
+    line-height: 1;
+    cursor: pointer;
+    user-select: none;
+    box-sizing: border-box !important;
+
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+
+    transition:
+        color 0.15s ease,
+        background-color 0.15s ease,
+        border-color 0.15s ease,
+        box-shadow 0.15s ease,
+        transform 0.1s ease;
+}
+
+/* チェックボックス本体を非表示 */
+#id_weekdays input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* ホバー */
+#id_weekdays label:hover {
+    color: #2c3e50;
+    background-color: #eef2f5;
+    border-color: #5f7183;
+    box-shadow: 0 2px 5px rgba(44, 62, 80, 0.12);
+}
+
+/* 選択中 */
+#id_weekdays label:has(input[type="checkbox"]:checked) {
+    color: #fff;
+    background-color: #2c3e50;
+    border-color: #2c3e50;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.18);
+    transform: translateY(1px);
+}
+
+/* 土曜日 */
+#id_weekdays > :nth-child(6) label {
+    color: #315b7d;
+    border-color: #8ba6ba;
+}
+
+#id_weekdays > :nth-child(6) label:has(
+    input[type="checkbox"]:checked
+) {
+    color: #fff;
+    background-color: #315b7d;
+    border-color: #315b7d;
+}
+
+/* 日曜日 */
+#id_weekdays > :nth-child(7) label {
+    color: #8a4343;
+    border-color: #bc9696;
+}
+
+#id_weekdays > :nth-child(7) label:has(
+    input[type="checkbox"]:checked
+) {
+    color: #fff;
+    background-color: #8a4343;
+    border-color: #8a4343;
+}
 /* 共通処理 */
 body {
     font-family: "Yu Gothic", "Meiryo", "Times New Roman", serif;
@@ -224,19 +315,29 @@ body {
 }
 
 /* --- 詳細ラベル --- */
-.detail-card label { 
-    display: inline-block; 
-    width: 230px;   
-    font-weight: bold; 
-    background-color: #9cc4ebac; 
-    color: white;           /* 文字は白 */
-    text-align: center; 
-    padding: 5px 10px; 
-    border-radius: 4px;     /* 角丸 */
-    margin-right: 15px; 
-    font-size: 0.9rem;
+
+/* 詳細ラベル */
+.detail-card label {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 230px;
+    min-height: 34px;
+    margin-right: 15px;
+    padding: 6px 12px;
+
+    color: var(--color-primary);
+    background-color: var(--color-primary-soft);
+    border-left: 4px solid var(--color-accent);
+    border-radius: 4px;
+
+    font-size: 0.88rem;
+    font-weight: 600;
+    text-align: center;
     vertical-align: middle;
 }
+
 
 /* 必須項目のラベルに「必須」バッジを擬似的に追加 */
 

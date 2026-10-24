@@ -119,6 +119,7 @@ def _is_future_month_not_pa(user, year, month, prev=False):
 def user_service(request,user_id):
     dis_year = int(request.GET.get('year', now.year))
     dis_month = int(request.GET.get('month', now.month))
+    from_list = request.GET.getlist('from_list') or 0
     user = UseUser.objects.get(id=user_id)
 
 # ケアマネジャーor認定情報更新が必要 利用者一覧画面にリダイレクトする
@@ -131,13 +132,13 @@ def user_service(request,user_id):
     if _is_future_month_not_pa(user, dis_year, dis_month):
         messages.error(request, f'前月が生活保護受給のため、{dis_month}月分の情報を先に登録してください')
         url = reverse('dashboard:public_assistance_create', args=[user.id] )
-        return redirect(f'{url}?year={dis_year}&month={dis_month}')
+        return redirect(f'{url}?year={dis_year}&month={dis_month}&from_list={from_list}')
 
 # 過去月のプラン作成 ではなく、プラン未作成なら作成画面にリダイレクトする
     if _is_future_month_not_plan(user_id,dis_year, dis_month):
         request.check_flag = True
         url = reverse('dashboard:createPlan', args=[user_id] )
-        return redirect(f'{url}?year={dis_year}&month={dis_month}')
+        return redirect(f'{url}?year={dis_year}&month={dis_month}&from_list={from_list}')
 
     logger.info(f'{dis_year}-{dis_month}のサービス提供票に遷移')
     context = build_user_service_context(user_id=user_id,year=dis_year,month=dis_month)

@@ -10,6 +10,40 @@
     {% load static %}
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <style>
+        :root {
+            --color-primary: #2c3e50;
+            --color-primary-hover: #34495e;
+            --color-primary-soft: #edf2f6;
+
+            --color-accent: #315b7d;
+            --color-text: #303942;
+            --color-muted: #6c7884;
+
+            --color-border: #d5dce3;
+            --color-border-dark: #aeb8c2;
+
+            --color-background: #f5f7f9;
+            --color-surface: #ffffff;
+            --color-surface-hover: #f8fafb;
+
+            --color-success: #356348;
+            --color-success-bg: #eef6f1;
+            --color-success-border: #aac8b5;
+
+            --color-danger: #8a3e3e;
+            --color-danger-bg: #fbefef;
+            --color-danger-border: #d6aaaa;
+
+            --shadow-small: 0 2px 5px rgba(36, 50, 64, 0.08);
+            --shadow-card: 0 5px 18px rgba(36, 50, 64, 0.08);
+        }
+        body {
+            margin: 0;
+            padding: 20px;
+            color: var(--color-text);
+            background-color: var(--color-background);
+            font-family: "Meiryo", "メイリオ", "Yu Gothic", "游ゴシック", "Hiragino Sans", sans-serif;
+        }
         /* サイドバーの基本設定 */
         #sidebar {
             position: fixed;

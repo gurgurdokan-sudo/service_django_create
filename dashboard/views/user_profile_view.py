@@ -73,8 +73,9 @@ def public_assistance_create(request,user_id):
     latest_pa = PublicAssistance.objects.filter(user= user,is_active = True).first()
     q_year = request.POST.get("year") or request.GET.get("year")
     q_month = request.POST.get("month") or request.GET.get("month")
+    from_list = request.GET.get("from_list") or 0
     is_from_service = bool(q_year and q_month)
-    linking = request.POST.get("linking") or request.GET.get("linking")
+    linking = request.POST.get("linking") or request.GET.get("linking") # 詳細から遷移flag
     crumbs =[
         # ("利用者一覧", "dashboard:user_list"),
         (f"{user.name} 様", "dashboard:detail", [user_id]), #詳細へ
@@ -96,21 +97,24 @@ def public_assistance_create(request,user_id):
 
     if request.method == 'POST':
         action = request.POST.get('action')
-        logger.info(f'{action} ==========================================')
+        logger.info('生活保護_create POST start ,action=%s ,user_name=%s',action, user.name)
         # form.instance.user = user
         if action == 'release':
             # 「解除」リクエストの処理
             user.public_assistance.filter(is_active=True).update(is_active=False)
             url = reverse('dashboard:service', args=[user_id])
-            return redirect(f'{url}?year={y}&month={m}')
+            return redirect(f'生活保護を解除 redirect {url}?year={y}&month={m}')
 
         elif form.is_valid():
             form.save(user=user)
             messages.success(request, f"{user.name}様 の生活保護登録")
             if is_from_service:
                 url = reverse('dashboard:service', args=[user_id])
-                return redirect(f'{url}?year={y}&month={m}')
+                logger.info(f'新規 生活保護を登録 redirect {url}?year={y}&month={m}')
+                return redirect(f'{url}?year={y}&month={m}&from_list={from_list}')
             elif linking:
+                logger.info('詳細から 生活保護を登録 or 追加, user_name=%s, year=%d, month=%d',
+                            user.name, y, m)
                 return redirect('dashboard:detail', user_id)
             else:
                 return redirect('dashboard:user_list')

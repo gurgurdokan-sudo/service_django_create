@@ -51,9 +51,9 @@
       <td><a href="{% url 'dashboard:update' user.id %}" class="btn btn-edit">編集</a></td>
       <td>
         <a class="btn linkSwitch"
-          href="{% url 'dashboard:service' user.id %}"
-          data-current="{% url 'dashboard:service' user.id %}"
-          data-prev="{% url 'dashboard:prevMonthPlan' user.id %}">
+          href="{% url 'dashboard:service' user.id %}?from_list=1"
+          data-current="{% url 'dashboard:service' user.id %}?from_list=1"
+          data-prev="{% url 'dashboard:prevMonthPlan' user.id %}?from_list=1">
           サービス提供票
         </a>
       </td>

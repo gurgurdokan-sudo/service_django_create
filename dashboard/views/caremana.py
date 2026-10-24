@@ -37,6 +37,7 @@ def care_mana_update(request, caremanager_id):
         form = CareManagerForm(instance=caremanager)
     return render(request, 'dashboard/care_manager_update.html', {
         'form': form,
+        'caremanager': caremanager,
         'breadcrumbs': BreadcrumbUtil.create(crumbs),
     })
 
