@@ -21,6 +21,7 @@ class ServiceMonthlyRecord(models.Model):
     date = models.DateField(help_text="月初の日付（例: 2026-07-01）")
     path = models.CharField(max_length=100, blank=True, null=True)  # サービス提供票の格納Path FileFieldに変更するか検討
     weekday_pattern = models.JSONField(default=list)  # 0=月曜日, 6=日曜日
+    addon_pattern = models.JSONField(default=list)
     start_time = models.TimeField(default="09:00")
     end_time = models.TimeField(default="17:00")
 
