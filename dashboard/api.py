@@ -1,5 +1,4 @@
-import logging
-
+from typing import Optional, Any
 from django.db import transaction
 from django.db.models import QuerySet
 from django.shortcuts import get_object_or_404
@@ -15,7 +14,7 @@ from dashboard.models import (
     UseUser,
 )
 from dashboard.services.summary import build_service_summary
-
+import logging
 logger = logging.getLogger(__name__)
 
 
@@ -26,7 +25,7 @@ def _error(message, status=400):
     return Response({"status": "error", "message": message}, status=status)
 
 
-def _parse_int(value, min_value=None, max_value=None):
+def _parse_int(value:Any, min_value=None, max_value=None):
     """数字に変換できなければ None を返す"""
     try:
         number = int(value)
@@ -300,7 +299,7 @@ def update_schedule(request, plan_id):
         logger.warning("不明な row_type: plan_id=%s, row_type=%s", plan.id, row_type)
         return _error("row_type が正しくありません")
 
-    monthly_record = (
+    monthly_record:ServiceMonthlyRecord = (
         ServiceMonthlyRecord.objects
         .filter(plans=plan)
         .select_related("user")
@@ -437,7 +436,7 @@ def validate_monthly_record(request, user_id):
     warnings = []
 
     # --- ヘルパー関数 ---
-    def parse_to_int(value, day, service_name, field_type):
+    def parse_to_int(value:Any, d:int, service_name:str, field_type:str) -> Optional[int]:
         """
         数値を安全にパースする。
         数値化できない不正な文字列の場合はエラーリストに追加し、Noneを返す。
@@ -446,19 +445,19 @@ def validate_monthly_record(request, user_id):
             return 0
         try:
             if isinstance(value, int):
-                count = value
+                cunt = value
             elif isinstance(value, float) and value.is_integer():
-                count = int(value)
+                cunt = int(value)
             elif isinstance(value, str) and value.strip().isdigit():
-                count = int(value.strip())
+                cunt = int(value.strip())
             else:
                 raise ValueError
-            if count < 0:
+            if cunt < 0:
                 raise ValueError
-            return count
+            return cunt
         except (ValueError, TypeError, OverflowError):
             errors.append(
-                f"【{service_name}】{day}日: {field_type}に無効な値（{value}）が入力されています。0以上の整数を指定してください。")
+                f"【{service_name}】{d}日: {field_type}に無効な値（{value}）が入力されています。0以上の整数を指定してください。")
             return None
 
     # --- 月次加算の集計用（利用者・月単位で全体を管理） ---
@@ -487,7 +486,7 @@ def validate_monthly_record(request, user_id):
             addon_ids.update(str(k) for k in addon_dict.keys())
 
         # このプランで使われている加算をDBから取得
-        current_master = {str(a.id): a for a in AddOnService.objects.filter(id__in=addon_ids)}
+        current_master:dict = {str(a.id): a for a in AddOnService.objects.filter(id__in=addon_ids)}
         global_addons_master.update(current_master)
 
         # 加算IDのチェック
@@ -526,7 +525,7 @@ def validate_monthly_record(request, user_id):
                 active_addons.append(a_id_str)
 
                 # 月額加算のカウントアップ
-                addon_obj = current_master.get(a_id_str)
+                addon_obj:AddOnService = current_master.get(a_id_str)
                 if addon_obj and addon_obj.apply_unit == "monthly":
                     global_monthly_addon_counts[a_id_str] = global_monthly_addon_counts.get(a_id_str, 0) + 1
 
