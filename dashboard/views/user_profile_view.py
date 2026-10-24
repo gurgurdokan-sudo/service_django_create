@@ -1,12 +1,21 @@
+import calendar
 from datetime import date, timedelta
-
 from dateutil.relativedelta import relativedelta
+
 from django.contrib import messages
+from django.db.models import QuerySet, Prefetch
 from django.urls import reverse
 from django.shortcuts import render, redirect, get_object_or_404
+from django.utils import timezone
 
 from dashboard.forms import UserForm, PublicAssistanceForm
-from dashboard.models import UseUser, CareManager, PublicAssistance
+from dashboard.models import(
+                                UseUser,
+                                CareManager,
+                                PublicAssistance,
+                                Certificate,
+                                ServiceMonthlyRecord
+                            )
 from dashboard.utils import BreadcrumbUtil
 from employees.permissions import delete_permission_required
 import logging
@@ -14,30 +23,78 @@ logger = logging.getLogger(__name__)
 
 #利用者一覧
 def user_list(request):
-    users = UseUser.objects.select_related('care_manager').prefetch_related('certificates')
-    today = date.today()
-    this_month = (today.year, today.month)
-    next_ = today + relativedelta(months=1)
-    next_month = (next_.year, next_.month)
+    today = timezone.localdate()
+    current_month_start = today.replace(day=1)
+    next_month_start = current_month_start + relativedelta(months=1)
+    current_month = (today.year, today.month)
+    next_month = (next_month_start.year, next_month_start.month)
 
+    last_day = calendar.monthrange(today.year, today.month)[1]
+    month_end = today.replace(day=last_day)
+    is_within_ten_days_of_month_end = today >= month_end - timedelta(days=10)
+
+    # 月末が近いときだけ、当月の未確定記録を取得
+    unconfirmed_user_ids = set()
+    if is_within_ten_days_of_month_end:
+        unconfirmed_user_ids = set(
+            ServiceMonthlyRecord.objects
+            .filter(date=current_month_start, confirmed=False)
+            .values_list("user_id", flat=True)
+        )
+    # 毎回DBを引かないよう、有効な認定を事前取得
+    valid_certificates = (
+        Certificate.objects
+        .filter(limit_start__lte=today, limit_end__gte=today)
+        .order_by("-limit_start")
+    )
+    users: QuerySet[UseUser] = (
+        UseUser.objects
+        .select_related("care_manager")
+        .prefetch_related(
+            Prefetch("certificates",queryset=valid_certificates,to_attr="valid_certificates")
+        )
+    )
     alerts = []
     for user in users:
         if user.care_manager_id is None:
-            alerts.append(f'{user.name} 様のケアマネジャーが紐づいていません。詳細画面で設定してください')
+            alerts.append(
+                f"{user.name} 様のケアマネジャーが紐づいていません。"
+                "詳細画面で設定してください"
+            )
 
-        certificate = user.current_certificate
+        certificate = (
+            user.valid_certificates[0]
+            if user.valid_certificates
+            else None
+        )
+
         if certificate is None:
-            alerts.append(f'{user.name} 様の有効な介護認定がありません。詳細画面で介護認定を設定してください')
-            continue
+            alerts.append(
+                f"{user.name} 様の有効な介護認定がありません。"
+                "詳細画面で介護認定を設定してください"
+            )
+        else:
+            changed_at = certificate.care_level_changed_at
+            if changed_at is not None:
+                changed_month = (changed_at.year, changed_at.month)
 
-        changed_at = certificate.care_level_changed_at
-        if changed_at is None:  # 以前の介護認定なし
-            continue
-        changed_month = (changed_at.year, changed_at.month)
-        if changed_month == this_month:
-            alerts.append(f'{user.name} 様の介護認定が今月で切り替わります')
-        elif changed_month == next_month:
-            alerts.append(f'{user.name} 様の介護認定が来月で切り替わります')
+                if changed_month == current_month:
+                    alerts.append(
+                        f"{user.name} 様の介護認定が今月で切り替わります"
+                    )
+                elif changed_month == next_month:
+                    alerts.append(
+                        f"{user.name} 様の介護認定が来月で切り替わります"
+                    )
+
+        # 認定情報の有無にかかわらず、月末通知を判定する
+        if (
+                is_within_ten_days_of_month_end
+                and user.pk in unconfirmed_user_ids
+        ):
+            alerts.append(
+                f"{user.name} 様のサービス提供表を確定させてください"
+            )
 
     return render(request, 'dashboard/user_list.html', {
         'users': users,
@@ -70,7 +127,7 @@ def user_create(request, cm_id):
 #生活保護情報4
 def public_assistance_create(request,user_id):
     user = get_object_or_404(UseUser,id = user_id)
-    latest_pa = PublicAssistance.objects.filter(user= user,is_active = True).first()
+    latest_pa:PublicAssistance = PublicAssistance.objects.filter(user= user,is_active = True).first()
     q_year = request.POST.get("year") or request.GET.get("year")
     q_month = request.POST.get("month") or request.GET.get("month")
     from_list = request.GET.get("from_list") or 0
@@ -209,12 +266,12 @@ def user_update(request, user_id):
 #詳細（JSのbutton遷移で消去
 def user_detail(request, user_id):
     # 履歴もまとめて取得
-    user = get_object_or_404(
-            UseUser.objects.prefetch_related('certificates', 'public_assistance'),
+    user:UseUser = get_object_or_404(
+        UseUser.objects.prefetch_related('certificates', 'public_assistance'),
         id=user_id
     )
-    certificates = user.certificates.order_by("-is_active","-limit_start")[:5]
-    public_assistance = user.public_assistance.order_by("-is_active","-end_date")
+    certificates:QuerySet[Certificate] = user.certificates.order_by("-is_active","-limit_start")[:5]
+    public_assistance:QuerySet[PublicAssistance] = user.public_assistance.order_by("-is_active","-end_date")[:5]
 
     logger.info(f'\n介護認定={certificates}\n生活保護={public_assistance}')
     labels = {f.name: f.verbose_name for f in user._meta.fields}

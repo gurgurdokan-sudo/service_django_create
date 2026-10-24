@@ -8,7 +8,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 class ServiceMonthlyRecord(models.Model):
-    '''実際に提供されたサービスの記録を管理するモデル'''
+    """実際に提供されたサービスの記録を管理するモデル"""
 
     class Meta:
         verbose_name_plural = "月間提供表"
