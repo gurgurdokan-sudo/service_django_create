@@ -134,6 +134,7 @@ def _is_future_month_not_pa(user, year, month, prev=False):
 
 #main
 def user_service(request,user_id):
+    now = timezone.now()
     dis_year = int(request.GET.get('year', now.year))
     dis_month = int(request.GET.get('month', now.month))
     from_list = request.GET.getlist('from_list') or 0

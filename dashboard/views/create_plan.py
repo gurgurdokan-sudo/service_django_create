@@ -155,4 +155,4 @@ def _previous_record(user, year, month) -> ServiceMonthlyRecord | None:
         user.monthly_records.filter(date__lt=target_date)
         .order_by("-date")
         .first()
-    )
+    ) or None

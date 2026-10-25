@@ -3,7 +3,10 @@ from django.db import transaction
 from django.db.models import QuerySet
 from django.shortcuts import get_object_or_404
 from django.http import JsonResponse
-from rest_framework.decorators import api_view
+from django.utils.dateparse import parse_time
+from rest_framework import status
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from dashboard.models import (
@@ -568,4 +571,63 @@ def validate_monthly_record(request, user_id):
         "errors": errors,
         "warnings": warnings,
         "message": "チェックが完了しました。",
+    })
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def service_master_preview(request):
+    """
+    介護度・開始時刻・終了時刻から、
+    プレビュー用の時間区分とサービス名を返す。
+    """
+
+    care_level = request.query_params.get("care_level")
+    start_time = parse_time(request.query_params.get("start_time", ""))
+    end_time = parse_time(request.query_params.get("end_time", ""))
+
+    if not care_level:
+        return Response(
+            {"detail": "care_level を指定してください"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    if start_time is None or end_time is None:
+        return Response(
+            {"detail": "start_time と end_time を正しく指定してください"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    if end_time <= start_time:
+        return Response(
+            {"detail": "終了時刻は開始時刻より後にしてください"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    # ServicePlanの既存プロパティで滞在時間区分を判定する。
+    # 保存はしない。start_time / end_timeだけを使う一時インスタンス。
+    preview_plan = ServicePlan(
+        start_time=start_time,
+        end_time=end_time,
+    )
+    category = preview_plan.stay_time_category
+
+    if not category:
+        return Response({
+            "category": None,
+            "service_name": None,
+        })
+
+    service = (
+        ServiceMaster.objects
+        .filter(
+            care_level=care_level,
+            stay_time_category=category,
+        )
+        .order_by("id")
+        .first()
+    )
+
+    # 該当なし時間区分は返す
+    return Response({
+        "category": category,
+        "service_name": service.service_name if service else None,
     })
