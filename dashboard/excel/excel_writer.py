@@ -150,7 +150,7 @@ def get_service_sheet_path(user, year, month):
     if settings.DJANGO_ENV == 'dev':
         user_dir = os.path.join(
             settings.MEDIA_ROOT,
-            "service_sheets_export",
+            # "service_sheets_export",
             f"{user.id}_{user.name}"
         )
         os.makedirs(user_dir, exist_ok=True)

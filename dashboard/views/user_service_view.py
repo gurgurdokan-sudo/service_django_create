@@ -1,6 +1,6 @@
 from datetime import date
 
-from django.db.models import QuerySet
+from django.db.models import QuerySet, Q
 from django.shortcuts import render,redirect, get_object_or_404
 from django.utils import timezone
 from django.contrib import messages
@@ -16,18 +16,18 @@ from dashboard.models import (
     ServiceMonthlyRecord, Certificate,
 )
 from dashboard.calendar_table import get_month_days
-now = timezone.now()
 
 import logging
 logger = logging.getLogger(__name__)
 
 def build_user_service_context(user_id, year, month):
     """画面やExcelに渡すcontextを組み立てる"""
+    now = timezone.now()
     office:Office = Office.objects.filter(id=1).first() #todoログインユーザー事務所
     default = AddOnService.objects.get(pk=office.default_service.pk)
 
     target:UseUser = (UseUser.objects.select_related('care_manager').get(id=user_id))
-    plans: QuerySet[ServicePlan] =\
+    plans: QuerySet[ServicePlan] = \
         ServicePlan.objects.filter(user = target,year = year,month = month,)
     addons = []
     for p in plans:
@@ -46,6 +46,13 @@ def build_user_service_context(user_id, year, month):
             })
     logger.info(f'{year}-{month}のサービス提供票のplansを取得')
 
+    if plans.filter(Q(service_code__isnull=True) | Q(service_code="")).exists():
+        logger.error(
+            "サービスコード未設定のプランがあります: user_id=%s, year=%s, month=%s",
+            target.id, year, month,
+        )
+        raise ValueError("既存プランにサービスコード未設定の行があります")
+
     user_codes = plans.values_list("service_code",flat=True)#userチェック済みのサービスコード
     certificate:Certificate = target.get_certificate(year, month)
     if certificate:
@@ -56,7 +63,7 @@ def build_user_service_context(user_id, year, month):
             ServiceMaster.objects
             .filter(care_level__in = c_list)
             .exclude(service_code__in = user_codes)
-            )
+        )
         print(service_masters,flush=True)
     else:
         service_masters = None
@@ -101,6 +108,7 @@ def build_user_service_context(user_id, year, month):
 
 def _is_future_month_not_plan(user, year, month, prev=False):
     """指定された年月が未来で、かつその月のプランが存在しない場合にTrueを返す"""
+    now = timezone.now()
     if prev:
         return not ServicePlan.objects.filter(user=user, year=year, month=month).exists()
     if (year > now.year) or (year == now.year and month >= now.month):
@@ -161,6 +169,7 @@ def user_service(request,user_id):
 
 #一括前月モード
 def prev_month_plan(request, user_id):
+    now = timezone.now()
     prev_month = now.month - 1 if now.month > 1 else 12
     year = now.year if prev_month != 12 else now.year - 1
     if _is_future_month_not_plan(user_id,year,prev_month,prev=True):
@@ -180,6 +189,7 @@ def prev_month_plan(request, user_id):
 #予定通り
 def service_act(request, user_id):
     user = get_object_or_404(UseUser, id=user_id)
+    now = timezone.now()
     year = int(request.GET.get('year', now.year))
     month = int(request.GET.get('month', now.month))
 
@@ -191,7 +201,7 @@ def service_act(request, user_id):
     for plan in query_plans:
         schedule = plan.schedule_dict      # {"1": "1", "5": "1", ...}
         actual = plan.actual_dict          # {"1": {"main": "", "addon": []}, ...}
-        actual_addon = plan.add_addon_pattern_to_actual(plan.schedule_json)
+        plan.add_addon_pattern_to_actual(plan.schedule_json)
         for day in col:
             day_str = str(day['day'])
             if schedule.get(day_str) == '1':
