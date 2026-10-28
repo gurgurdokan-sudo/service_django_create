@@ -557,12 +557,11 @@ def service_summary(request, user_id):
         "summary": build_service_summary(user, year, month, save=False),
     })
 
-@api_view(['GET'])
+@api_view(["GET"])
 def validate_monthly_record(request, user_id):
     try:
-        year = int(request.GET.get("year",2000))
-        month = int(request.GET.get("month",10))
-        logger.info(f"{year}{month}")
+        year = int(request.GET.get("year", 2000))
+        month = int(request.GET.get("month", 10))
         if not 1 <= month <= 12:
             raise ValueError
     except (KeyError, TypeError, ValueError):
@@ -572,17 +571,22 @@ def validate_monthly_record(request, user_id):
             "warnings": [],
         }, status=400)
 
-    plans:QuerySet[ServicePlan] = ServicePlan.objects.filter(user_id=user_id, year=year, month=month)
+    plans: list[ServicePlan] = list(
+        ServicePlan.objects.filter(
+            user_id=user_id,
+            year=year,
+            month=month,
+        ).order_by("id")
+    )
     errors = []
     warnings = []
 
-    # --- ヘルパー関数 ---
     def parse_to_int(value:Any, d:int, service_name:str, field_type:str) -> Optional[int]:
         """
         数値を安全にパースする。
         数値化できない不正な文字列の場合はエラーリストに追加し、Noneを返す。
         """
-        if value == "" or value is None:
+        if value in ("", None):
             return 0
         try:
             if isinstance(value, int):
@@ -598,110 +602,174 @@ def validate_monthly_record(request, user_id):
             return cunt
         except (ValueError, TypeError, OverflowError):
             errors.append(
-                f"【{service_name}】{d}日: {field_type}に無効な値（{value}）が入力されています。0以上の整数を指定してください。")
+                f"【{service_name}】{day}日: {field_type}に無効な値"
+                f"（{value}）が入力されています。0以上の整数を指定してください。"
+            )
             return None
 
-    # --- 月次加算の集計用（利用者・月単位で全体を管理） ---
-    global_monthly_addon_counts = {}
+    # 先に全Planの基本サービス実績日を集める。
+    # 自費は、紐付け先Plan自身ではなく、同じ日に全Planのどれかで
+    # 基本サービス実績があるかを判定する。
+    actual_data_by_plan = {}
+    main_count_by_plan_day = {}
+    actual_main_days_all_plans = set()
     total_actual_main_count = 0
-
-    # 加算ID -> 加算名のマスタ辞書
-    global_addons_master = {}
 
     for plan in plans:
         actual_data = plan.actual_dict
+        actual_data_by_plan[plan.id] = actual_data
+
         if not isinstance(actual_data, dict):
             errors.append(f"【{plan.service_name}】: 実績データの形式が不正です。")
             continue
 
-        # --- マスタ取得と存在チェック ---
-        addon_ids = set()
         for day, day_info in actual_data.items():
             if not isinstance(day_info, dict):
                 errors.append(f"【{plan.service_name}】{day}日: 実績データの形式が不正です。")
+                continue
+
+            day_key = str(day)
+            main_count = parse_to_int(
+                day_info.get("main", ""), day_key, plan.service_name, "基本サービス"
+            )
+            main_count_by_plan_day[(plan.id, day_key)] = main_count
+
+            if main_count is not None:
+                total_actual_main_count += main_count
+                if main_count > 0:
+                    actual_main_days_all_plans.add(day_key)
+
+    # 加算の月額算定回数を利用者・月単位で集計する。
+    global_monthly_addon_counts = {}
+    global_addons_master = {}
+    addon_seen_by_day = {}
+
+    for plan in plans:
+        actual_data = actual_data_by_plan.get(plan.id)
+        if not isinstance(actual_data, dict):
+            continue
+
+        # このPlanの実績JSONに含まれる加算マスタを取得する。
+        addon_ids = set()
+        for day, day_info in actual_data.items():
+            if not isinstance(day_info, dict):
                 continue
             addon_dict = day_info.get("addon") or {}
             if not isinstance(addon_dict, dict):
                 errors.append(f"【{plan.service_name}】{day}日: 加算データの形式が不正です。")
                 continue
-            addon_ids.update(str(k) for k in addon_dict.keys())
+            addon_ids.update(str(addon_id) for addon_id in addon_dict.keys())
 
-        # このプランで使われている加算をDBから取得
-        current_master:dict = {str(a.id): a for a in AddOnService.objects.filter(id__in=addon_ids)}
+        current_master = {
+            str(addon.id): addon
+            for addon in AddOnService.objects.filter(id__in=addon_ids)
+        }
         global_addons_master.update(current_master)
 
-        # 加算IDのチェック
-        for a_id in addon_ids:
-            if a_id not in current_master:
-                errors.append(f"【{plan.service_name}】: 登録された加算データ（ID: {a_id}）のマスタが見つかりません。")
+        for addon_id in addon_ids:
+            if addon_id not in current_master:
+                errors.append(
+                    f"【{plan.service_name}】: 登録された加算データ"
+                    f"（ID: {addon_id}）のマスタが見つかりません。"
+                )
 
-        # --- 入力チェック ---
+        # 自費: どのPlanに付いていても、同じ日に全Planのどこにも基本サービス実績がなければエラー
+        # 保険加算: 紐付く同じPlanの日別実績を確認する。
         for day, day_info in actual_data.items():
             if not isinstance(day_info, dict):
                 continue
-            raw_main = day_info.get("main", "")
 
-            main_count = parse_to_int(raw_main, day, plan.service_name, "基本サービス")
-            if main_count is not None:
-                total_actual_main_count += main_count
-
+            day_key = str(day)
+            main_count = main_count_by_plan_day.get((plan.id, day_key))
             addon_dict = day_info.get("addon") or {}
             if not isinstance(addon_dict, dict):
                 continue
-            active_addons = []
 
-            for a_id, a_val in addon_dict.items():
-                a_id_str = str(a_id)
-                if a_val is None or a_val == "":
+            daily_insurance_addons = []
+            for addon_id, addon_value in addon_dict.items():
+                addon_id = str(addon_id)
+                if addon_value in (None, ""):
                     continue
-                if not isinstance(a_val, str):
+                if not isinstance(addon_value, str):
                     errors.append(
-                        f"【{plan.service_name}】{day}日: "
-                        f"加算（ID:{a_id_str}）のデータ形式が不正です。"
+                        f"【{plan.service_name}】{day_key}日: "
+                        f"加算（ID:{addon_id}）のデータ形式が不正です。"
                     )
                     continue
-                if not a_val.strip():
+                if not addon_value.strip():
                     continue
 
-                active_addons.append(a_id_str)
+                addon_obj: AddOnService = current_master.get(addon_id)
+                if addon_obj is None:
+                    # マスタがないエラーは上で記録済み。
+                    continue
+                addon_key = (day_key, addon_id)
+                previous_plan_id = addon_seen_by_day.get(addon_key)
+                if previous_plan_id is not None:
+                    errors.append(
+                        f"【{plan.service_name}】{day_key}日: 加算"
+                        f"（{addon_obj.service_name}）が同日に複数Planへ登録されています。"
+                    )
+                else:
+                    addon_seen_by_day[addon_key] = plan.id
 
-                # 月額加算のカウントアップ
-                addon_obj:AddOnService = current_master.get(a_id_str)
-                if addon_obj and addon_obj.apply_unit == "monthly":
-                    global_monthly_addon_counts[a_id_str] = global_monthly_addon_counts.get(a_id_str, 0) + 1
+                if addon_obj.insurance_type == "self_pay":
+                    if day_key not in actual_main_days_all_plans:
+                        errors.append(
+                            f"【{plan.service_name}】{day_key}日: 自費項目"
+                            f"（{addon_obj.service_name}）が登録されていますが、"
+                            "同日にいずれのPlanにも基本サービス実績がありません。"
+                        )
+                    # 自費はPlan単体のmain実績との紐付け判定をしない。
+                    continue
 
-            # --- 日ごとに算定する加算だけ、同日の基本サービス実績を確認 ---
-            daily_addons = [
-                a_id for a_id in active_addons
-                if current_master.get(a_id)
-                   and current_master[a_id].apply_unit != "monthly"
-            ]
-            if main_count is not None and main_count <= 0 and daily_addons:
-                addon_names = [current_master[k].service_name for k in daily_addons]
+                if addon_obj.apply_unit == "monthly":
+                    global_monthly_addon_counts[addon_id] = (
+                            global_monthly_addon_counts.get(addon_id, 0) + 1
+                    )
+                else:
+                    daily_insurance_addons.append(addon_obj)
+
+            # 日ごとに算定する保険加算は、紐付いているPlanの基本実績を確認。
+            if (
+                    main_count is not None
+                    and main_count <= 0
+                    and daily_insurance_addons
+            ):
+                addon_names = [addon.service_name for addon in daily_insurance_addons]
                 errors.append(
-                    f"【{plan.service_name}】{day}日: 基本サービスの実績がないのに加算（{', '.join(addon_names)}）が登録されています。")
+                    f"【{plan.service_name}】{day_key}日: 基本サービスの実績がないのに"
+                    f"保険加算（{', '.join(addon_names)}）が登録されています。"
+                )
 
-        # ---  予定と実績の乖離 ---
+        # Planごとの予定と実績の乖離を確認する。
         sched_count = plan.get_total_count("schedule")
         act_base_count = plan.count_actual_main_days
         if sched_count != act_base_count:
             warnings.append(
-                f"【{plan.service_name}】: 予定{sched_count}回・実績{act_base_count}回です。回数差を確認してください。")
+                f"【{plan.service_name}】: 予定{sched_count}回・"
+                f"実績{act_base_count}回です。回数差を確認してください。"
+            )
 
-
-    # ---  月次加算の重複チェック ---
-    for a_id, count in global_monthly_addon_counts.items():
+    # 月額算定の保険加算の重複チェック。
+    for addon_id, count in global_monthly_addon_counts.items():
         if count > 1:
-            addon_name = global_addons_master[a_id].service_name if a_id in global_addons_master else f"ID:{a_id}"
-            # 月1回が制度・マスタ仕様で確定している場合は errors.append に変更する。
+            addon_name = (
+                global_addons_master[addon_id].service_name
+                if addon_id in global_addons_master
+                else f"ID:{addon_id}"
+            )
             warnings.append(
-                f"月額算定の加算（{addon_name}）が同月内に複数回（{count}回）登録されています。算定単位を確認してください。")
+                f"月額算定の加算（{addon_name}）が同月内に複数回"
+                f"（{count}回）登録されています。算定単位を確認してください。"
+            )
 
-    # 月額加算は同日に基本サービスがなくてもよいが、月全体で基本実績がない場合は確認を促す。
     if global_monthly_addon_counts and total_actual_main_count == 0:
-        warnings.append("月額加算がありますが、月内の基本サービス実績がありません。算定要件を確認してください。")
+        warnings.append(
+            "月額加算がありますが、月内の基本サービス実績がありません。"
+            "算定要件を確認してください。"
+        )
 
-    # --- 結果の返却 ---
     status = "error" if errors else "warning" if warnings else "ok"
     return JsonResponse({
         "status": status,

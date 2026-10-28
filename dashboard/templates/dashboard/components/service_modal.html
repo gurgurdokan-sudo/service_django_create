@@ -37,7 +37,8 @@
                             <option value="{{ p.id }}"
                                     {% if p.code == plan.code %}
                                     selected
-                                    {% endif %} >{{ p.service_name }}
+                                    {% endif %} >
+                                {{ p.service_name }}（{{ p.start_time }}〜{{ p.end_time }}）
                             </option>
                         {% endfor %}
                     </select>

@@ -33,12 +33,13 @@ def build_user_service_context(user_id, year, month):
     for p in plans:
         summary = p.get_addon_summary
         for key, item in summary.items():
-            addon = item.get("addon")
+            addon: AddOnService = item.get("addon")
             days = item.get("days", [])
             if not addon:
                 continue
             addons.append({
                 "p_id": p.id,
+                "type": addon.insurance_type,
                 "id": addon.id,
                 "name": addon.service_name,
                 "days": days,
@@ -74,10 +75,10 @@ def build_user_service_context(user_id, year, month):
         for item in addons
         if item.get("id") is not None
     }
-    if office.default_service:
-        excluded_addon_ids.add(office.default_service.pk)
-
-    addon_service = AddOnService.objects.exclude(pk__in=excluded_addon_ids)
+    # if office.default_service:
+    #     excluded_addon_ids.add(office.default_service.pk)
+    #
+    # addon_service = AddOnService.objects.exclude(pk__in=excluded_addon_ids)
     logger.info(f'{year}-{month}のサービス提供票の確認状態を取得')
     record:ServicePlan = ServiceMonthlyRecord.objects.filter(user=target, date=date(year, month, 1)).first()
 
@@ -102,7 +103,7 @@ def build_user_service_context(user_id, year, month):
         'year_range': range(min(now.year, year) - 1, max(now.year, year) + 2),
         'month_range': range(1, 13),
         # 画面用　モーダルに出すPlan/Addon
-        'addon_service': addon_service,
+        'addon_service': AddOnService.objects.all(),
         'service_masters': service_masters,  # userの対象全プラン
     }
 
