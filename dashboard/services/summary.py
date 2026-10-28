@@ -111,19 +111,55 @@ def _match_plan_items(plans, plan_items):
     return list(zip(plans, items))
 
 
-def _insurance_summary(record, plans, res):
-    plan_rows = []
-    for plan, item in _match_plan_items(plans, res.get("plan_items", [])):
+def _aggregate_plan_rows(plans, plan_items):
+    """同じサービスコードのPlanを1行に集約する（時刻は集約条件にしない）。"""
+    grouped = {}
+
+    for plan, item in _match_plan_items(plans, plan_items):
         item = item or {}
-        plan_rows.append({
-            "id": plan.id,
-            "code": item.get("code", plan.service_code),
-            "name": item.get("name", plan.service_name),
-            "unit": _to_int(item.get("unit", plan.unit)),
-            "schedule_count": plan.get_total_count("schedule"),
-            "actual_count": _to_int(item.get("count")),
-            "subtotal": _to_int(item.get("subtotal")),
-        })
+        code = str(item.get("code") or plan.service_code)
+        unit = _to_int(item.get("unit", plan.unit))
+        schedule_count = _to_int(plan.get_total_count("schedule"))
+        actual_count = _to_int(item.get("count"))
+        subtotal_value = item.get("subtotal")
+        subtotal = (
+            _to_int(subtotal_value)
+            if subtotal_value is not None
+            else unit * actual_count
+        )
+
+        row = grouped.get(code)
+        if row is None:
+            row = {
+                # 代表PlanのIDを残す。
+                # 念のため plan_ids に保持する。
+                "id": plan.id,
+                "plan_ids": [],
+                "code": code,
+                "name": item.get("name", plan.service_name),
+                "unit": unit,
+                "schedule_count": 0,
+                "actual_count": 0,
+                "subtotal": 0,
+            }
+            grouped[code] = row
+        elif row["unit"] != unit:
+            # 同一コードの単位数が異なる 想定外
+            raise ValueError(
+                f"同一サービスコードの単位数が一致しません: {code}"
+            )
+
+        row["plan_ids"].append(plan.id)
+        row["schedule_count"] += schedule_count
+        row["actual_count"] += actual_count
+        row["subtotal"] += subtotal
+
+    return sorted(grouped.values(), key=lambda row: row["code"])
+
+
+def _insurance_summary(record, plans, res):
+    # 同一サービスコードの別時間PlanもAPI上で1行にまとめて返す。
+    plan_rows = _aggregate_plan_rows(plans, res.get("plan_items", []))
 
     addons = [
         {
