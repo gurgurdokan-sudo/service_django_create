@@ -12,7 +12,7 @@ class ServiceMonthlyRecord(models.Model):
     """実際に提供されたサービスの記録を管理するモデル"""
 
     class Meta:
-        verbose_name_plural = "月間提供表"
+        verbose_name_plural = "利用者-月間提供表"
         unique_together = ('user', 'date')  # その月のサービス提供票は1件のみ
 
     office = models.ForeignKey('Office', on_delete=models.PROTECT, verbose_name='サービス提供の事業所')

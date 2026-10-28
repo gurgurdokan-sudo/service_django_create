@@ -151,35 +151,37 @@
             </div>
           </td>
         </tr>
-
         <!-- このプランに紐づく加算行 -->
         {% for a_obj in addons %}
-        <tr class="addon-row" data-plan-id="{{ a_obj.p_id }}" data-name="{{ a_obj.name }}">
-          <td class="col-delete">
-            <button type="button" class="btn-delete-row"
-              onclick="deleteAddon({{ a_obj.p_id }}, '{{ a_obj.name }}')">🗑</button>
-          </td>
-          <td class="col-time">--:--</td>
-          <td class="col-service service-addon-name" colspan="2">
-            <span>{{ a_obj.name }}</span>
-          </td>
-          {#  <td class="col-office">-</td>  #}
-          <td class="col-calendar">
-            <div class="calendar-row" data-row-type="actual_addon">
-              <div class="label-cell">実績</div>
-              {% for d in calendar %}
-              <div
-                class="day-cell editable-cell {% if d.is_sun or d.is_holiday %}sun-bg{% elif d.is_sat %}sat-bg{% endif %}"
-                data-day="{{ d.day }}" data-addon-name="{{ a_obj.name }}">
-                {% if d.day|stringformat:"s" in a_obj.days %}
-                  <span>1</span>
-                {% endif %}
-              </div>
-              {% endfor %}
-                <div class="total-cell">{{ a_obj.total|default:'0' }}</div>
-            </div>
-          </td>
-        </tr>
+          {% if a_obj.p_id == plan.id %}
+            <tr class="addon-row" data-plan-id="{{ a_obj.p_id }}" data-name="{{ a_obj.name }}">
+              <td class="col-delete">
+                <button type="button" class="btn-delete-row"
+                    onclick="deleteAddon({{ a_obj.p_id }}, '{{ a_obj.name }}')">🗑
+                </button>
+              </td>
+              <td class="col-time">--:--</td>
+              <td class="col-service service-addon-name" colspan="2">
+                <span>{{ a_obj.name }}</span>
+              </td>
+              {#  <td class="col-office">-</td>  #}
+              <td class="col-calendar">
+                <div class="calendar-row" data-row-type="actual_addon">
+                  <div class="label-cell">実績</div>
+                  {% for d in calendar %}
+                    <div
+                        class="day-cell editable-cell {% if d.is_sun or d.is_holiday %}sun-bg{% elif d.is_sat %}sat-bg{% endif %}"
+                        data-day="{{ d.day }}" data-addon-name="{{ a_obj.name }}">
+                      {% if d.day|stringformat:"s" in a_obj.days %}
+                        <span>1</span>
+                      {% endif %}
+                    </div>
+                  {% endfor %}
+                  <div class="total-cell">{{ a_obj.total|default:'0' }}</div>
+                </div>
+              </td>
+            </tr>
+          {% endif %}
         {% endfor %}
 
         {% empty %}

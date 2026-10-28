@@ -178,7 +178,11 @@
             <tbody>
                 {% for record in user.monthly_records.all|dictsortreversed:"date" %}
                 <tr>
-                    <td><strong>{{ record.date|date:"Y年m月" }}</strong></td>
+                    <td class="text-truncate" style="max-width: 150px;">
+                        <a class="link-name"
+                           href="{% url 'dashboard:service' user.id %}?year={{ record.date.year }}&month={{ record.date.month }}"
+                        ><strong>{{ record.date|date:"Y年m月" }}</strong></a>
+                    </td>
                     <td>{{ record.user_share_amount|default:"0" }} 円</td>
                     <td>{{ record.benefit_amount|default:"0" }} 円</td>
                     <td>{{ record.user_share_amount|default:"0" }} 円</td>
