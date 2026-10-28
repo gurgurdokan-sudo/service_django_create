@@ -310,6 +310,7 @@ def update_schedule(request, plan_id):
         .select_related("user")
         .first()
     )
+    monthly_record.save(update_fields=["updated_at"])
     if monthly_record is None:
         return _error("このプランに対応する月次記録がありません", 409)
 
@@ -347,7 +348,6 @@ def create_plan(request, user_id):
 
     master_id = _parse_int(request.data.get("selected_service"), 1)
     year = _parse_int(request.data.get("year"), 2000, 2100)
-    print(year,flush=True)
     month = _parse_int(request.data.get("month"), 1, 12)
     start_time = request.data.get("start_time")
     end_time = request.data.get("end_time")
@@ -366,7 +366,7 @@ def create_plan(request, user_id):
             date=date(year, month, 1),
             defaults={"office": office},
         )
-
+        monthly_record.save(update_fields=["updated_at"])
         if monthly_record.confirmed:
             return _error("確定済みのためプランを追加できません", 409)
 

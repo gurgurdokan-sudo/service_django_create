@@ -76,7 +76,7 @@ class ServicePlan(models.Model):
 
     user = models.ForeignKey('UseUser', on_delete=models.CASCADE)
     monthly_record = models.ForeignKey(ServiceMonthlyRecord, on_delete=models.CASCADE, related_name="plans", )
-
+    updated_at = models.DateTimeField(auto_now=True)
     this_year = datetime.now().year
     year = models.IntegerField(choices=[(i, f"{i}年") for i in range(this_year - 1, this_year + 2)], default=this_year)
     month = models.IntegerField(choices=[(i, f"{i}月") for i in range(1, 13)], default=datetime.now().month)

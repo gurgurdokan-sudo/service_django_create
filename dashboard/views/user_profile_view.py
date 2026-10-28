@@ -3,7 +3,7 @@ from datetime import date, timedelta
 from dateutil.relativedelta import relativedelta
 
 from django.contrib import messages
-from django.db.models import QuerySet, Prefetch
+from django.db.models import QuerySet, Prefetch, F, OuterRef, Subquery
 from django.urls import reverse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
@@ -41,7 +41,14 @@ def user_list(request):
             .filter(date=current_month_start, confirmed=False)
             .values_list("user_id", flat=True)
         )
-    # 毎回DBを引かないよう、有効な認定を事前取得
+
+    # 当月Recordの更新日時を利用者ごとに取得するサブクエリ
+    monthly_record_update = (
+        ServiceMonthlyRecord.objects
+        .filter(user_id=OuterRef("pk"), date=current_month_start)
+        .order_by("-updated_at")
+        .values("updated_at")[:1]
+    )
     valid_certificates = (
         Certificate.objects
         .filter(limit_start__lte=today, limit_end__gte=today)
@@ -49,9 +56,21 @@ def user_list(request):
     )
     users: QuerySet[UseUser] = (
         UseUser.objects
+        .annotate(
+            monthly_record_updated_at=Subquery(monthly_record_update)
+        )
         .select_related("care_manager")
         .prefetch_related(
-            Prefetch("certificates",queryset=valid_certificates,to_attr="valid_certificates")
+            Prefetch(
+                "certificates",
+                queryset=valid_certificates,
+                to_attr="valid_certificates",
+            )
+        )
+        .order_by(
+            F("monthly_record_updated_at").asc(nulls_first=True),
+            "name",
+            "pk",
         )
     )
     alerts = []
