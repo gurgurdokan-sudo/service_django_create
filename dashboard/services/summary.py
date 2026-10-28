@@ -1,9 +1,8 @@
-import logging
 from datetime import date
 
 from dashboard.excel.service_calculator import ServiceSheetCalculator
 from dashboard.models import ServiceMonthlyRecord
-
+import logging
 logger = logging.getLogger(__name__)
 
 # Calculator の結果から、そのまま月次記録に保存する項目

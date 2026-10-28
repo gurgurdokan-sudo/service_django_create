@@ -388,7 +388,7 @@ export default function ClaimMonthly() {
               {records.map((r, idx) => (
                 <tr key={idx} className={r.confirmed ? "" : "row-warning"}>
                   <td>
-                    {r.user}
+                    <a className="link-name" href={r.user_href}>{r.user}</a>
                     {r.public_flag && <span className="public-badge">生活保護</span>}
                   </td>
                   <td>
@@ -423,7 +423,7 @@ export default function ClaimMonthly() {
           <form onSubmit={handleCreateCsv}>
           <button
             type="submit"
-            className={`btn ${canCreateCsv ? "btn-success" : "btn-danger"}`}
+            className={`btn ${canCreateCsv ? "btn-success" : "btn-secondary"}`}
             disabled={!canCreateCsv || isCreatingCsv}
           >
             {isCreatingCsv

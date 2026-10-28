@@ -1,8 +1,10 @@
 from datetime import date
 
 from django.shortcuts import render
-from django.db.models import Sum
-from django.http import JsonResponse
+from django.db.models import Sum, QuerySet
+from django.http import JsonResponse, HttpResponseBase
+from django.urls import reverse
+from django.utils.http import urlencode
 
 from dashboard.models import ServiceMonthlyRecord, OfficeMonthlyBilling, Office
 from dashboard.utils import BreadcrumbUtil  
@@ -36,12 +38,13 @@ def created_service_list_api(request):
     billing_date = date(year, month, 1)
 
     # --- レコード取得 ---
-    month_records = ServiceMonthlyRecord.objects.filter(
-        office=office, # 事業所での絞り込み
-        # user__is_active=True, # 有効な利用者のみ
-        date__year=year,
-        date__month=month,
-    ).order_by("-date")
+    month_records: QuerySet[ServiceMonthlyRecord] =\
+        ServiceMonthlyRecord.objects.filter(
+            office=office, # 事業所での絞り込み
+            # user__is_active=True, # 有効な利用者のみ
+            date__year=year,
+            date__month=month,
+        ).order_by("-date")
     
     # --- 確定済みレコードの抽出 ---
     confirmed_records = month_records.filter(confirmed=True)
@@ -94,6 +97,7 @@ def created_service_list_api(request):
                 "public_amount": r.public_amount,
                 "user_share_amount": r.user_share_amount,
                 "public_flag": r.public_amount > 0,
+                "user_href": _make_service_href(r.user.id, r.date.year, r.date.month),
             }
         )
 
@@ -265,4 +269,8 @@ def _check_cara_management(users) -> dict:
         "status": "ok",
         "value": f"{len(users)}人確認済み",
     }
-    
+
+def _make_service_href(user_id: int, year: int, month: int) -> HttpResponseBase | str:
+    path = reverse("dashboard:service", args=[user_id])
+    query = urlencode({"year": year, "month": month})
+    return f"{path}?{query}"

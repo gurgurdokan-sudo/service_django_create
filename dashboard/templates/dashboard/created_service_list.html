@@ -2,7 +2,15 @@
 {% block css %}
 {% load static %}
 <link rel="stylesheet" href="{% static 'dashboard/css/created.css' %}">
+<style>
 
+.link-name {
+  color: inherit; /* 通常時の文字色 */
+  text-decoration: underline; /* 下線 */
+  transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out;
+}
+
+</style>
 {% endblock css %}
 
 {% block body %}
