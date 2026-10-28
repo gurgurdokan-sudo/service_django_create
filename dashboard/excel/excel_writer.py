@@ -12,26 +12,30 @@ from openpyxl.styles import Alignment
 from dashboard.excel.service_calculator import ServiceSheetCalculator, format_comma
 
 import logging
+
 logger = logging.getLogger(__name__)
+
 
 def create_service_sheet(context):
     try:
         wb = load_workbook('templatesExcel/service_template.xlsx')
         calc = ServiceSheetCalculator(context)
         res = calc.get_results()
-        
+
         user = context['user']
         year, month = context['dis_year'], context['dis_month']
-        ws1 = wb['1'] # スケジュール
+        ws1 = wb['1']  # スケジュール
 
         # --- Sheet 1: ヘッダー (生活保護情報の印字) ---
         if res['is_hogo']:
             pa = res['pa_data']
-            ws1['G5'] = "25" # 法別番号
-            ws1['I5'] = pa.hogo_number # 保護番号(8桁)
-            ws1['V9'] = pa.recipient_number # 受給者番号(10桁)
-        
-        # (中略: スケジュールのループ書き込み)
+            ws1['G5'] = "25"  # 法別番号
+            ws1['I5'] = pa.hogo_number  # 保護番号(8桁)
+            ws1['V9'] = pa.recipient_number  # 受給者番号(10桁)
+
+        # Sheet1はres["schedule_plan_items"]を1Planごとに出力する。
+        # 同じサービスコードでもstart_time/end_timeが違うPlanは別行にする。
+        # (テンプレートのセル配置に合わせたスケジュール書き込み処理)
 
         # --- Sheet 2: 別表（実績） ---
         ws2 = wb['2']
@@ -44,15 +48,15 @@ def create_service_sheet(context):
             current_row += 1
 
         # 小計行 (地域密着通所合計)
-        ws2[f'AT{current_row}'] = format_comma(res['total_cost']) # 10割分
-        ws2[f'AX{current_row}'] = format_comma(res['benefit_amount']) # 保険分(9割)
-        
+        ws2[f'AT{current_row}'] = format_comma(res['total_cost'])  # 10割分
+        ws2[f'AX{current_row}'] = format_comma(res['benefit_amount'])  # 保険分(9割)
+
         # 本人負担欄 (BD列) の制御
         if res['is_hogo']:
-            ws2[f'BA{current_row}'] = format_comma(res['public_amount']) # 公費分(1割)
-            ws2[f'BD{current_row}'] = "0" # 本人は0
+            ws2[f'BA{current_row}'] = format_comma(res['public_amount'])  # 公費分(1割)
+            ws2[f'BD{current_row}'] = "0"  # 本人は0
         else:
-            ws2[f'BD{current_row}'] = format_comma(res['user_share_amount']) # 本人が払う
+            ws2[f'BD{current_row}'] = format_comma(res['user_share_amount'])  # 本人が払う
 
         # 最終合計行 (20行目固定)
         ws2['AT20'] = format_comma(res['total_cost'])
@@ -64,22 +68,22 @@ def create_service_sheet(context):
             ws2['BD20'] = format_comma(res['user_share_amount'])
 
         # --- 生活保護情報の印字を追加 ---
-        bikou_text =''
+        bikou_text = ''
         if res['is_hogo']:
             pa = res['pa_data']
             # セル位置はテンプレートに合わせて調整してください
-            bikou_text += "生活保護の法別番号:25\n" # 生活保護の法別番号
-            bikou_text += f'公費負担者番号:{pa.hogo_number}\n'      # 公費負担者番号
-            bikou_text += f'公費受給者番号:{pa.recipient_number}' # 公費受給者番号
+            bikou_text += "生活保護の法別番号:25\n"  # 生活保護の法別番号
+            bikou_text += f'公費負担者番号:{pa.hogo_number}\n'  # 公費負担者番号
+            bikou_text += f'公費受給者番号:{pa.recipient_number}'  # 公費受給者番号
         ws2['AK23'] = bikou_text
-# ローカル保存処理
+        # ローカル保存処理
         if settings.DJANGO_ENV == 'dev':
             filepath, filename = get_service_sheet_path(user, year, month)
             logger.info("MEDIA_ROOT=%r, file_path=%r, absolute=%r",
                         settings.MEDIA_ROOT, filepath, os.path.abspath(filepath))
             wb.save(filepath)
 
-# s3の場合保存処理
+        # s3の場合保存処理
         else:
             logger.info("s3の処理開始 year=%d, month=%d, 利用者名=%s", year, month, user.username)
             buffer = io.BytesIO()
@@ -87,14 +91,15 @@ def create_service_sheet(context):
             buffer.seek(0)
             file_bytes = buffer.getvalue()
             key, filename = get_service_sheet_path(user, year, month)
-            upload_service_sheet_to_s3(key,file_bytes)
-        
-# 後処理
-        _record_model_update(user, year, month,res)
+            upload_service_sheet_to_s3(key, file_bytes)
+
+        # 後処理
+        _record_model_update(user, year, month, res)
         return
     except Exception as e:
         logger.error(f"サービス提供表の作成中にエラーが発生しました: {e}")
         raise
+
 
 def write_billing_line(ws, row, item, office_number, office_names):
     """別表の1行分を書き込むヘルパー"""
@@ -108,35 +113,37 @@ def write_billing_line(ws, row, item, office_number, office_names):
     ws[f'Z{row}'] = format_comma(item['subtotal'])
     ws[f'AC{row}'] = format_comma(item['subtotal'])
 
+
 def _auto_newline(text, ws, cell, line=10):
     """セル内で自動改行するためのヘルパー"""
     text = str(text)
     wrapped = "\n".join(textwrap.wrap(text, line))
     ws[cell] = wrapped
-    ws[cell].alignment = Alignment(wrap_text=True, vertical="center",)
+    ws[cell].alignment = Alignment(wrap_text=True, vertical="center", )
+
 
 def _record_model_update(user, year, month, res):
     """ServiceMonthlyRecordに計算結果を反映する"""
     from dashboard.models import ServiceMonthlyRecord
     target_date = date(year, month, 1)
-    
+
     record, _ = ServiceMonthlyRecord.objects.get_or_create(
-        user=user, 
+        user=user,
         date=target_date
     )
 
     # 計算結果をモデルのフィールドに保存
-    record.total_units = res['total_units']                         # 10割分
-    record.total_cost = res['total_cost']                           # 総費用
-    record.benefit_amount = res['benefit_amount']                   # 保険請求額
-    record.public_amount = res['public_amount']                     # 公費請求額
-    record.user_share_amount = res['user_share_amount']             # 利用者負担額
-    record.within_units = res['within_units']                       # 10割分の単位数
-    record.over_units = res['over_units']                           # 超過分の単位数
+    record.total_units = res['total_units']  # 10割分
+    record.total_cost = res['total_cost']  # 総費用
+    record.benefit_amount = res['benefit_amount']  # 保険請求額
+    record.public_amount = res['public_amount']  # 公費請求額
+    record.user_share_amount = res['user_share_amount']  # 利用者負担額
+    record.within_units = res['within_units']  # 10割分の単位数
+    record.over_units = res['over_units']  # 超過分の単位数
 
     # CSV出力用のフィールドも更新
-    record.actual_count = res['actual_count']                       # 実績日数
-    record.service_units = res['service_units']                     # サービス＋加算などの単位数合計
+    record.actual_count = res['actual_count']  # 実績日数
+    record.service_units = res['service_units']  # サービス＋加算などの単位数合計
     record.addon_units = sum(item['subtotal'] for item in res['addon_items'])  # 加算単位数
     record.claim_units = record.service_units + record.addon_units  # 請求
 
@@ -145,8 +152,9 @@ def _record_model_update(user, year, month, res):
     record.save()
     logger.info(f"{user.name}様の{year}年{month}月分実績を保存しました")
 
+
 def get_service_sheet_path(user, year, month):
-    '''サービス提供表の保存パスを取得するユーティリティ関数。ユーザーIDと年月を指定して、ローカルまたはS3のパスを返す。'''
+    """サービス提供表の保存パスを取得するユーティリティ関数。ユーザーIDと年月を指定して、ローカルまたはS3のパスを返す。"""
     if settings.DJANGO_ENV == 'dev':
         user_dir = os.path.join(
             settings.MEDIA_ROOT,
@@ -159,7 +167,7 @@ def get_service_sheet_path(user, year, month):
         os.makedirs(date_dir, exist_ok=True)
         filename = f"サービス提供表_{user.name}_{year}_{month}.xlsx"
         return os.path.join(date_dir, filename), filename
-# s3バージョン
+    # s3バージョン
     else:
         key = f"service_sheets_export/{user.id}_{user.name}/{year}_{month:02d}/サービス提供表_{user.name}_{year}_{month}.xlsx"
         filename = f"サービス提供表_{user.name}_{year}_{month}.xlsx"
@@ -174,5 +182,6 @@ def upload_service_sheet_to_s3(key, file_bytes):
         ContentType='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
     return f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com/{key}"
+
 def add_comma(value):
     return f"{int(value):,}"

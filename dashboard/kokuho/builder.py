@@ -237,16 +237,31 @@ class ClaimBuilder:
 
     def _build_user_claim_details(self):
         rows = []
-        for plan in self.plans:                          # モデルインスタンス
+        basic_detail_totals = {}
+
+        # CSV明細上のサービス項目コード・単位数が同じ基本Planを集約する
+        for plan in self.plans:
             count = int(plan.get_total_count("actual"))
             if count <= 0:
                 continue
             unit = int(plan.unit)
-            rows.append(self._detail_row(plan.service_code, unit, count, unit * count))
+            service_item_code = self._service_item_code(plan.service_code)
+            key = (service_item_code, unit)
+            basic_detail_totals[key] = basic_detail_totals.get(key, 0) + count
+
+        for (service_item_code, unit), count in basic_detail_totals.items():
+            rows.append(
+                self._detail_row(
+                    service_item_code,
+                    unit,
+                    count,
+                    unit * count,
+                )
+            )
 
         for item in self.record.all_addons.values():
             addon = item['addon']
-            if not addon or addon.insurance_type == 'self_pay':   # 修正：and → or
+            if not addon or addon.insurance_type == 'self_pay':
                 continue
             if addon.type == 'rate':
                 logger.warning(f'率加算は下の行で出力: {addon.code}')
@@ -256,8 +271,8 @@ class ClaimBuilder:
             count = len(item['days'])
             rows.append(self._detail_row(addon.code, int(addon.unit), count, int(addon.unit) * count))
 
-        if self.default_addon:                           # 処遇改善加算などの率加算
-            units = self._rate_units()                   # 減算後の単位数に率を掛ける
+        if self.default_addon:  # 処遇改善加算などの率加算
+            units = self._rate_units()  # 減算後の単位数に率を掛ける
             if units > 0:
                 if units > 9999:
                     logger.warning(f'02の単位数欄は4桁です: {units}')

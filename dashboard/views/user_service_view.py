@@ -53,7 +53,7 @@ def build_user_service_context(user_id, year, month):
         )
         raise ValueError("既存プランにサービスコード未設定の行があります")
 
-    user_codes = plans.values_list("service_code",flat=True)#userチェック済みのサービスコード
+    # user_codes = plans.values_list("service_code",flat=True)#userチェック済みのサービスコード
     certificate:Certificate = target.get_certificate(year, month)
     if certificate:
         c_list = [certificate.care_level]
@@ -62,13 +62,13 @@ def build_user_service_context(user_id, year, month):
         service_masters =(
             ServiceMaster.objects
             .filter(care_level__in = c_list)
-            .exclude(service_code__in = user_codes)
+            # .exclude(service_code__in = user_codes)
         )
         print(service_masters,flush=True)
     else:
         service_masters = None
         logger.error('介護認定の取得に失敗')
-    logger.info(f'{user_codes}以外のplansを取得')
+    # logger.info(f'{user_codes}以外のplansを取得')
     excluded_addon_ids = {
         item["id"]
         for item in addons

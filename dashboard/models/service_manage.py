@@ -17,6 +17,7 @@ class ServiceMonthlyRecord(models.Model):
 
     office = models.ForeignKey('Office', on_delete=models.PROTECT, verbose_name='サービス提供の事業所')
     user = models.ForeignKey('UseUser', on_delete=models.CASCADE, related_name="monthly_records")
+    updated_at = models.DateTimeField(auto_now=True)
     confirmed = models.BooleanField(default=False)  # 確定フラグ
     confirmed_at = models.DateField(verbose_name='確定日', blank=True, null=True)
     date = models.DateField(help_text="月初の日付（例: 2026-07-01）")
@@ -76,7 +77,6 @@ class ServicePlan(models.Model):
 
     user = models.ForeignKey('UseUser', on_delete=models.CASCADE)
     monthly_record = models.ForeignKey(ServiceMonthlyRecord, on_delete=models.CASCADE, related_name="plans", )
-    updated_at = models.DateTimeField(auto_now=True)
     this_year = datetime.now().year
     year = models.IntegerField(choices=[(i, f"{i}年") for i in range(this_year - 1, this_year + 2)], default=this_year)
     month = models.IntegerField(choices=[(i, f"{i}月") for i in range(1, 13)], default=datetime.now().month)
