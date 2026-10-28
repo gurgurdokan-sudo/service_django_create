@@ -35,10 +35,14 @@
             <label>適応のプラン</label>
             <span id="this-plan-root" data-care-level="{{ user.care_level }}">該当サービスなし</span>
         </p>
-        <p class="weekday-row">
-            <label>{{ form.weekdays.label }}</label>
-            <span class="weekday-inputs">{{ form.weekdays }}</span>
-        </p>
+        <div class="weekday-row" role="group" aria-labelledby="weekday-label">
+            <label id="weekday-label" class="weekday-title">
+                {{ form.weekdays.label }}
+            </label>
+            <div class="weekday-inputs">
+                {{ form.weekdays }}
+            </div>
+        </div>
         <p>
             <label>{{ form.use_previous_addon_pattern.label }}</label>
             <span class="weekday-inputs">{{ form.use_previous_addon_pattern }}</span>

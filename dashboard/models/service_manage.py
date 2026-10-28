@@ -72,7 +72,7 @@ class ServiceMonthlyRecord(models.Model):
 
 class ServicePlan(models.Model):
     class Meta:
-        verbose_name_plural = "サービス利用計画"
+        verbose_name_plural = "利用者-サービス利用計画"
 
     user = models.ForeignKey('UseUser', on_delete=models.CASCADE)
     monthly_record = models.ForeignKey(ServiceMonthlyRecord, on_delete=models.CASCADE, related_name="plans", )
