@@ -7,14 +7,14 @@ from django.db import models
 
 
 class Staff(AbstractUser):
-    '''スタッフ（ログインユーザー）
+    """スタッフ（ログインユーザー）
 
     AUTH_USER_MODEL として使用する。dashboard.UseUser（被保険者/利用者）とは別物なので注意。
     - superuser はサイト管理専用で、スタッフ一覧・選択肢には出さない
     - can_delete（削除権限）は Django 管理サイトからのみ付与する
     Slack連携: slack_user_id にSlackのメンバーID（U...）を設定すると
     出退勤ボタン・日報プロンプトの送信対象になる。
-    '''
+    """
     slack_user_id = models.CharField(
         'SlackユーザーID', max_length=20, blank=True, default='',
         help_text='例: U0A1E588J2J',
@@ -55,10 +55,10 @@ WEEKDAY_CHOICES = [
 
 
 class Assignment(models.Model):
-    '''勤怠スケジュール: その日、どの従業員がどの利用者を担当するか
+    """勤怠スケジュール: その日、どの従業員がどの利用者を担当するか
 
     通常は ShiftPattern から月単位で一括生成し、例外の日だけ個別に編集する。
-    '''
+    """
     employee = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
         verbose_name='従業員', related_name='assignments',
@@ -99,11 +99,11 @@ class Assignment(models.Model):
 
 
 class ShiftPattern(models.Model):
-    '''いつも通りのシフトの型（曜日ベース）
+    """いつも通りのシフトの型（曜日ベース）
 
     「山田さんは毎週月・水に田中さんを担当（10:00-16:00、日報担当）」のような
     繰り返しパターン。月単位で Assignment に一括展開する（既存の日はスキップ）。
-    '''
+    """
     employee = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
         verbose_name='従業員', related_name='shift_patterns',
@@ -161,7 +161,7 @@ class ShiftPattern(models.Model):
 
 
 class Attendance(models.Model):
-    '''出退勤記録（Slackのボタン押下または画面から登録）'''
+    """出退勤記録（Slackのボタン押下または画面から登録）"""
     class Kind(models.TextChoices):
         CLOCK_IN = 'in', '出勤'
         CLOCK_OUT = 'out', '退勤'

@@ -1,23 +1,34 @@
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.models import User
 from django.shortcuts import render,redirect,get_object_or_404
 from django.contrib import messages
+from django.db.models import Q, QuerySet
 
 from dashboard.models import CareManager, UseUser
 from dashboard.forms import CareManagerForm
 from dashboard.utils import BreadcrumbUtil
 
 from employees.permissions import delete_permission_required, has_delete_permission
-#ケアマネジャー一覧
 @login_required
 def care_mana_list(request):
-    crumbs = [("ケアマネジャー一覧", None)]
+    search_query = request.GET.get("q", "").strip()
     can_delete = has_delete_permission(request.user)
-    care_managers = CareManager.objects.prefetch_related('useuser_set').order_by('name')
-    return render(request, 'dashboard/care_manager_list.html', {
-        'care_managers': care_managers,
-        'breadcrumbs': BreadcrumbUtil.create(crumbs),
-        'can_delete': can_delete,
+
+    # 未検索時は全件表示。users は UseUser.care_manager の related_name。
+    care_managers = CareManager.objects.prefetch_related("users").order_by("name", "pk")
+
+    if search_query:
+        care_managers = care_managers.filter(
+            Q(name__icontains=search_query)
+            | Q(office_name__icontains=search_query)
+            | Q(users__name__icontains=search_query)
+        )
+
+    crumbs = [("ケアマネジャー一覧", None)]
+    return render(request, "dashboard/care_manager_list.html", {
+        "care_managers": care_managers,
+        "breadcrumbs": BreadcrumbUtil.create(crumbs),
+        "can_delete": can_delete,
+        "search_query": search_query,
     })
 
 def care_mana_update(request, caremanager_id):
@@ -76,7 +87,7 @@ def care_mana_create(request):
         ]
         title = 'ケアマネジャー登録'
 
-    care_managers = CareManager.objects.all()
+    care_managers: QuerySet[CareManager] = CareManager.objects.all()
     for cm in care_managers:
         office = cm.office_name or ''
         short = f'{office[:5]}...' if len(office) >= 8 else office

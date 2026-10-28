@@ -1,56 +1,87 @@
 {% extends 'dashboard/base/base.html' %}
 {% block css %}
-  {% load static %}
-  <link rel="stylesheet" href="{% static 'dashboard/css/temp.css' %}" />
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'dashboard/css/temp.css' %}"/>
+    <style>
+        #care-manager-table-scroll{
+            overflow-x: auto;
+            width: 100%;
+            max-width: 100%;
+        }
+        .care-manager-table th, .care-manager-table td {
+            white-space: nowrap;
+        }
+    </style>
 {% endblock %}
 {% block body %}
-  <div class="container">
-    <div id="bread" data-items="{{ breadcrumbs }}"></div>
-    <div class="header-container">
-      <h1 class="page-title">ケアマネジャー一覧</h1>
-    </div>
-    {# todo検索 #}
+    <div class="container">
+        <div id="bread" data-items="{{ breadcrumbs }}"></div>
+        <div class="header-container">
+            <h1 class="page-title">ケアマネジャー一覧</h1>
+        </div>
 
-    <table class="data-table">
-      <tr>
-        <th class="action-buttons">消去/更新</th>
-        <th>担当者名</th>
-        <th>居宅介護支援専門員番号</th>
-        <th></th>
-        <!-- あえてスペース -->
-        <th>居宅介護支援事業所名</th>
-        <th>居宅介護支援事業所番号</th>
-        <th>担当の利用者</th>
-      </tr>
-      {% for care_manager in care_managers %}
-        <tr>
-          <td class="action-buttons">
-            <a href="{% url 'dashboard:care_mana_update' care_manager.id %}" class="btn btn-edit">更新</a>
-            {% if can_delete %}
-              <a href="{% url 'dashboard:care_mana_delete' care_manager.id %}" class="btn delete-single">消去</a>
+        <form method="get" class="care-manager-search row g-2 align-items-end mb-3" role="search">
+            <div class="col-12 col-md-7 col-lg-6">
+                <label for="care-manager-query" class="form-label">ケアマネジャー名・事業所名・利用者名</label>
+                <input
+                        type="search"
+                        class="form-control"
+                        id="care-manager-query"
+                        name="q"
+                        value="{{ search_query }}"
+                        placeholder="担当者名または事業所名で検索"
+                />
+            </div>
+            <div class="col-6 col-md-auto">
+                <button type="submit" class="btn btn-primary w-100">検索</button>
+            </div>
+
+            {% if search_query %}
+                <div class="col-6 col-md-auto">
+                    <a href="?" class="btn btn-outline-secondary w-100">クリア</a>
+                </div>
             {% endif %}
-          </td>
-          <td>{{ care_manager.name }}</td>
-          <td>{{ care_manager.license_number }}</td>
-          <td></td>
-          <!-- あえてスペース -->
-          <td>{{ care_manager.office_name }}</td>
-          <td>{{ care_manager.office_number }}</td>
-          <td>
-            {% for user in care_manager.useuser_set.all %}
-              {{ user.name }}{% if not forloop.last %}<br>{% endif %}
-            {% empty %}
-              担当利用者なし
-            {% endfor %}
-          </td>
-        </tr>
-      {% empty %}
-        <tr>
-          <td colspan="8" class="no-users">ケアマネジャーが登録されていません</td>
-        </tr>
-      {% endfor %}
-    </table>
-  </div>
+        </form>
+        <div id="care-manager-table-scroll" class="care-manager-table-scroll">
+            <table class="data-table care-manager-table">
+                <tr>
+                    <th class="action-buttons">消去/更新</th>
+                    <th>担当者名</th>
+                    <th>居宅介護支援専門員番号</th>
+                    <th>居宅介護支援事業所名</th>
+                    <th>居宅介護支援事業所番号</th>
+                    <th>担当の利用者</th>
+                </tr>
+                {% for care_manager in care_managers %}
+                    <tr>
+                        <td class="action-buttons">
+                            <a href="{% url 'dashboard:care_mana_update' care_manager.id %}"
+                               class="btn btn-edit">更新</a>
+                            {% if can_delete %}
+                                <a href="{% url 'dashboard:care_mana_delete' care_manager.id %}"
+                                   class="btn delete-single">消去</a>
+                            {% endif %}
+                        </td>
+                        <td>{{ care_manager.name }}</td>
+                        <td>{{ care_manager.license_number }}</td>
+                        <td>{{ care_manager.office_name }}</td>
+                        <td>{{ care_manager.office_number }}</td>
+                        <td>
+                            {% for user in care_manager.users.all %}
+                                {{ user.name }}{% if not forloop.last %}<br>{% endif %}
+                            {% empty %}
+                                担当利用者なし
+                            {% endfor %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="8" class="no-users">ケアマネジャーが登録されていません</td>
+                    </tr>
+                {% endfor %}
+            </table>
+        </div>
+    </div>
 {% endblock %}
 {% block script %}
 
