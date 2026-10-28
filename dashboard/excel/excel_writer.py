@@ -5,6 +5,7 @@ from django.utils.timezone import now
 from django.conf import settings
 import boto3
 import textwrap
+from collections import defaultdict
 
 from openpyxl import load_workbook
 from openpyxl.styles import Alignment
@@ -12,7 +13,6 @@ from openpyxl.styles import Alignment
 from dashboard.excel.service_calculator import ServiceSheetCalculator, format_comma
 
 import logging
-
 logger = logging.getLogger(__name__)
 
 
@@ -26,26 +26,40 @@ def create_service_sheet(context):
         year, month = context['dis_year'], context['dis_month']
         ws1 = wb['1']  # スケジュール
 
-        # --- Sheet 1: ヘッダー (生活保護情報の印字) ---
+        # --- Sheet 1: ヘッダー (生活保護情報の印字) ---Sheet1は予定・実績カレンダー用
         if res['is_hogo']:
             pa = res['pa_data']
             ws1['G5'] = "25"  # 法別番号
             ws1['I5'] = pa.hogo_number  # 保護番号(8桁)
             ws1['V9'] = pa.recipient_number  # 受給者番号(10桁)
 
-        # Sheet1はres["schedule_plan_items"]を1Planごとに出力する。
-        # 同じサービスコードでもstart_time/end_timeが違うPlanは別行にする。
-        # (テンプレートのセル配置に合わせたスケジュール書き込み処理)
-
         # --- Sheet 2: 別表（実績） ---
         ws2 = wb['2']
         current_row = 6
         office_name = context['office'].name.split()[:2]
 
-        # 明細書き込み
-        for item in res['plan_items'] + res['addon_items']:
-            write_billing_line(ws2, current_row, item, context['office'].office_number, office_name)
+        # Sheet2 はサービスコード別明細と、必要なサービス種類別集計行を出力する。
+        sheet2_rows = build_sheet2_rows(
+            res['plan_items'],
+            res['addon_items'],
+            context['office'],
+        )
+        for item in sheet2_rows:
+            if item['row_type'] == 'service_type_total':
+                write_service_type_total(
+                    ws2, current_row, item,
+                    context['office'].office_number, office_name,
+                )
+            else:
+                write_billing_line(
+                    ws2, current_row, item,
+                    context['office'].office_number, office_name,
+                )
             current_row += 1
+
+        # row 20は既存の最終合計欄として使うため、明細/サービス種類集計がここまで達したら
+        if current_row >= 20:
+            raise ValueError("Sheet2の明細・集計行が固定合計欄（20行目）に重なります")
 
         # 小計行 (地域密着通所合計)
         ws2[f'AT{current_row}'] = format_comma(res['total_cost'])  # 10割分
@@ -99,6 +113,94 @@ def create_service_sheet(context):
     except Exception as e:
         logger.error(f"サービス提供表の作成中にエラーが発生しました: {e}")
         raise
+
+
+
+SERVICE_TYPE_NAMES = {
+    "78": "地域密着型通所介護",
+}
+
+
+def build_sheet2_rows(plan_items, addon_items, office):
+    """Sheet2用の明細と、必要なサービス種類別集計行を作る。
+
+    同じ事業所・サービスコード・単位数のPlan/加算は明細1行にまとめる。
+    Plan数ではなく、同じ事業所・サービス種類に異なるサービスコードが
+    複数ある場合だけ、グループ末尾に集計行を1行作る。
+    """
+    office_number = str(office.office_number)
+    groups = defaultdict(dict)
+
+    for item in [*plan_items, *addon_items]:
+        code = str(item["code"])
+        unit = int(item["unit"])
+        count = int(item.get("count") or 0)
+        subtotal = item.get("subtotal")
+        subtotal = int(subtotal) if subtotal is not None else unit * count
+
+        # 実績がない明細は出力しない。ただし負の減算単位は残す。
+        if count == 0 and subtotal == 0:
+            continue
+
+        service_type_code = code[:2]
+        group_key = (office_number, service_type_code)
+        detail_key = (code, unit)
+        details = groups[group_key]
+
+        if detail_key not in details:
+            details[detail_key] = {
+                "row_type": "detail",
+                "name": item["name"],
+                "code": code,
+                "unit": unit,
+                "count": 0,
+                "subtotal": 0,
+            }
+
+        details[detail_key]["count"] += count
+        details[detail_key]["subtotal"] += subtotal
+
+    rows = []
+    for (group_office_number, service_type_code), detail_map in sorted(groups.items()):
+        details = sorted(
+            detail_map.values(),
+            key=lambda row: (row["code"], row["unit"]),
+        )
+        rows.extend(details)
+
+        # 公式記載要領に合わせ、サービス種類内にコードが複数ある場合だけ集計行を出す。
+        # 同じコードのPlanが時間帯違いで複数あっても、ここでのコード数は1なので集計行は出ない。
+        distinct_service_codes = {row["code"] for row in details}
+        if len(distinct_service_codes) > 1:
+            service_type_name = SERVICE_TYPE_NAMES.get(
+                service_type_code,
+                f"サービス種類 {service_type_code}",
+            )
+            rows.append({
+                "row_type": "service_type_total",
+                "name": f"{service_type_name} 集計",
+                "code": "",
+                "unit": "",
+                "count": "",
+                "subtotal": sum(row["subtotal"] for row in details),
+            })
+
+    return rows
+
+
+def write_service_type_total(ws, row, item, office_number, office_names):
+    """サービス種類別の集計行を書く。セル位置は既存write_billing_lineに合わせる。"""
+    ws[f'A{row}'] = "\\n".join(office_names)
+    ws[f'A{row}'].alignment = Alignment(wrap_text=True)
+    ws[f'G{row}'] = office_number
+    _auto_newline(item["name"], ws, f'L{row}', 6)
+    ws[f'Q{row}'] = ""  # 集計行にサービスコードは書かない
+    ws[f'T{row}'] = ""  # 集計行に1回当たりの単位数は書かない
+    ws[f'Y{row}'] = ""  # 集計行に回数は書かない
+    # 既存の明細出力で単位合計を書いている列に、グループ合計を出す。
+    # 実テンプレートで集計値欄の列が異なる場合は、この2列を帳票に合わせる。
+    ws[f'Z{row}'] = format_comma(item["subtotal"])
+    ws[f'AC{row}'] = format_comma(item["subtotal"])
 
 
 def write_billing_line(ws, row, item, office_number, office_names):
@@ -173,6 +275,7 @@ def get_service_sheet_path(user, year, month):
         filename = f"サービス提供表_{user.name}_{year}_{month}.xlsx"
         return key, filename
 
+
 def upload_service_sheet_to_s3(key, file_bytes):
     s3 = boto3.client('s3')
     s3.put_object(
@@ -182,6 +285,7 @@ def upload_service_sheet_to_s3(key, file_bytes):
         ContentType='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
     return f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com/{key}"
+
 
 def add_comma(value):
     return f"{int(value):,}"

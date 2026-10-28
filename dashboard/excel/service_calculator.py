@@ -16,7 +16,7 @@ class ServiceSheetCalculator:
 
         self.unit_price = float(self.office.unit_price)
         self.benefit_rate = float(cert.benefit_rate) # 0.9など
-        
+
         # 介護度別の支給限度額
         limits = {'要介護1': 16692, '要介護2': 19705, '要介護3': 27048, '要介護4': 30938, '要介護5': 36217}
         self.max_payment = limits.get(cert.care_level, 0)
@@ -25,47 +25,87 @@ class ServiceSheetCalculator:
         self.pa_data = self.user.get_public_assistance(self.year, self.month)
         self.is_hogo = self.pa_data is not None
 
-        self.total_act_price_unit = 0 
+        self.total_act_price_unit = 0
         self.plan_items = []
         self.addon_items = []
+        self.schedule_plan_items = []
         self._calculate_base_and_addons()
 
     def _calculate_base_and_addons(self):
         actual_days = set()
+
         for plan in self.plans:
+            service_code = (
+                f"{self.office.service_type_code}{plan.service_code}"
+            )
+            unit = int(plan.unit)
+            count = int(plan.get_total_count("actual"))
+            subtotal = unit * count
+
+            # Sheet1用：予定・実績カレンダーはPlan単位で保持する。
+            self.schedule_plan_items.append({
+                "plan_id": plan.id,
+                "name": plan.service_name,
+                "code": service_code,
+                "unit": unit,
+                "start_time": plan.start_time,
+                "end_time": plan.end_time,
+                "schedule": plan.schedule_dict,
+                "actual": plan.actual_dict,
+            })
+
+            # 実利用日数は、加算ループの外で集計する。
             for day, info in plan.actual_dict.items():
-                if info.get('main') == '1':
+                if info.get("main") == "1":
                     actual_days.add(str(day))
-            count:int = int(plan.get_total_count('actual'))
-            unit:int = int(plan.unit)
-            subtotal:int = count * unit
-            self.plan_items.append({'name': plan.service_name, 'code': f"{self.office.service_type_code}{plan.service_code}", 'unit': unit, 'count': count, 'subtotal': subtotal})
+
+            # Sheet2用の基本サービス明細。Plan単位の元データを保持する。
+            if count > 0:
+                self.plan_items.append({
+                    "name": plan.service_name,
+                    "code": service_code,
+                    "unit": unit,
+                    "count": count,
+                    "subtotal": subtotal,
+                })
+
             self.total_act_price_unit += subtotal
+
+            # 加算はこのPlanに紐づく分だけ処理する。
             for value in plan.get_addon_summary.values():
-                addon_obj: AddOnService = value.get('addon')
+                addon_obj = value.get("addon")
 
-                if addon_obj.type == 'rate':  # 処遇改善加算などの率加算は別で計算
+                if not addon_obj:
                     continue
-                if addon_obj.insurance_type == 'self_pay':  # 自費は別で集計
+                if addon_obj.type == "rate":  # 率加算は別で計算
                     continue
+                if addon_obj.insurance_type == "self_pay":  # 自費は別で集計
+                    continue
+                if addon_obj.unit is None:
+                    raise ValueError(
+                        f"加算単位が設定されていません: {addon_obj.code}"
+                    )
 
-                add_count: int = len(value.get('days', []))
-                add_unit: int = int(addon_obj.unit)
-                add_total: int = add_unit * add_count
+                add_count = len(value.get("days", []))
+                add_unit = int(addon_obj.unit)
+                add_total = add_unit * add_count
 
-                if add_total == 0:  # 0のときは載せない（減算のマイナスは残す）
+                if add_total == 0:  # 0は載せない。減算のマイナスは残す
                     continue
 
                 self.addon_items.append({
-                    'id': addon_obj.id,
-                    'plan_id': plan.id,
-                    'name': addon_obj.service_name,
-                    'code': f"{self.office.service_type_code}{addon_obj.code}",
-                    'unit': add_unit,
-                    'count': add_count,
-                    'subtotal': add_total,
+                    "id": addon_obj.id,
+                    "plan_id": plan.id,
+                    "name": addon_obj.service_name,
+                    "code": (
+                        f"{self.office.service_type_code}{addon_obj.code}"
+                    ),
+                    "unit": add_unit,
+                    "count": add_count,
+                    "subtotal": add_total,
                 })
                 self.total_act_price_unit += add_total
+
         self.actual_days = len(actual_days)
 
     def get_results(self):
@@ -112,6 +152,7 @@ class ServiceSheetCalculator:
             'addon_items': self.addon_items,
             'total_units': self.total_act_price_unit + def_unit,
             'service_units': self.total_act_price_unit,
+            "schedule_plan_items": self.schedule_plan_items,
         }
 
 def format_comma(value, default=""):
