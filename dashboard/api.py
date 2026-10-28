@@ -1,3 +1,4 @@
+from datetime import date
 from typing import Optional, Any
 from django.db import transaction
 from django.db.models import QuerySet
@@ -338,10 +339,15 @@ def update_schedule(request, plan_id):
 
 @api_view(["POST"])
 def create_plan(request, user_id):
+    office = getattr(request.user, "office", None)
+    if office is None:
+        return _error("ログインユーザーの事業所が設定されていません", 400)
+
     target_user = get_object_or_404(UseUser, id=user_id)
 
     master_id = _parse_int(request.data.get("selected_service"), 1)
     year = _parse_int(request.data.get("year"), 2000, 2100)
+    print(year,flush=True)
     month = _parse_int(request.data.get("month"), 1, 12)
     start_time = request.data.get("start_time")
     end_time = request.data.get("end_time")
@@ -354,23 +360,33 @@ def create_plan(request, user_id):
         return _error("開始時刻と終了時刻を入力してください")
 
     master = get_object_or_404(ServiceMaster, id=master_id)
-    plan = ServicePlan.objects.create(
-        user=target_user,
-        year=year,
-        month=month,
-        start_time=start_time,
-        end_time=end_time,
-        service_name=master.service_name,
-        service_code=master.service_code,
-        unit=master.unit,
-    )
+    with transaction.atomic():
+        monthly_record, _ = ServiceMonthlyRecord.objects.get_or_create(
+            user=target_user,
+            date=date(year, month, 1),
+            defaults={"office": office},
+        )
+
+        if monthly_record.confirmed:
+            return _error("確定済みのためプランを追加できません", 409)
+
+        plan = ServicePlan.objects.create(
+            monthly_record=monthly_record,
+            user=target_user,
+            year=year,
+            month=month,
+            start_time=start_time,
+            end_time=end_time,
+            service_name=master.service_name,
+            service_code=master.service_code,
+            unit=master.unit,
+        )
     logger.info("サービスプランを作成: user_id=%s, plan_id=%s", target_user.id, plan.id)
     return Response({
         "status": "ok",
         "plan_id": plan.id,
         "message": f"{target_user.name} のサービスプランを作成しました",
     })
-
 
 @api_view(["DELETE"])
 def delete_plan(request, plan_id):

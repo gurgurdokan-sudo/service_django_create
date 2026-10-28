@@ -145,6 +145,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // ここからフォーム送信処理
     if (serviceBtn) {
         serviceBtn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            console.log('POST START')
             const selectedBasic = document.querySelector('input[name="selected_basic"]:checked');
             const selectedAddon = document.querySelector('input[name="selected_addon"]:checked');
             const selected = selectedBasic || selectedAddon;
@@ -152,7 +154,7 @@ document.addEventListener('DOMContentLoaded', () => {
                  return Swal.fire({
                     icon: 'warning',
                     text: 'サービスを選択してください'
-                });;
+                });
             }
             const userId = document.getElementById('userid').getAttribute("data-user-id");
             const startTime = document.getElementById('modal_start_time').value;
@@ -178,7 +180,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!result.isConfirmed) return;
                 // API送信
                     const [year,month] = document.getElementById('month_selector').value.split('-');
-                    
+                    alert(`${year} ${month}`)
                     const response = await fetch(`/api/plan/${userId}/create/`, {
                         method: "POST",
                         headers: { 
@@ -195,6 +197,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }); 
                 if (response.ok) {
                     location.reload(); // 成功したら新しいPlanを表示する
+                    console.log('POST RESPONSE OK');
                 }
                 return;
             }
