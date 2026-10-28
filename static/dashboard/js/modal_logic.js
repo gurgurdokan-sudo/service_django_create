@@ -179,8 +179,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 // キャンセルされたら中断
                 if (!result.isConfirmed) return;
                 // API送信
-                    const [year,month] = document.getElementById('month_selector').value.split('-');
-                    alert(`${year} ${month}`)
+                    const year = document.getElementById("dis_year").value;
+                    const month = document.getElementById("dis_month").value;
+                    console.log(`${year} ${month}`)
                     const response = await fetch(`/api/plan/${userId}/create/`, {
                         method: "POST",
                         headers: { 

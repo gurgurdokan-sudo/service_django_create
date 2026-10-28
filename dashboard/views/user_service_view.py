@@ -99,7 +99,7 @@ def build_user_service_context(user_id, year, month):
         # 画面用　Flag
         'confirmed': record.confirmed if record else False,
         # 画面用　select移動範囲
-        'year_range': range(now.year - 1, now.year + 1),
+        'year_range': range(min(now.year, year) - 1, max(now.year, year) + 2),
         'month_range': range(1, 13),
         # 画面用　モーダルに出すPlan/Addon
         'addon_service': addon_service,
