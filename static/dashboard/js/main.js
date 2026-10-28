@@ -65,11 +65,12 @@ async function deletePlan(planId) {
 
         if (!response.ok) {
             if (response.status === 409 && data.code === "ADDON_REASSIGN_FAILED") {
-                await Swal.fire({
-                    icon: "warning",
-                    title: "加算を自動付け替えできません",
-                    text: data.message || "付け替え先を一意に決められませんでした。データは変更されていません。残りのPlanと加算を確認してください。"
-                });
+                // await Swal.fire({
+                //     icon: "warning",
+                //     title: "加算を自動付け替えできません",
+                //     text: data.message || "付け替え先を一意に決められませんでした。データは変更されていません。残りのPlanと加算を確認してください。"
+                // });
+                console.log('付け替え先を一意に決められませんでした。データは変更されていません。');
                 return;
             }
             throw new Error(data.message || `削除に失敗しました (HTTP ${response.status})`);
@@ -78,10 +79,10 @@ async function deletePlan(planId) {
         const successMessages = ["基本プランを削除しました。"];
         const movedAddonCount = Number(data.reassigned_addon_count || 0);
         if (movedAddonCount > 0) {
-            successMessages.push(`加算データ${movedAddonCount}件を同じ月次Record内の別Planへ付け替えました。`);
+            successMessages.push(`加算データ${movedAddonCount}件を別の基本サービスへ付け替えました。`);
         }
         if (data.record_deleted) {
-            successMessages.push("対象月にPlanが残らないため、月次Recordも削除しました。");
+            successMessages.push("基本サービス作成画面に遷移します。");
         }
 
         await Swal.fire({
