@@ -43,7 +43,7 @@ class OfficeMonthlyBilling(models.Model):
 
     class Meta:
         verbose_name = "月次請求"
-        verbose_name_plural = "月次請求一覧"
+        verbose_name_plural = "事務所(月次請求)一覧"
         unique_together = ("office", "billing_month")
         ordering = ["-billing_month"]
 

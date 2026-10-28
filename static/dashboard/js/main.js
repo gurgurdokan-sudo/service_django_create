@@ -8,55 +8,100 @@ function getCsrfToken() {
 /**
  * 基本プランの削除
  */
+const deletingPlanIds = new Set();
 async function deletePlan(planId) {
-    const status = document.getElementById('confirmed-status');
-    const confirmed = status.dataset.confirmed === "True";
+    const planKey = String(planId);
+    if (deletingPlanIds.has(planKey)) return;
 
-    if (confirmed) {
-        Swal.fire({
-            icon: 'warning',
-            title: '確定済み',
-            text: '確定済みのため消去できません'
+    const status = document.getElementById("confirmed-status");
+    if (!status) {
+        await Swal.fire({
+            icon: "error",
+            title: "削除できません",
+            text: "確定状態を確認できません。ページを再読み込みしてください。"
         });
         return;
     }
-    if (!confirm("このサービス予定および実績データをすべて削除しますか？\n(この操作は取り消せません)")) {
+
+    const confirmed = String(status.dataset.confirmed).toLowerCase() === "true";
+    if (confirmed) {
+        await Swal.fire({
+            icon: "warning",
+            title: "確定済み",
+            text: "確定済みのため消去できません"
+        });
         return;
     }
 
+    deletingPlanIds.add(planKey);
     try {
-        const response = await fetch(`/api/plan/${planId}/delete/`, {
+        const result = await Swal.fire({
+            icon: "warning",
+            title: "削除確認",
+            text: "このサービス予定および実績データをすべて削除しますか？\n(この操作は取り消せません)",
+            showCancelButton: true,
+            confirmButtonText: "削除する",
+            cancelButtonText: "キャンセル",
+            confirmButtonColor: "#d33",
+            reverseButtons: true,
+            focusCancel: true
+        });
+        if (!result.isConfirmed) return;
+
+        const response = await fetch(`/api/plan/${encodeURIComponent(planKey)}/delete/`, {
             method: "DELETE",
             headers: {
                 "X-CSRFToken": getCsrfToken(),
+                "Accept": "application/json"
             }
         });
 
-        if (response.ok) {
-            await Swal.fire({
-                icon: 'success',
-                title: '削除完了',
-                text: '削除しました',
-                timer: 1500,
-                showConfirmButton: false
-            });
-
-            location.reload(); // 画面を更新して行を消す
-        } else {
-            const data = await response.json();
-            Swal.fire({
-                icon: 'error',
-                title: '削除失敗',
-                text: '削除に失敗しました: ' + (data.message || "Unknown error")
-            });
+        let data = {};
+        try {
+            data = await response.json();
+        } catch {
+            console.log('想定外のresponse')
         }
+
+        if (!response.ok) {
+            if (response.status === 409 && data.code === "ADDON_REASSIGN_FAILED") {
+                await Swal.fire({
+                    icon: "warning",
+                    title: "加算を自動付け替えできません",
+                    text: data.message || "付け替え先を一意に決められませんでした。データは変更されていません。残りのPlanと加算を確認してください。"
+                });
+                return;
+            }
+            throw new Error(data.message || `削除に失敗しました (HTTP ${response.status})`);
+        }
+
+        const successMessages = ["基本プランを削除しました。"];
+        const movedAddonCount = Number(data.reassigned_addon_count || 0);
+        if (movedAddonCount > 0) {
+            successMessages.push(`加算データ${movedAddonCount}件を同じ月次Record内の別Planへ付け替えました。`);
+        }
+        if (data.record_deleted) {
+            successMessages.push("対象月にPlanが残らないため、月次Recordも削除しました。");
+        }
+
+        await Swal.fire({
+            icon: "success",
+            title: "削除完了",
+            text: successMessages.join("\n"),
+            timer: 2500,
+            showConfirmButton: false
+        });
+
+        window.location.reload();
     } catch (error) {
         console.error("Delete Plan Error:", error);
-        Swal.fire({
-            icon: 'error',
-            title: '通信エラー',
-            text: '通信エラーが発生しました'
+        await Swal.fire({
+            icon: "error",
+            title: "削除失敗",
+            text: error.message || "通信エラーが発生しました"
         });
+    } finally {
+        deletingPlanIds.delete(planKey);
     }
 }
 
@@ -120,7 +165,7 @@ async function nextMonth(userId,action) {
                 });
                 return;
             }
-            window.location.href = `/user/${userId}/service/?year=${nowYear}&month=${String(nowMonth).padStart(2, '0')}`;            
+            window.location.href = `/user/${userId}/service/?year=${nowYear}&month=${String(nowMonth).padStart(2, '0')}`;
             return;
         }
         if(action === 'prev'){

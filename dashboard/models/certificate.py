@@ -5,7 +5,7 @@ from .const import LEVEL_CHOICES, BENEFIT_RATE_CHOICES
 class Certificate(models.Model):
     """被保険者証の情報を管理するモデル"""
     class Meta:
-        verbose_name_plural = "介護認定情報"
+        verbose_name_plural = "利用者-介護認定情報"
         ordering = ['-limit_start', '-created_at']
 
     user = models.ForeignKey('UseUser' ,

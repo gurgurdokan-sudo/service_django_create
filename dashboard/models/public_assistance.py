@@ -4,7 +4,7 @@ from django.utils import timezone
 class PublicAssistance(models.Model):
     """生活保護情報を管理するモデル"""
     class Meta:
-        verbose_name_plural= "生活保護情報"
+        verbose_name_plural= "利用者-生活保護情報"
     user = models.ForeignKey(
                     'UseUser',
                     on_delete=models.CASCADE,

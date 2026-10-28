@@ -379,19 +379,135 @@ def delete_plan(request, plan_id):
     if not has_delete_permission(request.user):
         return _error("削除権限がありません", 403)
 
-    plan = get_object_or_404(ServicePlan, id=plan_id)
-    monthly_record = (
-        ServiceMonthlyRecord.objects
-        .filter(plans=plan)
-        .select_related("user")
-        .first()
+    # 月次Recordをロックし、同じ月のPlan削除を直列化するため先に親IDを読む。
+    plan_ref: ServicePlan = get_object_or_404(
+        ServicePlan.objects.only("monthly_record_id"),
+        id=plan_id,
     )
 
+    summary = None
+    record_deleted = False
+    reassigned_addon_count = 0
+    unassigned_addon_count = 0
+
     with transaction.atomic():
+        monthly_record:ServiceMonthlyRecord = get_object_or_404(
+            ServiceMonthlyRecord.objects.select_for_update(),
+            id=plan_ref.monthly_record_id,
+        )
+        plan:ServicePlan = get_object_or_404(
+            ServicePlan.objects.select_for_update(),
+            id=plan_id,
+            monthly_record=monthly_record,
+        )
+
+        if monthly_record.confirmed:
+            return _error("確定済みのため削除できません", 409)
+
+        other_plans: list[ServicePlan] = list(
+            ServicePlan.objects.select_for_update()
+            .filter(monthly_record=monthly_record)
+            .exclude(pk=plan.pk)
+            .order_by("pk")
+        )
+
+        source_actual = _normalize_keys(plan.actual_json)
+        target_actual = {
+            other.pk: _normalize_keys(other.actual_json)
+            for other in other_plans
+        }
+        target_schedules = {
+            other.pk: _normalize_keys(other.schedule_json)
+            for other in other_plans
+        }
+
+        # actual_json[日付]["addon"]
+        # 削除操作で月次Recordごと削除する。
+        # 別のPlanがあるとき加算を同日対応のPlanへ移す。
+        if len(other_plans) == 1:
+            for day_key, source_day in source_actual.items():
+                source_addons = (source_day or {}).get("addon") or {}
+                if not source_addons:
+                    continue
+                if not isinstance(source_addons, dict):
+                    return Response({
+                        "status": "error",
+                        "code": "ADDON_REASSIGN_FAILED",
+                        "message": f"{day_key}日の加算データ形式が不正なため削除を中止しました。",
+                    }, status=status.HTTP_409_CONFLICT)
+
+                day = _parse_day(day_key)
+                if day is None:
+                    return Response({
+                        "status": "error",
+                        "code": "ADDON_REASSIGN_FAILED",
+                        "message": f"日付キー {day_key} を解釈できないため削除を中止しました。",
+                    }, status=status.HTTP_409_CONFLICT)
+
+                candidates = []
+                for other in other_plans:
+                    # 認定期間外のPlanには付け替えない。
+                    if not other.can_edit_day(day):
+                        continue
+
+                    target_day = _get_day(target_actual[other.pk], day_key)
+                    is_actual_main = target_day["main"] == "1"
+                    is_scheduled = target_schedules[other.pk].get(day_key) == "1"
+                    if not (is_actual_main or is_scheduled):
+                        continue
+
+                    candidates.append((other, is_actual_main))
+
+                # 実績mainがあるPlanを優先し、それ以外は予定日が一致するPlanを使う。
+                actual_candidates = [item[0] for item in candidates if item[1]]
+                eligible = actual_candidates or [item[0] for item in candidates]
+
+                if not eligible:
+                    # 認定期間などの条件に合う移し先がなければ、加算は引き継がずPlanを削除する。
+                    unassigned_addon_count += len(source_addons)
+                    continue
+                if len(eligible) > 1:
+                    return Response({
+                        "status": "error",
+                        "code": "ADDON_REASSIGN_FAILED",
+                        "message": (
+                            f"{day}日の加算を移せるPlanを一意に決められません。"
+                            "データは変更していません。加算を確認してから再実行してください。"
+                        ),
+                    }, status=status.HTTP_409_CONFLICT)
+
+                target = eligible[0]
+                target_day = _get_day(target_actual[target.pk], day_key)
+                addons_to_move = {
+                    addon_id: addon_name
+                    for addon_id, addon_name in source_addons.items()
+                    if addon_id not in target_day["addon"]
+                }
+                target_day["addon"].update(addons_to_move)
+                _put_day(target_actual[target.pk], day_key, target_day)
+                reassigned_addon_count += len(addons_to_move)
+        else: # 移し先を選ばないケース（他Planが0件または複数件）で、Planと一緒に削除される加算数を数える。
+            for source_day in source_actual.values():
+                if not isinstance(source_day, dict):
+                    continue
+                source_addons = source_day.get("addon") or {}
+                if isinstance(source_addons, dict):
+                    unassigned_addon_count += len(source_addons)
+
+        # 付け替え先が全日分決まってから保存する。途中で失敗した場合は何も変更しない。
+        for other in other_plans:
+            if target_actual[other.pk] != _normalize_keys(other.actual_json):
+                other.actual_json = target_actual[other.pk]
+                other.save(update_fields=["actual_json"])
+
+        record_id = monthly_record.pk
         plan.delete()
-        summary = None
-        # 消したあとに月の合計を計算し直す
-        if monthly_record:
+
+        if not ServicePlan.objects.filter(monthly_record_id=record_id).exists():
+            # ServiceMonthlyRecordに紐づくServicePlanがゼロなら空Recordも消して未確定アラートを残さない。
+            monthly_record.delete()
+            record_deleted = True
+        else:
             summary = build_service_summary(
                 monthly_record.user,
                 monthly_record.date.year,
@@ -399,10 +515,15 @@ def delete_plan(request, plan_id):
                 save=True,
             )
 
-    logger.info("サービスプランを削除: plan_id=%s", plan_id)
+    logger.info(
+        "サービスプランを削除: plan_id=%s, record_id=%s, reassigned_addons=%s, record_deleted=%s, unassigned_addon_count=%s",
+        plan_id, record_id, reassigned_addon_count, record_deleted, unassigned_addon_count
+    )
     return Response({
         "status": "ok",
         "message": f"ServicePlan {plan_id} deleted",
+        "reassigned_addon_count": reassigned_addon_count,
+        "record_deleted": record_deleted,
         "summary": summary,
     })
 
