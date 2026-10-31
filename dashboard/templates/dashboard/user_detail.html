@@ -1,267 +1,266 @@
 {% extends "dashboard/base/base.html" %}
 {% load static %}
 {% block css %}
-    <link rel="stylesheet" href="{% static 'dashboard/css/temp.css' %}"/>
-    <style>
-        .section-title {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-left: 5px solid #007bff;
-            padding-left: 15px;
-            margin-top: 30px;
-            margin-bottom: 15px;
-        }
+  <link rel="stylesheet" href="{% static 'dashboard/css/temp.css' %}"/>
+  <style>
+    .section-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-left: 5px solid #007bff;
+      padding-left: 15px;
+      margin-top: 30px;
+      margin-bottom: 15px;
+    }
 
-        .history-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.9em;
-        }
+    .history-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9em;
+    }
 
-        .history-table th, .history-table td {
-            border-bottom: 1px solid #eee;
-            padding: 10px;
-            text-align: left;
-        }
+    .history-table th, .history-table td {
+      border-bottom: 1px solid #eee;
+      padding: 10px;
+      text-align: left;
+    }
 
-        .status-active {
-            color: green;
-            font-weight: bold;
-        }
+    .status-active {
+      color: green;
+      font-weight: bold;
+    }
 
-        .detail-item {
-            display: flex;
-            flex-wrap: wrap; /* 幅が足りなくなったら子要素を丸ごと改行 */
-            align-items: center;
-            gap: 0.5rem; /* ラベルと値の間の余白 */
-            margin-bottom: 0.5rem;
-            cursor: default; /* カーソルをデフォルトにして選択不可の印象を与える */
-        }
+    .detail-item {
+      display: flex;
+      flex-wrap: wrap; /* 幅が足りなくなったら子要素を丸ごと改行 */
+      align-items: center;
+      gap: 0.5rem; /* ラベルと値の間の余白 */
+      margin-bottom: 0.5rem;
+      cursor: default; /* カーソルをデフォルトにして選択不可の印象を与える */
+    }
 
-        .detail-item span {
-            white-space: nowrap; /* テキスト内の自動改行を防ぐ */
-            user-select: none; /* テキストの選択を防ぐ */
-        }
+    .detail-item span {
+      white-space: nowrap; /* テキスト内の自動改行を防ぐ */
+      user-select: none; /* テキストの選択を防ぐ */
+    }
 
-        @media (max-width: 767.98px) {
-            .page-title {
-                font-size: 1.15rem !important; /* 1行で収まるサイズに縮小 */
-                border-left-width: 5px !important; /* 線の太さも少し細く */
-                padding-left: 10px !important; /* 余白を詰める */
-            }
+    @media (max-width: 767.98px) {
+      .page-title {
+        font-size: 1.15rem !important; /* 1行で収まるサイズに縮小 */
+        border-left-width: 5px !important; /* 線の太さも少し細く */
+        padding-left: 10px !important; /* 余白を詰める */
+      }
 
-            .detail-card {
-                padding: 12px 10px !important;
-                margin: 0 0 15px 0 !important;
-                display: block !important;
-                /* 横方向のみスクロールを許可 */
-                overflow-x: auto !important;
-                -webkit-overflow-scrolling: touch; /* スマホでの慣性スクロール */
-            }
+      .detail-card {
+        padding: 12px 10px !important;
+        margin: 0 0 15px 0 !important;
+        display: block !important;
+        /* 横方向のみスクロールを許可 */
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch; /* スマホでの慣性スクロール */
+      }
 
-            .detail-card .history-table {
-                width: max-content !important; /* または min-width: 380px; など */
-                white-space: nowrap !important; /* 列内の改行を禁止して横幅を維持 */
-            }
-        }
-    </style>
+      .detail-card .history-table {
+        width: max-content !important; /* または min-width: 380px; など */
+        white-space: nowrap !important; /* 列内の改行を禁止して横幅を維持 */
+      }
+    }
+  </style>
 {% endblock %}
 
 {% block body %}
-    {% include 'dashboard/components/messages.html' %}
-    <div id="bread" class="ms-2" data-items='{{ breadcrumbs|safe }}'></div>
+  {% include 'dashboard/components/messages.html' %}
+  <div id="bread" class="ms-2" data-items='{{ breadcrumbs|safe }}'></div>
 
-    <div class="container">
-        <div class="header-container">
-            <h1 class="page-title">{{ user.name }} 様 詳細</h1>
-            <div class="action-bar d-none d-md-block">
-                <a class="btn btn-primary" href='{% url "dashboard:update" user.id %}'>基本情報を編集</a>
-                {% if can_delete %}
-                    <a class="btn btn-outline-danger" href='{% url "dashboard:delete" user.id %}'>利用者削除</a>
-                {% endif %}
-            </div>
+  <div class="container">
+    <div class="header-container">
+      <h1 class="page-title">{{ user.name }} 様 詳細</h1>
+      <div class="action-bar d-none d-md-block">
+        <a class="btn btn-primary" href='{% url "dashboard:update" user.id %}'>基本情報を編集</a>
+        {% if can_delete %}
+          <a class="btn btn-outline-danger" href='{% url "dashboard:delete" user.id %}'>利用者削除</a>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="row">
+      <!-- 左側：基本情報とケアマネ -->
+      <div class="col-md-5">
+        <div class="section-title user-select-none"><h3>基本情報</h3></div>
+        <div class="detail-card">
+          <div class="detail-item"><label>{{ labels.name_kana }}</label> {{ user.name_kana }}</div>
+          <div class="detail-item"><label>現在の介護度</label> <span
+              class="bg-info badge">{{ user.care_level }}</span></div>
+          <div class="detail-item"><label>{{ labels.insured_number }}</label> {{ user.insured_number }}</div>
+          <div class="detail-item"><label>{{ labels.date_of_birth }}</label> {{ user.date_of_birth }}</div>
+          <div class="detail-item"><label>{{ labels.gender }}</label> {{ user.get_gender_display }}</div>
+          <div class="detail-item"><label>{{ labels.notes }}</label><br>{{ user.notes|linebreaksbr }}</div>
         </div>
 
-        <div class="row">
-            <!-- 左側：基本情報とケアマネ -->
-            <div class="col-md-5">
-                <div class="section-title user-select-none"><h3>基本情報</h3></div>
-                <div class="detail-card">
-                    <div class="detail-item"><label>{{ labels.name_kana }}</label> {{ user.name_kana }}</div>
-                    <div class="detail-item"><label>現在の介護度</label> <span
-                            class="bg-info badge">{{ user.care_level }}</span></div>
-                    <div class="detail-item"><label>{{ labels.insured_number }}</label> {{ user.insured_number }}</div>
-                    <div class="detail-item"><label>{{ labels.date_of_birth }}</label> {{ user.date_of_birth }}</div>
-                    <div class="detail-item"><label>{{ labels.gender }}</label> {{ user.get_gender_display }}</div>
-                    <div class="detail-item"><label>{{ labels.notes }}</label><br>{{ user.notes|linebreaksbr }}</div>
-                </div>
+        <div class="section-title user-select-none text-truncate"><h3>連絡先（ケアマネジャー）</h3></div>
+        <div class="detail-card">
+          {% if user.care_manager %}
+            <div class="detail-item"><label>担当者</label>{{ user.care_manager.name }}</div>
+            <div class="detail-item">
+              <label>事務所番号</label>{{ user.care_manager.care_management_office_number }}</div>
+            <div class="detail-item"><label>事業所</label><span
+                class="text-truncate"> {{ user.care_manager.office_name }}</span></div>
+            <div class="detail-item"><label>電話/FAX</label> {{ user.care_manager.tel|default:"未設定" }}
+              / {{ user.care_manager.fax|default:"未設定" }}</div>
+          {% else %}
+            <p class="text-danger">ケアマネジャーが設定されていません</p>
+            <a class="btn btn-primary" href='{% url "dashboard:care_mana_create" %}?user_id={{ user.id }}'>
+              ケアマネジャーを設定
+            </a>
+          {% endif %}
+        </div>
+      </div> <!-- end 左側 -->
 
-                <div class="section-title user-select-none text-truncate"><h3>連絡先（ケアマネジャー）</h3></div>
-                <div class="detail-card">
-                    {% if user.care_manager %}
-                        <div class="detail-item"><label>担当者</label>{{ user.care_manager.name }}</div>
-                        <div class="detail-item">
-                            <label>事務所番号</label>{{ user.care_manager.care_management_office_number }}</div>
-                        <div class="detail-item"><label>事業所</label><span
-                                class="text-truncate"> {{ user.care_manager.office_name }}</span></div>
-                        <div class="detail-item"><label>電話/FAX</label> {{ user.care_manager.tel|default:"未設定" }}
-                            / {{ user.care_manager.fax|default:"未設定" }}</div>
-                    {% else %}
-                        <p class="text-danger">ケアマネジャーが設定されていません</p>
-                        <a class="btn btn-primary" href='{% url "dashboard:care_mana_create" %}?user_id={{ user.id }}'>
-                            ケアマネジャーを設定
-                        </a>
-                    {% endif %}
-                </div>
-            </div> <!-- end 左側 -->
+      <!-- 右側：認定履歴と生保履歴 -->
+      <div class="col-md-7">
+        <div class="section-title text-truncate">
+          <h3>介護認定履歴</h3>
+          <a href="{% url 'dashboard:certificate_update' user.id %}"
+             class="btn btn-sm btn-outline-primary d-none d-md-block">認定を更新</a>
+        </div>
+        <div class="detail-card">
+          <table class="history-table">
+            <thead>
+            <tr>
+              <th>期間</th>
+              <th>介護度</th>
+              <th>状態</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for cert in certificates %}
+              <tr class="{% if cert.is_active %}fw-bold{% else %}status-expired{% endif %}">
+                <td>
+                  <a class="link-name" href="{% url 'dashboard:certificate_edit' user.id cert.id %}">
+                    {{ cert.limit_start|date:"Y/m/d" }} 〜 {{ cert.limit_end|date:"Y/m/d" }}
+                  </a>
+                </td>
+                <td>{{ cert.care_level }}</td>
+                <td>{% if cert.is_active %}<span class="status-active">適用中</span>{% else %}
+                  過去{% endif %}</td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="3" class="text-center">認定情報がありません</td>
+              </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+          <!-- ▼ 注釈テキスト ▼ -->
+          <div class="text-muted small user-select-none text-truncate">
+            <i class="fa-solid fa-circle-info me-1"></i>
+            ※期間のリンクをクリックすると過去の認定情報の編集・修正が行えます。
+          </div>
+        </div> <!-- end detail-card -->
 
-            <!-- 右側：認定履歴と生保履歴 -->
-            <div class="col-md-7">
-                <div class="section-title text-truncate">
-                    <h3>介護認定履歴</h3>
-                    <a href="{% url 'dashboard:certificate_update' user.id %}"
-                       class="btn btn-sm btn-outline-primary d-none d-md-block">認定を更新</a>
-                </div>
-                <div class="detail-card">
-                    <table class="history-table">
-                        <thead>
-                        <tr>
-                            <th>期間</th>
-                            <th>介護度</th>
-                            <th>状態</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        {% for cert in certificates %}
-                            <tr class="{% if cert.is_active %}fw-bold{% else %}status-expired{% endif %}">
-                                <td>
-                                    <a class="link-name" href="{% url 'dashboard:certificate_edit' user.id cert.id %}">
-                                        {{ cert.limit_start|date:"Y/m/d" }} 〜 {{ cert.limit_end|date:"Y/m/d" }}
-                                    </a>
-                                </td>
-                                <td>{{ cert.care_level }}</td>
-                                <td>{% if cert.is_active %}<span class="status-active">適用中</span>{% else %}
-                                    過去{% endif %}</td>
-                            </tr>
-                        {% empty %}
-                            <tr>
-                                <td colspan="3" class="text-center">認定情報がありません</td>
-                            </tr>
-                        {% endfor %}
-                        </tbody>
-                    </table>
-                    <!-- ▼ 注釈テキスト ▼ -->
-                    <div class="text-muted small user-select-none text-truncate">
-                        <i class="fa-solid fa-circle-info me-1"></i>
-                        ※期間のリンクをクリックすると過去の認定情報の編集・修正が行えます。
-                    </div>
-                </div> <!-- end detail-card -->
+        {% if public_assistance %}
+          <div class="section-title text-truncate">
+            <h3>生活保護情報</h3>
+            <a href="{% url 'dashboard:public_assistance_create' user.id %}"
+               class="d-none d-md-block btn btn-sm btn-outline-primary">生保情報を追加</a>
+          </div>
+          <div class="detail-card">
+            <div class="table-responsive">
+              <table class="history-table">
+                <thead>
+                <tr>
+                  <th>対象月</th>
+                  <th>保護番号</th>
+                  <th>受給者番号</th>
+                  <th>状態</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for pa in public_assistance %}
+                  <tr class="{% if pa.is_active %}fw-bold{% else %}status-expired{% endif %}">
+                    <td>
+                      <a class="link-name"
+                         href="{% url 'dashboard:public_assistance_edit' user.id pa.id %}">{{ pa.start_date|date:"Y年m月" }}分</a>
+                    </td>
+                    <td>{{ pa.hogo_number }}</td>
+                    <td>{{ pa.recipient_number }}</td>
+                    <td>{% if pa.is_active %}<span class="status-active">有効</span>{% else %}
+                      無効{% endif %}</td>
+                  </tr>
+                {% empty %}
+                  <tr>
+                    <td colspan="4">生活保護情報はありません</td>
+                  </tr>
+                {% endfor %}
+                </tbody>
+              </table>
+              <!-- ▼ 注釈テキスト ▼ -->
+              <div class="text-muted small user-select-none text-truncate">
+                <i class="fa-solid fa-circle-info me-1"></i>
+                ※期間のリンクをクリックすると過去の認定情報の編集・修正が行えます。
+              </div>
+            </div>
+          </div> <!-- end detail-card -->
+        {% else %}
+          <div class="section-title text-truncate">
+            <h3>生活保護情報</h3>
+          </div>
+          <a class="btn btn-primary d-none d-md-block"
+             href="{% url 'dashboard:public_assistance_create' user.id %}?linking=True">
+            利用者に生活保護を設定する
+          </a>
+        {% endif %}
 
-                {% if public_assistance %}
-                    <div class="section-title text-truncate">
-                        <h3>生活保護情報</h3>
-                        <a href="{% url 'dashboard:public_assistance_create' user.id %}"
-                           class="d-none d-md-block btn btn-sm btn-outline-primary">生保情報を追加</a>
-                    </div>
-                    <div class="detail-card">
-                        <div class="table-responsive">
-                            <table class="history-table">
-                                <thead>
-                                <tr>
-                                    <th>対象月</th>
-                                    <th>保護番号</th>
-                                    <th>受給者番号</th>
-                                    <th>状態</th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                {% for pa in public_assistance %}
-                                    <tr class="{% if pa.is_active %}fw-bold{% else %}status-expired{% endif %}">
-                                        <td>
-                                            <a class="link-name"
-                                               href="{% url 'dashboard:public_assistance_edit' user.id pa.id %}">{{ pa.start_date|date:"Y年m月" }}分</a>
-                                        </td>
-                                        <td>{{ pa.hogo_number }}</td>
-                                        <td>{{ pa.recipient_number }}</td>
-                                        <td>{% if pa.is_active %}<span class="status-active">有効</span>{% else %}
-                                            無効{% endif %}</td>
-                                    </tr>
-                                {% empty %}
-                                    <tr>
-                                        <td colspan="4">生活保護情報はありません</td>
-                                    </tr>
-                                {% endfor %}
-                                </tbody>
-                            </table>
-                            <!-- ▼ 注釈テキスト ▼ -->
-                            <div class="text-muted small user-select-none text-truncate">
-                                <i class="fa-solid fa-circle-info me-1"></i>
-                                ※期間のリンクをクリックすると過去の認定情報の編集・修正が行えます。
-                            </div>
-                        </div>
-                    </div> <!-- end detail-card -->
-                {% else %}
-                    <div class="section-title text-truncate">
-                        <h3>生活保護情報</h3>
-                    </div>
-                    <a class="btn btn-primary d-none d-md-block"
-                       href="{% url 'dashboard:public_assistance_create' user.id %}?linking=True">
-                        利用者に生活保護を設定する
-                    </a>
-                {% endif %}
+        <div class="section-title">
+          <h3>サービス提供表作成実績</h3>
+          <a href="{% url 'dashboard:created_service_list' %}"
+             class="btn btn-sm btn-outline-primary d-none d-md-block">提供表 国保請求へ</a>
+        </div>
 
-                <div class="section-title">
-                    <h3>サービス提供表作成実績</h3>
-                    <a href="{% url 'dashboard:created_service_list' %}"
-                       class="btn btn-sm btn-outline-primary d-none d-md-block">提供表 国保請求へ</a>
-                </div>
-
-                <div class="detail-card">
-                    <table class="history-table">
-                        <thead>
-                        <tr>
-                            <th>対象月</th>
-                            <th class="d-none d-md-table-cell">利用者負担金</th>
-                            <th class="d-none d-md-table-cell">国保請求額</th>
-                            <th class="text-truncate">利用者負担額</th>
-                            <th class="d-none d-md-table-cell">データ状態</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        {% for record in user.monthly_records.all|dictsortreversed:"date" %}
-                            <tr>
-                                <!-- 対象月 -->
-                                <td class="text-truncate" style="max-width: 150px;">
-                                    <a class="link-name"
-                                       href="{% url 'dashboard:service' user.id %}?year={{ record.date.year }}&month={{ record.date.month }}"
-                                    ><strong>{{ record.date|date:"Y年m月" }}</strong></a>
-                                </td>
-                                <!-- 利用者負担金 -->
-                                <td class="d-none d-md-table-cell">{{ record.user_share_amount|default:"0" }} 円</td>
-                                <!-- 国保請求額 -->
-                                <td class="d-none d-md-table-cell">{{ record.benefit_amount|default:"0" }} 円</td>
-                                <!-- 利用者負担額 -->
-                                <td class="text-truncate">{{ record.user_share_amount|default:"0" }} 円</td>
-                                <!-- データ状態 -->
-                                <td class="d-none d-md-table-cell">
-                                    {% if record.confirmed %}<span class="status-active">確定済み</span>
-                                    {% else %}<span class="text-muted">未確定（編集中）</span>{% endif %}
-                                </td>
-                            </tr>
-                        {% empty %}
-                            <tr><td colspan="4" class="text-center">実績データがありません</td></tr>
-                        {% endfor %}
-                        </tbody>
-                    </table>
-                    <!-- ▼ 注釈テキスト ▼ -->
-                    <div class="text-muted small user-select-none text-truncate">
-                        <i class="fa-solid fa-circle-info me-1"></i>
-                        ※対象月のリンクをクリックすると過去の認定情報の編集・消去が行えます。
-                    </div>
-
-                </div>
-            </div> <!-- end detail-card -->
-        </div> <!-- end 右側 -->
-    </div>
+        <div class="detail-card">
+          <table class="history-table">
+            <thead>
+            <tr>
+              <th>対象月</th>
+              <th class="d-none d-md-table-cell">利用者負担金</th>
+              <th class="d-none d-md-table-cell">国保請求額</th>
+              <th class="text-truncate">利用者負担額</th>
+              <th class="d-none d-md-table-cell">データ状態</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for record in user.monthly_records.all|dictsortreversed:"date" %}
+              <tr>
+                <!-- 対象月 -->
+                <td class="text-truncate" style="max-width: 150px;">
+                  <a class="link-name"
+                     href="{% url 'dashboard:service' user.id %}?year={{ record.date.year }}&month={{ record.date.month }}"
+                  ><strong>{{ record.date|date:"Y年m月" }}</strong></a>
+                </td>
+                <!-- 利用者負担金 -->
+                <td class="d-none d-md-table-cell">{{ record.user_share_amount|default:"0" }} 円</td>
+                <!-- 国保請求額 -->
+                <td class="d-none d-md-table-cell">{{ record.benefit_amount|default:"0" }} 円</td>
+                <!-- 利用者負担額 -->
+                <td class="text-truncate">{{ record.user_share_amount|default:"0" }} 円</td>
+                <!-- データ状態 -->
+                <td class="d-none d-md-table-cell">
+                  {% if record.confirmed %}<span class="status-active">確定済み</span>
+                  {% else %}<span class="text-muted">未確定（編集中）</span>{% endif %}
+                </td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="4" class="text-center">実績データがありません</td></tr>
+            {% endfor %}
+            </tbody>
+          </table>
+          <!-- ▼ 注釈テキスト ▼ -->
+          <div class="text-muted small user-select-none text-truncate">
+            <i class="fa-solid fa-circle-info me-1"></i>
+            ※対象月のリンクをクリックすると過去の認定情報の編集・消去が行えます。
+          </div>
+        </div>
+      </div> <!-- end detail-card -->
+    </div> <!-- end 右側 -->
+  </div>
 {% endblock %}
