@@ -15,7 +15,7 @@
 
 {% block body %}
 <div class="container">
-  <div id="bread" data-items='{{ breadcrumbs|safe }}'></div>
+  <div id="bread" class="ms-2" data-items='{{ breadcrumbs|safe }}'></div>
   <body>
     <form id="csrf-token-form" hidden>
       {% csrf_token %}

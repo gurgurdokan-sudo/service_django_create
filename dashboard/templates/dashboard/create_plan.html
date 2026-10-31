@@ -1,13 +1,22 @@
 {% extends 'dashboard/base/base.html' %}
 {% load static %}
 {% block css %}
-    <link rel="stylesheet" href="{% static 'dashboard/css/temp.css' %}">
+  <link rel="stylesheet" href="{% static 'dashboard/css/temp.css' %}">
+  <style>
+  @media (max-width: 767.98px) {
+    .page-title {
+      font-size: 1.15rem  !important; /* 1行で収まるサイズに縮小 */
+      border-left-width: 5px !important; /* 線の太さも少し細く */
+      padding-left: 10px !important;    /* 余白を詰める */
+    }
+  }
+  </style>
 {% endblock %}
 {% block body %}
   {% include 'dashboard/components/messages.html' %}
-    <div id="bread" data-items="{{ breadcrumbs }}"></div>
+    <div id="bread" class="ms-2" data-items="{{ breadcrumbs }}"></div>
     <!---- home>>Planがないユーザー ---->
-    <h2 class="page-title">{{ user.name }} さんのサービス提供計画作成</h2>
+    <h2 class="page-title text-truncate">{{ user.name }} さんのサービス提供計画作成</h2>
     <div class=detail-card>
       <form method="post" id="planForm" class="plan-form" action="{{ request.get_full_path }}" novalidate>
         {% csrf_token %}

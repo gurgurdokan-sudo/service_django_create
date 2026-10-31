@@ -14,8 +14,10 @@
   .swal2-container {  z-index: 20000 !important; }
   .swal2-html-container {  font-family: "Meiryo", "メイリオ", sans-serif !important; }
   @media (max-width: 767.98px) {
-    .hide-on-mobile {
-      display: none !important;
+    .page-title {
+      font-size: 1.15rem  !important; /* 1行で収まるサイズに縮小 */
+      border-left-width: 5px !important; /* 線の太さも少し細く */
+      padding-left: 10px !important;    /* 余白を詰める */
     }
   }
 </style>
@@ -25,7 +27,7 @@
 <div class="container">
   <!-- ヘッダーエリア -->
 
-  <div id="bread" data-items="{{ breadcrumbs }}"></div>
+  <div id="bread" class="ms-2" data-items="{{ breadcrumbs }}"></div>
   <div class="header-container">
     <h2 id="userId" data-user-id="{{ user.id }}" class="page-title text-truncate">
       <span>{{ user.name }} さんのサービス提供表 {{ dis_month }} 月  </span>

@@ -8,7 +8,7 @@
   {% include 'dashboard/components/messages.html' %}
   <h2 class="page-title">{{ title }}</h2>
   <div class="detail-card">
-    <div id="bread" data-items="{{ breadcrumbs }}"></div>
+    <div id="bread" class="ms-2" data-items="{{ breadcrumbs }}"></div>
     <form method="post" id="public_assistance_Form" action="{{ request.get_full_path }}" novalidate>
       {% csrf_token %}
       <input type="hidden" name="linking" value="{{ linking }}">

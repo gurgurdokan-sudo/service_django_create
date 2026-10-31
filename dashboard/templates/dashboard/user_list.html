@@ -2,28 +2,44 @@
 {% block css %}
 {% load static %}
 <link rel="stylesheet" href="{% static 'dashboard/css/temp.css' %}">
+  <style>
+  @media (max-width: 767.98px) {
+    .data-table td .btn {
+      display: block;
+      width: 100%;
+      text-align: center;
+    }
+    .alert-text{
+      display: block;
+      white-space: nowrap !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+      max-width: 100%;
+    }
+  }
+  </style>
 {% endblock %}
 {% block body %}
 <div class="container">
   {% include "dashboard/components/messages.html" %}
-  <div id="bread" data-items='[{"label": "ホーム", "url": ""}]'></div>
+  <div id="bread" class="ms-2" data-items='[{"label": "ホーム", "url": ""}]'></div>
   <div class="header-container">
-    <h1 class="page-title">利用者一覧</h1>
-    <label><a href="{% url 'dashboard:plan' %}" class="btn btn-plan">Planマスター取り込み</a></label>
+    <h1 class="page-title text-truncate">利用者一覧</h1>
+    <label class="d-none d-md-block"><a href="{% url 'dashboard:plan' %}" class="btn btn-plan">Planマスター取り込み</a></label>
     <div class="form-check form-switch">
       <input class="form-check-input" type="checkbox" role="switch" id="bootstrapSwitch">
-      <label id="switchMonth" class="form-check-label" for="bootstrapSwitch">一括前月モード</label>
+      <label id="switchMonth" class="form-check-label d-none d-md-block" for="bootstrapSwitch">一括前月モード</label>
     </div>
-    <label><a href="{% url 'dashboard:care_mana_create' %}" class="btn btn-create">新規作成</a></label>
+    <label><a href="{% url 'dashboard:care_mana_create' %}" class="btn btn-create d-none d-md-block">新規作成</a></label>
   </div>
   <div id="alert" class="alert callout callout-info alert-dismissible fade show my-3 shadow-sm" role="alert">
     <div class="d-flex align-items-center">
       <i class="fa-solid fa-circle-info fa-lg me-2"></i>
-      <div>
+      <div class="overflow-hidden">
         <strong>お知らせ・注意事項:</strong>
         <div class="alert-body">
           {% for alert in alerts %}
-            <p class="alert-text">{{ alert }}</p>
+            <p class="alert-text"><span class="text-truncate">{{ alert }}</span></p>
           {% empty %}
             <p class="alert-text alert-text-empty">特になし</p>
           {% endfor %}
@@ -37,18 +53,29 @@
   <table class="data-table">
     <tr>
       {% comment %} <th>ID</th> {% endcomment %}
-      <th class="user-select-none">要介護度</th>
+      <th class="user-select-none d-none d-md-table-cell">要介護度</th>
       <th class="user-select-none">名前(詳細)</th>
-      <th class="user-select-none">被保険者証の情報</th>
-      <th class="user-select-none text-center">編集</th>
+      <th class="user-select-none d-none d-md-table-cell">被保険者証の情報</th>
+      <th class="user-select-none text-center d-none d-md-table-cell">編集</th>
       <th class="user-select-none">サービス提供票</th>
     </tr>
     {% for user in users %}
     <tr>
-      <td class="badge user-select-none">{{ user.care_level }}</td>
-      <td><a href="{% url 'dashboard:detail' user.id %}" class="link-name">{{ user.name }}</a></td>
-      <td><a href="{% url 'dashboard:certificate_update' user.id %}" class="btn btn-cert">認定情報作成</a></td>
-      <td class="d-flex justify-content-center"><a href="{% url 'dashboard:update' user.id %}" class="btn btn-edit">編集</a></td>
+      <!-- 要介護度 -->
+      <td class="badge user-select-none d-none d-md-table-cell text-start">{{ user.care_level }}</td>
+      <!-- 名前 -->
+      <td class="text-truncate">
+          <a href="{% url 'dashboard:detail' user.id %}" class="link-name">{{ user.name }}</a>
+      </td>
+      <!-- 認定情報 -->
+      <td class="d-none d-md-table-cell">
+          <a href="{% url 'dashboard:certificate_update' user.id %}" class="btn btn-cert">認定情報作成</a>
+      </td>
+      <!-- 編集 -->
+      <td class="d-none d-md-flex justify-content-center">
+          <a href="{% url 'dashboard:update' user.id %}" class="btn btn-edit">編集</a>
+      </td>
+      <!-- サービス提供票 -->
       <td>
         <a class="btn linkSwitch"
           href="{% url 'dashboard:service' user.id %}?from_list=1"

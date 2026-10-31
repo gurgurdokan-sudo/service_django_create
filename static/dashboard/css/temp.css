@@ -436,15 +436,26 @@ label:has(+ select[required])::after,
     padding: 15px 0; 
     margin: 0;
 }
-  .no-data {
+.no-data {
     width: 100%;
     text-align: center;
     border-collapse: collapse;
-  }
-  .action-buttons{
+}
+.action-buttons {
     width: 150px;
-  }
-  .action-buttons button{
-    margin-right: 5px;
-    width: 70px;
-  }
+}
+.action-buttons button {
+  margin-right: 5px;
+  width: 70px;
+}
+
+#main-content {
+    margin-left: 50px;
+    transition: margin-left 0.3s ease;
+}
+
+@media (max-width: 767.98px) {
+    #main-content {
+        margin-left: 0 !important;
+    }
+}

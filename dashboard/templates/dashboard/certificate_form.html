@@ -7,7 +7,7 @@
   {% include 'dashboard/components/messages.html' %}
   <h2>{{ title|default:"認定情報" }}</h2>
   <div class="detail-card">
-    <div id="bread" data-items='{{ breadcrumbs|safe }}'></div>
+    <div id="bread" class="ms-2" data-items='{{ breadcrumbs|safe }}'></div>
     <form method="post" id="certificateForm" novalidate>
       {% csrf_token %}
       <div>

@@ -41,6 +41,27 @@
     text-align: left !important;
     padding: 0 !important;
   }
+  .calendar-scroll-wrapper {
+  width: 100%;
+  max-height: 75vh;        /* 縦スクロールさせたい高さ（画面の75%や、600pxなど） */
+  overflow: auto;          /* 縦も横もはみ出たらスクロールバーを表示 */
+  -webkit-overflow-scrolling: touch; /* スマホでの慣性スクロール */
+  }
+
+  #calendar {
+    min-width: 700px;        /* カレンダーが崩れない最小の横幅（700px〜800px程度が目安） */
+    margin: 0;               /* 中央揃え解除 */
+    background: #fff;
+    padding: 10px;
+    border-radius: 8px;
+  }
+  @media (max-width: 767.98px) {
+    .page-title {
+      font-size: 1.15rem  !important; /* 1行で収まるサイズに縮小 */
+      border-left-width: 5px !important; /* 線の太さも少し細く */
+      padding-left: 10px !important;    /* 余白を詰める */
+    }
+  }
 </style>
 <link rel="stylesheet" href="{% static 'dashboard/css/temp.css' %}">
 {% endblock css %}
@@ -52,7 +73,7 @@
 
   {% include "dashboard/components/messages.html" %}
 
-  <div class="calendar-toolbar">
+  <div class="calendar-toolbar d-none d-md-block">
     <form method="post" action="{% url 'employees:shift_generate' %}" style="display:flex;gap:6px;align-items:center;">
       {% csrf_token %}
       <select name="year" id="gen-year" class="form-control" style="width:auto;">
@@ -72,7 +93,7 @@
     <div class="legend"><span class="u">利用者</span><span>スタッフ担当</span></div>
   </div>
 
-  <div id="calendar"></div>
+  <div id="calendar" class="calendar-scroll-wrapper"></div>
 </div>
 
 <!-- シフト追加/編集ポップアップ -->

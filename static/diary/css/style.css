@@ -137,6 +137,11 @@
     }
 
     #main-content {
-        margin-left: 0;
-        margin-top:0;
+        margin-left: 50px;
+        transition: margin-left 0.3s ease;
+    }
+    @media (max-width: 767.98px) {
+        #main-content {
+            margin-left: 0 !important;
+        }
     }
