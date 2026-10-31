@@ -22,7 +22,25 @@ STAY_TIME_CHOICES = [
     ('7-8', '7以上-8未満'),
     ('8-9', '8以上-9未満')
 ]
-
+# 限度額
+def max_separate_payment(care_level):
+    match care_level:
+        case '要支援1':
+            return 5003
+        case '要支援2':
+            return 10473
+        case '要介護1':
+            return 16692
+        case '要介護2':
+            return 19705
+        case '要介護3':
+            return 27048
+        case '要介護4':
+            return 30938
+        case '要介護5':
+            return 36217
+        case _:
+            return None
 # 所属の市町村（地域区分）で単位数単価が変化
 UNIT_PRICE_TABLE = {7: 11.40, 6: 10.90, 5: 10.45, 4: 10.25, 3: 10.15, 2: 10.10, 1: 10.00}
 

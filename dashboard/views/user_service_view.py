@@ -15,7 +15,9 @@ from dashboard.models import (
     ServiceMaster,
     AddOnService,
     Office,
-    ServiceMonthlyRecord, Certificate,
+    ServiceMonthlyRecord,
+    Certificate,
+    const
 )
 from dashboard.calendar_table import get_month_days
 
@@ -65,7 +67,6 @@ def build_user_service_context(user_id, year, month):
             ServiceMaster.objects
             .filter(care_level__in = c_list)
         )
-        print(service_masters,flush=True)
     else:
         service_masters = None
         logger.error('介護認定の取得に失敗')
@@ -138,7 +139,6 @@ def _first_value(obj: Any, *field_names: str) -> Any:
     for field_name in field_names:
         value = _related_value(obj, field_name)
         if value is not None and value != "":
-            logger.info(f'====================={field_name}')
             return value
     return None
 
@@ -169,32 +169,28 @@ def _build_user_info(user, year: int, month: int, office) -> dict[str, Any]:
     if certificate is None:
         return info
 
-    get_care_level_display = _related_value(
-        certificate, "get_care_level_display"
-    )
-    limit_amount_value =
-    if certificate.limit_amount_type == '任意':
+    limit_amount_value = const.max_separate_payment(certificate.care_level)
+    if certificate.limit_amount_type == '任意': # 任意なら上書き
         limit_amount_value = _related_value(certificate, "limit_amount_value"),
     info.update({
-        "care_level": (
-            get_care_level_display()
-            if callable(get_care_level_display)
-            else _related_value(certificate, "care_level")
-        ),
+        "care_level": certificate.care_level,
         "care_start": _related_value(certificate, "limit_start"),
         "care_end": _related_value(certificate, "limit_end"),
         # 支給限度額
         "limit_amount_value": limit_amount_value,
     })
-    # 変更前の認定は同じ利用者に限定。info全体を上書きしない。
+    # 変更前の認定は同じ利用者から取得
     changed_at = _related_value(certificate, "care_level_changed_at")
-    if changed_at:
+    current_data = date(year, month, 1)
+    if changed_at and changed_at > current_data:
         info["old_cert"] = (
             Certificate.objects
-            .filter(user=user, limit_start=changed_at)
+            .filter(user=user, is_active=False)
             .exclude(pk=certificate.pk)
             .first()
         )
+        # 支給限度額
+        info["old_cert"].limit_amount_value = const.max_separate_payment(info["old_cert"].care_level)
 
     return info
 
@@ -231,7 +227,6 @@ def user_service(request,user_id):
     ]
     context['breadcrumbs'] = BreadcrumbUtil.create(crumbs)
     logger.info(f'======{user.name} 様 提供表確定 {context["confirmed"]}======')
-    print(context['service_masters'],flush=True)
     return render(request,'dashboard/user_service.html',context)
 
 #一括前月モード

@@ -1,6 +1,8 @@
+from calendar import monthrange
+from datetime import date
+
 from django.db import models
 from django.utils import timezone
-from datetime import date
 
 class UseUser(models.Model):
     """被保険者の情報を管理するモデル"""
@@ -101,14 +103,19 @@ class UseUser(models.Model):
 
     def get_certificate(self, year, month) :
         """ 指定した日付時点で有効な認定データを1件返す """
-        target_date = date(int(year), int(month), 1)
-        q_cert = self.certificates.filter(
-            limit_start__lte=target_date,
-            limit_end__gte=target_date,
-        ).order_by('-limit_start')
-        for cert in q_cert: #アクティブを優先してreturn
-            if cert.is_active: return cert
-        return q_cert.first()
+        year = int(year)
+        month = int(month)
+        month_start = date(year, month, 1)
+        month_end = date(year, month, monthrange(year, month)[1])
+
+        return (
+            self.certificates.filter(
+                limit_start__lte=month_end,
+                limit_end__gte=month_start,
+            )
+            .order_by("-is_active", "-limit_start")
+            .first()
+        )
 
     def latest_changed_cert(self, year, month):  # 紐づく介護認定情報
         return self.certificates.filter(

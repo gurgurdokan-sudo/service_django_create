@@ -1,33 +1,44 @@
 <section class="card detail-card mb-4 shadow-sm" aria-labelledby="user-info-heading">
-  <div class="card-header bg-navy text-white d-flex align-items-center kon-dark">
-    <h5 id="user-info-heading" class="m-0 fw-bold">
-      <i class="bi bi-person-badge me-2"></i>利用者情報
-    </h5>
+  <div class="card-header bg-navy p-0 kon-dark">
+    <button
+      class="btn w-100 text-white text-start d-flex align-items-center justify-content-between p-3 rounded-0 border-0"
+      type="button"
+      data-bs-toggle="collapse"
+      data-bs-target="#userInfoCollapse{{ user.id }}"
+      aria-expanded="false"
+      aria-controls="userInfoCollapse{{ user.id }}"
+    >
+      <span class="fw-bold">
+        <i class="bi bi-person-badge me-2"></i>利用者情報
+      </span>
+      <i class="bi bi-chevron-down" aria-hidden="true"></i>
+    </button>
   </div>
-  <div class="card-body p-4">
+  <div id="userInfoCollapse{{ user.id }}" class="collapse">
+    <div class="card-body p-4">
     <h6 class="border-bottom pb-2 mb-3 text-secondary fw-bold">基本情報</h6>
     <div class="row g-3 mb-4">
       <div class="col-md-2 col-sm-4">
-        <div class="small text-muted mb-1">利用者名</div>
+        <div class="small text-muted mb-1 text-truncate">利用者名</div>
         <div class="fw-bold fs-6">{{ user.name|default:"-" }}</div>
       </div>
       <div class="col-md-2 col-sm-4">
-        <div class="small text-muted mb-1">被保険者番号</div>
+        <div class="small text-muted mb-1 text-truncate">被保険者番号</div>
         <div class="fw-bold">{{ user.insured_number|default:"-" }}</div>
       </div>
       <div class="col-md-3 col-sm-4">
-        <div class="small text-muted mb-1">保険者</div>
+        <div class="small text-muted mb-1 text-truncate">保険者</div>
         <div class="fw-bold">
           {{ info.insurer_name|default:"-" }}
           {% if info.insurer_number %}<span class="text-secondary small">（{{ info.insurer_number }}）</span>{% endif %}
         </div>
       </div>
       <div class="col-md-2 col-sm-6">
-        <div class="small text-muted mb-1">担当ケアマネジャー</div>
+        <div class="small text-muted mb-1 text-truncate">担当ケアマネジャー</div>
         <div class="fw-bold">{{ info.care_manager_name|default:"-" }}</div>
       </div>
       <div class="col-md-3 col-sm-6">
-        <div class="small text-muted mb-1">居宅介護支援事業所</div>
+        <div class="small text-muted mb-1 text-truncate">居宅介護支援事業所</div>
         <div class="fw-bold">{{ info.care_management_office|default:"-" }}</div>
       </div>
     </div>
@@ -74,5 +85,6 @@
       </div>
     </div>
     {% endif %}
+    </div>
   </div>
 </section>
