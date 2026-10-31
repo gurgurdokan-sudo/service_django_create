@@ -28,7 +28,7 @@
 
     <div id="confirmed-status" data-confirmed="{{ confirmed }}">
       {% if confirmed %}{#  レコードがNoneを考慮しない  #}
-        <span class="badge bg-danger">確定済み</span>
+        <span class="badge bg-success">確定済み</span>
       {% else %}
         <span class="badge bg-warning text-dark">未確定</span>
       {% endif %}
@@ -77,6 +77,7 @@
     </div>
   </div>
 
+  {% include "dashboard/components/user_info.html" with user=user info=user_info %}
   <!-- メインテーブル -->
   <div class="table-wrapper">
     <table class="schedule-table">

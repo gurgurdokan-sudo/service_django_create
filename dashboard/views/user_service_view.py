@@ -1,5 +1,7 @@
 from datetime import date
+from typing import Any
 
+from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import QuerySet, Q
 from django.shortcuts import render,redirect, get_object_or_404
 from django.utils import timezone
@@ -54,7 +56,6 @@ def build_user_service_context(user_id, year, month):
         )
         raise ValueError("既存プランにサービスコード未設定の行があります")
 
-    # user_codes = plans.values_list("service_code",flat=True)#userチェック済みのサービスコード
     certificate:Certificate = target.get_certificate(year, month)
     if certificate:
         c_list = [certificate.care_level]
@@ -63,22 +64,11 @@ def build_user_service_context(user_id, year, month):
         service_masters =(
             ServiceMaster.objects
             .filter(care_level__in = c_list)
-            # .exclude(service_code__in = user_codes)
         )
         print(service_masters,flush=True)
     else:
         service_masters = None
         logger.error('介護認定の取得に失敗')
-    # logger.info(f'{user_codes}以外のplansを取得')
-    excluded_addon_ids = {
-        item["id"]
-        for item in addons
-        if item.get("id") is not None
-    }
-    # if office.default_service:
-    #     excluded_addon_ids.add(office.default_service.pk)
-    #
-    # addon_service = AddOnService.objects.exclude(pk__in=excluded_addon_ids)
     logger.info(f'{year}-{month}のサービス提供票の確認状態を取得')
     record:ServicePlan = ServiceMonthlyRecord.objects.filter(user=target, date=date(year, month, 1)).first()
 
@@ -97,6 +87,8 @@ def build_user_service_context(user_id, year, month):
         # 画面用　batchアラート
         'monthly_record': target.get_monthly_record(year, month), # サービス提供票の確定状態
         'public_assistance':target.get_public_assistance(year,month),
+        # 画面用　利用者情報
+        'user_info': _build_user_info(target, year, month, office),
         # 画面用　Flag
         'confirmed': record.confirmed if record else False,
         # 画面用　select移動範囲
@@ -132,6 +124,79 @@ def _is_future_month_not_pa(user, year, month, prev=False):
     this_month_first = date(today.year, today.month, 1)
     target_month_first = date(int(year), int(month), 1)    
     return target_month_first >= this_month_first
+
+def _related_value(obj: Any, field_name: str) -> Any:
+    """未設定の関連オブジェクトがあっても画面表示を止めない。"""
+    if obj is None:
+        return None
+    try:
+        return getattr(obj, field_name, None)
+    except ObjectDoesNotExist:
+        return None
+
+def _first_value(obj: Any, *field_names: str) -> Any:
+    for field_name in field_names:
+        value = _related_value(obj, field_name)
+        if value is not None and value != "":
+            logger.info(f'====================={field_name}')
+            return value
+    return None
+
+def _build_user_info(user, year: int, month: int, office) -> dict[str, Any]:
+    certificate = user.get_certificate(year, month)
+    care_manager = _related_value(user, "care_manager")
+
+    insurer = office.municipality    # 保険者
+
+    info: dict[str, Any] = {
+        # 保険者(地域) 例：新座市
+        "insurer_name": _first_value(insurer, "name"),
+        # 保険者(地域)番号 例：112300
+        "insurer_number": _first_value(insurer, "municipality_code"),
+        "care_manager_name": _first_value(care_manager, "name"),
+        # CareManagerの事務所
+        "care_management_office": _first_value(care_manager,"office_name"),
+        "care_level": None,
+        "care_start": None,
+        "care_end": None,
+        "limit_amount_value": None,
+        "old_cert": None,
+        "show_short_stay_days": False,
+        "previous_short_stay_days": 0,
+    }
+
+    # 認定がない月でも利用者・ケアマネ情報は表示
+    if certificate is None:
+        return info
+
+    get_care_level_display = _related_value(
+        certificate, "get_care_level_display"
+    )
+    limit_amount_value =
+    if certificate.limit_amount_type == '任意':
+        limit_amount_value = _related_value(certificate, "limit_amount_value"),
+    info.update({
+        "care_level": (
+            get_care_level_display()
+            if callable(get_care_level_display)
+            else _related_value(certificate, "care_level")
+        ),
+        "care_start": _related_value(certificate, "limit_start"),
+        "care_end": _related_value(certificate, "limit_end"),
+        # 支給限度額
+        "limit_amount_value": limit_amount_value,
+    })
+    # 変更前の認定は同じ利用者に限定。info全体を上書きしない。
+    changed_at = _related_value(certificate, "care_level_changed_at")
+    if changed_at:
+        info["old_cert"] = (
+            Certificate.objects
+            .filter(user=user, limit_start=changed_at)
+            .exclude(pk=certificate.pk)
+            .first()
+        )
+
+    return info
 
 #main
 def user_service(request,user_id):

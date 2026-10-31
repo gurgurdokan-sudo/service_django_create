@@ -1,0 +1,78 @@
+<section class="card detail-card mb-4 shadow-sm" aria-labelledby="user-info-heading">
+  <div class="card-header bg-navy text-white d-flex align-items-center kon-dark">
+    <h5 id="user-info-heading" class="m-0 fw-bold">
+      <i class="bi bi-person-badge me-2"></i>利用者情報
+    </h5>
+  </div>
+  <div class="card-body p-4">
+    <h6 class="border-bottom pb-2 mb-3 text-secondary fw-bold">基本情報</h6>
+    <div class="row g-3 mb-4">
+      <div class="col-md-2 col-sm-4">
+        <div class="small text-muted mb-1">利用者名</div>
+        <div class="fw-bold fs-6">{{ user.name|default:"-" }}</div>
+      </div>
+      <div class="col-md-2 col-sm-4">
+        <div class="small text-muted mb-1">被保険者番号</div>
+        <div class="fw-bold">{{ user.insured_number|default:"-" }}</div>
+      </div>
+      <div class="col-md-3 col-sm-4">
+        <div class="small text-muted mb-1">保険者</div>
+        <div class="fw-bold">
+          {{ info.insurer_name|default:"-" }}
+          {% if info.insurer_number %}<span class="text-secondary small">（{{ info.insurer_number }}）</span>{% endif %}
+        </div>
+      </div>
+      <div class="col-md-2 col-sm-6">
+        <div class="small text-muted mb-1">担当ケアマネジャー</div>
+        <div class="fw-bold">{{ info.care_manager_name|default:"-" }}</div>
+      </div>
+      <div class="col-md-3 col-sm-6">
+        <div class="small text-muted mb-1">居宅介護支援事業所</div>
+        <div class="fw-bold">{{ info.care_management_office|default:"-" }}</div>
+      </div>
+    </div>
+
+    <h6 class="border-bottom pb-2 mb-3 text-secondary fw-bold">介護認定情報</h6>
+    <div class="row g-3 mb-3 p-3 bg-light rounded align-items-center">
+      <div class="col-md-auto">
+        <span class="badge bg-warning px-3 py-2 fs-6">{{ info.care_level|default:"未設定" }}</span>
+      </div>
+      <div class="col-md">
+        <div class="small text-muted mb-1">認定有効期間</div>
+        <div class="fw-bold">{{ info.care_start|date:"Y/m/d"|default:"-" }} ～ {{ info.care_end|date:"Y/m/d"|default:"-" }}</div>
+      </div>
+      <div class="col-md">
+        <div class="small text-muted mb-1">支給限度額</div>
+        <div class="fw-bold text-end pe-4">{{ info.limit_amount_value|default_if_none:"未設定" }} <span class="small fw-normal">単位/月</span></div>
+      </div>
+    </div>
+
+    {% if info.old_cert %}
+    <div class="row g-3 mb-3 p-3 bg-light border border-warning rounded align-items-center position-relative">
+      <span class="position-absolute top-0 start-0 translate-middle badge rounded-pill bg-warning text-dark border border-light" style="width: auto; margin-left: 30px;">変更前</span>
+      <div class="col-md-auto mt-4 mt-md-2">
+        <span class="badge bg-secondary px-3 py-2 fs-6">{{ info.old_cert.care_level|default:"未設定" }}</span>
+      </div>
+      <div class="col-md mt-4 mt-md-2">
+        <div class="small text-muted mb-1">認定有効期間</div>
+        <div class="fw-bold text-secondary">{{ info.old_cert.limit_start|date:"Y/m/d"|default:"-" }} ～ {{ info.old_cert.limit_end|date:"Y/m/d"|default:"-" }}</div>
+      </div>
+      <div class="col-md mt-4 mt-md-2">
+        <div class="small text-muted mb-1">支給限度額</div>
+        <div class="fw-bold text-secondary text-end pe-4">{{ info.old_cert.limit_amount_value|default_if_none:"未設定" }} <span class="small fw-normal">単位/月</span></div>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if info.show_short_stay_days %}
+    <div class="row mt-3">
+      <div class="col-md-12">
+        <div class="alert alert-info py-2 px-3 m-0 d-inline-block">
+          <span class="fw-bold me-3">前月までの短期入所利用日数:</span>
+          <span class="fs-5 fw-bold">{{ info.previous_short_stay_days|default_if_none:"0" }}</span> 日
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</section>

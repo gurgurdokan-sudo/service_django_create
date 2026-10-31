@@ -146,24 +146,24 @@ AWS_REGION = os.environ.get('AWS_REGION', 'ap-northeast-1')
 
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
-if DJANGO_ENV != 'dev':
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': os.environ.get('POSTGRES_DB', 'service_db'),
-            'USER': os.environ.get('POSTGRES_USER', 'django'),
-            'PASSWORD': os.environ.get('POSTGRES_PASSWORD', 'django'),
-            'HOST': 'postgres_db',
-            'PORT': int(os.environ.get('POSTGRES_PORT', 5432)),
-        }
+# if DJANGO_ENV != 'dev':
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.environ.get('POSTGRES_DB', 'service_db'),
+        'USER': os.environ.get('POSTGRES_USER', 'django'),
+        'PASSWORD': os.environ.get('POSTGRES_PASSWORD', 'django'),
+        'HOST': 'postgres_db',
+        'PORT': int(os.environ.get('POSTGRES_PORT', 5432)),
     }
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
     }
+# else:
+#     DATABASES = {
+#         'default': {
+#             'ENGINE': 'django.db.backends.sqlite3',
+#             'NAME': BASE_DIR / 'db.sqlite3',
+#         }
+#     }
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators

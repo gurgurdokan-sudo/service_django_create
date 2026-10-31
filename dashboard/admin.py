@@ -4,7 +4,6 @@ from dashboard.models import UseUser, ServiceMaster, ServicePlan, ServiceMonthly
 
 admin.site.register(ServiceMaster)
 admin.site.register(ServicePlan)
-admin.site.register(ServiceMonthlyRecord)
 admin.site.register(AddOnService)
 admin.site.register(Municipality)
 admin.site.register(CareManager)
@@ -13,6 +12,9 @@ admin.site.register(PublicAssistance)
 
 @admin.register(OfficeMonthlyBilling)
 class OfficeMonthlyBillingAdmin(admin.ModelAdmin):
+    readonly_fields = ("updated_at", )
+@admin.register(ServiceMonthlyRecord)
+class ServiceMonthlyRecordAdmin(admin.ModelAdmin):
     readonly_fields = ("updated_at", )
 @admin.register(Office)
 class OfficeAdmin(admin.ModelAdmin):

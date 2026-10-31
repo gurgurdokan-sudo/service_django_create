@@ -5,7 +5,7 @@ from .const import LEVEL_CHOICES, STAY_TIME_CHOICES, SERVICE_TYPE_CHOICES, UNIT_
 
 
 class ServiceMaster(models.Model):
-    '''提供されるサービスのマスターデータを管理するモデル'''
+    """提供されるサービスのマスターデータを管理するモデル"""
     class Meta:
         verbose_name_plural= "利用サービス マスタ"
     care_level = models.CharField(
@@ -90,11 +90,12 @@ class Office(models.Model):
 
     name = models.CharField(max_length=100)
     office_number = models.IntegerField()
-    municipality = models.ForeignKey(Municipality, on_delete=models.PROTECT)
-    default_service = models.ForeignKey(AddOnService, on_delete=models.SET_NULL, null=True, blank=True)
+    municipality = models.ForeignKey('Municipality',verbose_name='保険者（地域）', on_delete=models.PROTECT)
+    default_service = models.ForeignKey('AddOnService', on_delete=models.SET_NULL, null=True, blank=True)
     service_type_code = models.IntegerField(
         choices=SERVICE_TYPE_CHOICES,
-        default=SERVICE_TYPE_CODE, verbose_name = '種類コード',
+        default=SERVICE_TYPE_CODE,
+        verbose_name = '種類コード',
         help_text="""地域密着型通所介護 → 78
                     通所介護（通常規模） → 79
                     通所介護（大規模Ⅰ） → 80
