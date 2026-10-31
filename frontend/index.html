@@ -5,15 +5,64 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>サービス集計（モック）</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
+    <style>
+      .summary-table { table-layout: fixed; width: 100%; max-width: 1800px; }
+      .summary-col-name     { width: 40%; }
+      .summary-col-price    { width: 20%; }
+      .summary-col-count    { width: 20%; }
+      .summary-col-subtotal { width: 20%; }
+    </style>
   </head>
   <body class="p-3">
-    <form method="post">
-      <!-- 実際の画面ではDjango Formの入力欄に置き換える -->
-      <input id="id_start_time" name="start_time" type="time" value="10:00">
-      <input id="id_end_time" name="end_time" type="time" value="15:00">
+    <div
+  id="service-summary-root"
+  data-user-id="1"
+  data-year="2026"
+  data-month="9"
+></div>
 
-      <div id="this-plan-root" data-care-level="要介護1">a</div>
-    </form>
+    <!-- モックデータ -->
+    <script>
+      window.initialPlans = [
+        {
+          id: 1,
+          service_name: '地域密着型通所介護（7-8時間）',
+          service_code: '781344',
+          unit: 1013,
+          // 予定：'1' の日だけ数える
+          schedule_dict: { 1: '1', 8: '1', 15: '1', 22: '1' },
+          // 実績：main が '1' の日だけ数える（22日は欠席 → 3 / 4 で赤字になる）
+          actual_dict: {
+            1: { main: '1' },
+            8: { main: '1' },
+            15: { main: '1' },
+            22: { main: '' },
+          },
+        },
+      ];
+
+      window.initialAddons = [
+        { id: 5, code: '5301', name: '入浴介助加算Ⅰ', insurance_type: 'insurance', type: 'unit', unit: 40, days: [1, 8, 15] },
+        { id: 6, code: '6107', name: '処遇改善加算', insurance_type: 'insurance', type: 'rate', days: [] },
+        { id: 9, code: 'S01', name: '昼食代', insurance_type: 'self_pay', price: 600, days: [1, 8, 15] },
+        { id: 10, code: 'S02', name: 'おやつ代', insurance_type: 'self_pay', price: 100, days: [1, 8, 15] },
+      ];
+
+      // 1013×3 + 40×3 = 3159 単位（画面の合計と一致させる）
+      window.initialMonthlyRecord = {
+        service_units: 3159,
+        total_units: 3450,     // 3159 + 処遇改善 291
+        within_units: 3450,
+        over_units: 0,
+        total_cost: 36052,     // 3450 × 10.45 切り捨て
+        benefit_amount: 32446, // 36052 × 0.9 切り捨て
+        user_share_amount: 3606,
+        public_amount: 0,
+        actual_count: 3,
+        confirmed: false,
+      };
+    </script>
+
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
