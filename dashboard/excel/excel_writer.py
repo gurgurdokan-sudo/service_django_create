@@ -11,6 +11,7 @@ from openpyxl.styles import Alignment
 from openpyxl.utils import get_column_letter
 
 from dashboard.models import AddOnService
+from dashboard.models.const import CARE_LEVEL_LIMIT_UNITS
 from dashboard.calendar_table import get_month_days, to_wareki_parts, format_wareki_date
 from dashboard.excel.service_calculator import ServiceSheetCalculator, format_comma
 
@@ -35,12 +36,9 @@ def create_service_sheet(context):
             ws1, user, context['office'], year, month, created_date
         )
 
-        # --- Sheet 1: 生活保護情報の印字 ---
-        if res['is_hogo']:
-            pa = res['pa_data']
-            ws1['G5'] = "25"  # 法別番号
-            ws1['I5'] = pa.hogo_number  # 保護番号(8桁)
-            ws1['V9'] = pa.recipient_number  # 受給者番号(10桁)
+        # ---  生活保護情報 ---
+        pub = user.get_public_assistance(year, month)
+        is_hogo = True if pub else False
 
         # --- Sheet 1: 予定・実績カレンダー ---
         plans = context['plans']
@@ -168,21 +166,22 @@ def create_service_sheet(context):
         # 最終合計行 (20行目固定)
         ws2['AT20'] = format_comma(res['total_cost'])
         ws2['AX20'] = format_comma(res['benefit_amount'])
-        if res['is_hogo']:
-            ws2['BA20'] = format_comma(res['public_amount'])
-            ws2['BD20'] = "0"
+        if is_hogo:
+            ws2['BD20'] = format_comma(res['public_amount'])
+            ws2['BG20'] = "0"
         else:
-            ws2['BD20'] = format_comma(res['user_share_amount'])
+            ws2['BG20'] = format_comma(res['user_share_amount'])
 
         # --- 生活保護情報の印字を追加 ---
-        bikou_text = ''
-        if res['is_hogo']:
-            pa = res['pa_data']
-            # セル位置はテンプレートに合わせて調整してください
-            bikou_text += "生活保護の法別番号:25\n"  # 生活保護の法別番号
-            bikou_text += f'公費負担者番号:{pa.hogo_number}\n'  # 公費負担者番号
-            bikou_text += f'公費受給者番号:{pa.recipient_number}'  # 公費受給者番号
-        ws2['AK23'] = bikou_text
+        bikou_text = []
+        if is_hogo:
+            bikou_text.extend([
+                "生活保護の法別番号:25 ",  # 生活保護の法別番号
+                f"公費負担者番号:{pub.hogo_number} ",  # 公費負担者番号
+                f"公費受給者番号:{pub.recipient_number}", # 公費受給者番号
+            ])
+        for i, text in enumerate(bikou_text, start=0):
+            ws2[f'AK{23 + i}'] = text
         # ローカル保存処理
         if settings.DJANGO_ENV == 'dev':
             filepath, filename = get_service_sheet_path(user, year, month)
@@ -268,7 +267,6 @@ def build_sheet2_rows(plan_items, addon_items, office):
         rows.extend(details)
 
         # 公式記載要領に合わせ、サービス種類内にコードが複数ある場合だけ集計行を出す。
-        # 同じコードのPlanが時間帯違いで複数あっても、ここでのコード数は1なので集計行は出ない。
         distinct_service_codes = {row["code"] for row in details}
         if len(distinct_service_codes) > 1:
             service_type_name = SERVICE_TYPE_NAMES.get(
@@ -315,22 +313,10 @@ def write_billing_line(ws, row, item, office_number, office_names):
     ws[f'AC{row}'] = format_comma(item['subtotal'])
 
     # 明細行：費用総額・給付率・保険給付額・利用者負担
-    ws[f'AT{row}'] = format_comma(item['cost_total'])
-    ws[f'AW{row}'] = int(item['benefit_rate'] * 100)
-    ws[f'AX{row}'] = format_comma(item['benefit_amount'])
-    ws[f'BD{row}'] = format_comma(item['user_share_amount'])
-
-
-# 区分支給限度基準額（単位／月）。令和元年10月改定値。
-CARE_LEVEL_LIMIT_UNITS = {
-    "要支援1": 5032,
-    "要支援2": 10531,
-    "要介護1": 16765,
-    "要介護2": 19705,
-    "要介護3": 27048,
-    "要介護4": 30938,
-    "要介護5": 36217,
-}
+    # ws[f'AT{row}'] = format_comma(item['cost_total'])
+    # ws[f'AW{row}'] = int(item['benefit_rate'] * 100)
+    # ws[f'AX{row}'] = format_comma(item['benefit_amount'])
+    # ws[f'BG{row}'] = format_comma(item['user_share_amount'])
 
 def write_schedule_header(ws, user, office, year, month, created_date):
     """Sheet1上部の利用者・認定情報（第6表の基本情報欄）を書く。"""
@@ -363,6 +349,9 @@ def write_schedule_header(ws, user, office, year, month, created_date):
 
     # 要介護状態区分は対象月1日時点の認定を使う（user.care_levelは今日時点）。
     ws['W9'] = cert.care_level
+    # --- 限度額適用期間 ---
+    ws['AT9'] = f"{format_wareki_date(cert.limit_start)}から"
+    ws['AT11'] = f"{format_wareki_date(cert.limit_end)}まで"
     # 月途中の区分変更がある月は、限度額が大きい方の限度額を出す。
     ws['AI9'] = format_comma(_month_limit_units(cert, changed_cert))
     # 変更後要介護状態区分・変更日（月途中で区分が変わった場合だけ書く）
@@ -370,7 +359,6 @@ def write_schedule_header(ws, user, office, year, month, created_date):
         changed_at = changed_cert.care_level_changed_at or changed_cert.limit_start
         ws['W11'] = changed_cert.care_level
         ws['W12'] = format_wareki_date(changed_at)
-
 
 def _get_month_certificates(user, year, month):
     """対象月1日時点の認定と、月途中から有効になる認定を返す。"""
