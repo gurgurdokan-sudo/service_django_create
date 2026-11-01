@@ -14,7 +14,7 @@ def auto_newline(text, ws, cell, line=10):
 
 
 def write_digits(ws, row, start_col, value, length):
-    """番号を1マス1文字で書く。桁数違いは帳票の欄ずれになるためエラーにする。"""
+    """番号を1マス1文字で書く桁数違いは帳票の欄ずれになるためエラーにする"""
     text = str(value or "").strip()
     if len(text) != length:
         raise ValueError(f"{length}桁の番号を設定してください: {text!r}")

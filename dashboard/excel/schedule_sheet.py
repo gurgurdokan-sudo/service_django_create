@@ -1,5 +1,4 @@
-# schedule_sheet.py
-"""Sheet1（スケジュール）：第6表の基本情報と予定・実績カレンダーを書く。"""
+"""Sheet1（スケジュール）：第6表の基本情報と予定・実績カレンダーを書く"""
 from openpyxl.utils import get_column_letter
 
 from dashboard.models import AddOnService
@@ -16,14 +15,14 @@ CALENDAR_START_COL = 25  # 1日の列（Y列）
 
 
 def write_schedule_sheet(ws, user, office, plans, year, month, created_date):
-    """Sheet1に基本情報と予定・実績カレンダーを書く。"""
+    """Sheet1に基本情報と予定・実績カレンダーを書く"""
     ws.title = SHEET_TITLE
     write_schedule_header(ws, user, office, year, month, created_date)
     write_schedule_calendar(ws, office, plans, year, month)
 
 
 def write_schedule_header(ws, user, office, year, month, created_date):
-    """Sheet1上部の利用者・認定情報（第6表の基本情報欄）を書く。"""
+    """Sheet1上部の利用者・認定情報（第6表の基本情報欄）を書く"""
     cert, changed_cert = _get_month_certificates(user, year, month)
 
     # 保険者番号・保険者名
@@ -51,12 +50,12 @@ def write_schedule_header(ws, user, office, year, month, created_date):
     ws['G11'] = f"{birth_date.month}月{birth_date.day}日"
     ws['N9'] = user.get_gender_display()[:1]
 
-    # 要介護状態区分は対象月1日時点の認定を使う（user.care_levelは今日時点）。
+    # 要介護状態区分は対象月1日時点の認定を使う（user.care_levelは今日時点）
     ws['W9'] = cert.care_level
     # --- 限度額適用期間 ---
     ws['AT9'] = f"{format_wareki_date(cert.limit_start)}から"
     ws['AT11'] = f"{format_wareki_date(cert.limit_end)}まで"
-    # 月途中の区分変更がある月は、限度額が大きい方の限度額を出す。
+    # 月途中の区分変更がある月は、限度額が大きい方の限度額を出す
     ws['AI9'] = format_comma(_month_limit_units(cert, changed_cert))
     # 変更後要介護状態区分・変更日（月途中で区分が変わった場合だけ書く）
     if changed_cert and changed_cert.care_level != cert.care_level:
@@ -66,13 +65,13 @@ def write_schedule_header(ws, user, office, year, month, created_date):
 
 
 def write_schedule_calendar(ws, office, plans, year, month):
-    """日付・曜日を書き、Planごとに予定・実績行を続けて書く。"""
+    """日付・曜日を書き、Planごとに予定・実績行を続けて書く"""
     office.office_names = (office.name.split() + ["", ""])[:2]
     calendar = get_month_days(year, month)
     _write_calendar_days(ws, calendar)
     columns = _calendar_columns(calendar)
 
-    # 保険対象の加算マスタはPlanごとに変わらないため、ループの前に1回だけ取得する。
+    # 保険対象の加算マスタはPlanごとに変わらないため、ループの前に1回だけ取得する
     insurance_addons = list(
         AddOnService.objects.filter(insurance_type="insurance")
         .values_list("id", "service_name")
@@ -84,7 +83,7 @@ def write_schedule_calendar(ws, office, plans, year, month):
 
 
 def _write_calendar_days(ws, calendar):
-    """日付（15行目）・曜日（16行目）を書く。祝日は曜日欄に◎を出す。"""
+    """日付（15行目）・曜日（16行目）を書く祝日は曜日欄に◎を出す"""
     for i, calendar_day in enumerate(calendar):
         col = get_column_letter(CALENDAR_START_COL + i)
         ws[f'{col}{DAY_ROW}'] = calendar_day['day']
@@ -94,7 +93,7 @@ def _write_calendar_days(ws, calendar):
 
 
 def _calendar_columns(calendar):
-    """カレンダーの各日を（列記号, 日付の文字列）のリストで返す。"""
+    """カレンダーの各日を（列記号, 日付の文字列）のリストで返す"""
     return [
         (get_column_letter(CALENDAR_START_COL + i), str(calendar_day['day']))
         for i, calendar_day in enumerate(calendar)
@@ -102,7 +101,7 @@ def _calendar_columns(calendar):
 
 
 def _write_plan_rows(ws, row, plan, columns, office, insurance_addons):
-    """1つのPlanについて、基本サービスと加算の予定行・実績行を書き、次の行番号を返す。"""
+    """1つのPlanについて、基本サービスと加算の予定行・実績行を書き、次の行番号を返す"""
     actual_by_day = {
         str(day): value or {}
         for day, value in (plan.actual_dict or {}).items()
@@ -150,7 +149,7 @@ def _write_plan_rows(ws, row, plan, columns, office, insurance_addons):
 
 
 def _collect_addon_names(actual_by_day, insurance_addons):
-    """1か月分の実績から保険対象の加算を集め、{加算IDまたは加算名: 加算名} で返す。"""
+    """1か月分の実績から保険対象の加算を集め、{加算IDまたは加算名: 加算名} で返す"""
     insurance_addon_ids = {str(addon_id) for addon_id, _ in insurance_addons}
     insurance_addon_names = {str(name) for _, name in insurance_addons}
 
@@ -173,7 +172,7 @@ def _collect_addon_names(actual_by_day, insurance_addons):
 
 
 def _get_month_certificates(user, year, month):
-    """対象月1日時点の認定と、月途中から有効になる認定を返す。"""
+    """対象月1日時点の認定と、月途中から有効になる認定を返す"""
     cert = user.get_certificate(year, month)
     if cert is None:
         raise ValueError(f"{year}年{month}月の認定情報がありません")
@@ -189,7 +188,7 @@ def _get_month_certificates(user, year, month):
 
 
 def _limit_units(cert):
-    """認定1件分の区分支給限度基準額（単位）を返す。"""
+    """認定1件分の区分支給限度基準額（単位）を返す"""
     if cert.limit_amount_type == "任意" and cert.limit_amount_value:
         return int(cert.limit_amount_value)
     return CARE_LEVEL_LIMIT_UNITS.get(cert.care_level)

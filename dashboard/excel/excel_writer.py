@@ -1,5 +1,4 @@
-# export_service_sheet.py
-"""サービス提供表（Excel）の作成：各Sheetの書き込みを呼び出し、保存と月次実績の更新を行う。"""
+"""サービス提供表（Excel）の作成：各Sheetの書き込みを呼び出し、保存と月次実績の更新を行う"""
 import os
 import io
 from datetime import date
@@ -19,7 +18,7 @@ TEMPLATE_PATH = 'templatesExcel/service_template.xlsx'
 
 
 def create_service_sheet(context):
-    """ビューから呼ばれる入口。計算結果をSheet1・Sheet2に書き、保存して月次実績を更新する。"""
+    """ビューから呼ばれる入口計算結果をSheet1・Sheet2に書き、保存して月次実績を更新する"""
     try:
         wb = load_workbook(TEMPLATE_PATH)
         calc = ServiceSheetCalculator(context)
@@ -49,7 +48,7 @@ def create_service_sheet(context):
 
 
 def _save_workbook(wb, user, year, month):
-    """開発環境ではローカル、それ以外ではS3に保存する。"""
+    """開発環境ではローカル、それ以外ではS3に保存する"""
     # ローカル保存処理
     if settings.DJANGO_ENV == 'dev':
         filepath, filename = get_service_sheet_path(user, year, month)
@@ -99,7 +98,7 @@ def _record_model_update(user, year, month, res):
 
 
 def get_service_sheet_path(user, year, month):
-    """サービス提供表の保存パスを取得するユーティリティ関数。ユーザーIDと年月を指定して、ローカルまたはS3のパスを返す。"""
+    """サービス提供表の保存パスを取得するユーティリティ関数ユーザーIDと年月を指定して、ローカルまたはS3のパスを返す"""
     if settings.DJANGO_ENV == 'dev':
         user_dir = os.path.join(
             settings.MEDIA_ROOT,
