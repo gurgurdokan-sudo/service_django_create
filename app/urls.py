@@ -16,9 +16,11 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.contrib.auth import views as auth_views
-from django.urls import path,include
+from django.urls import path,include, reverse_lazy
 
 from employees.views import StaffLoginView
+
+admin.site.site_url = reverse_lazy("dashboard:user_list")
 
 urlpatterns = [
     path('admin/', admin.site.urls),

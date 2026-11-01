@@ -1,4 +1,3 @@
-from calendar import monthrange
 from datetime import date
 from typing import Any
 
@@ -83,9 +82,6 @@ def build_user_service_context(user_id, year, month):
         'calendar': get_month_days(year, month),
         'dis_year': year,
         'dis_month': month,
-        'current_year': now.year, #Excel出力の表示用
-        'current_month': now.month,
-        'len': date(year, month, monthrange(year, month)[1]),
 
         # 画面用　batchアラート
         'monthly_record': target.get_monthly_record(year, month), # サービス提供票の確定状態
