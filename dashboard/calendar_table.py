@@ -23,7 +23,7 @@ def get_month_days(year, month):
             days.append({
                 "day": day,
                 "weekday": w_date.weekday(),
-                "weekday_jp": "月火水木金土日"[date.weekday()],
+                "weekday_jp": "月火水木金土日"[w_date.weekday()],
                 "is_sun": w_date.weekday() == 6,
                 "is_sat": w_date.weekday() == 5,
                 "is_holiday": jpholiday.is_holiday(w_date),

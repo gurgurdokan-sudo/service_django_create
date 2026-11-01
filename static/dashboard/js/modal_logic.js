@@ -9,13 +9,25 @@ document.addEventListener('DOMContentLoaded', () => {
     const serviceBtn = document.getElementById('service-btn');
     const closeBtn = document.getElementById('closeBtn');
     const cancelBtn = document.getElementById('cancelBtn');
+
+    const scrollToServiceFooterBtn = document.getElementById('scrollToServiceFooter');
+    const modalContainer = modalOverlay?.querySelector('.modal-container');
+    const modalFooter = modalContainer?.querySelector('.modal-footer');
     if (openBtn) {
         openBtn.addEventListener('click', () => {
             modalOverlay.style.display = 'flex';
             hideAllBasicRows(); // モーダルを開くたびに初期化（非表示）
         });
     }
-
+    if (scrollToServiceFooterBtn && modalContainer && modalFooter) {
+        scrollToServiceFooterBtn.addEventListener('click', () => {
+            const footerBottom = modalFooter.offsetTop + modalFooter.offsetHeight;
+            modalContainer.scrollTo({
+                top: footerBottom - modalContainer.clientHeight,
+                behavior: 'smooth',
+            });
+        });
+    }
     const hideModal = () => {
         modalOverlay.style.display = 'none';
     };

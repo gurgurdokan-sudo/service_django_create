@@ -287,7 +287,22 @@ th .calendar-row .total-cell{
     padding: 15px 20px;
     border-bottom: 2px solid #2c3e50;
 }
-
+/* --- モーダルのスクロールボタン --- */
+.modal-scroll-bottom-btn {
+    margin-left: auto;
+    margin-right: 12px;
+    padding: 8px 12px;
+    border: 1px solid #2c3e50;
+    border-radius: 4px;
+    background: #2c3e50;
+    color: #fff;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+.modal-scroll-bottom-btn:hover {
+    background: #1f2d3a;
+}
+/* --- モーダルのcloseボタン --- */
 .close-icon-btn {
     background: none;
     border: none;
@@ -379,7 +394,7 @@ th .calendar-row .total-cell{
 .progress-bar-fill {
     height: 100%;
     background: linear-gradient(90deg, #217346, #43a047);
-    width: 0%;
+    width: 0;
     transition: width 0.4s ease;
     position: relative;
 }
