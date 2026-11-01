@@ -5,7 +5,6 @@ from django.utils.timezone import localdate, now
 from django.conf import settings
 import boto3
 import textwrap
-from collections import defaultdict
 from openpyxl import load_workbook
 from openpyxl.styles import Alignment
 from openpyxl.utils import get_column_letter
@@ -43,7 +42,7 @@ def create_service_sheet(context):
         # --- Sheet 1: 予定・実績カレンダー ---
         plans = context['plans']
         office = context['office']
-        office_names = (office.name.split() + ["", ""])[:2]
+        office.office_names = (office.name.split() + ["", ""])[:2]
         row = 17
 
         # 日付（15行目）・曜日（16行目）。祝日は曜日欄に◎を出す。
@@ -64,8 +63,8 @@ def create_service_sheet(context):
             # 基本サービス：予定行と実績行
             ws1[f'B{row}'] = f'{plan.start_time:%H:%M}～{plan.end_time:%H:%M}'
             _auto_newline(plan.service_name, ws1, f'H{row}')
-            ws1[f'O{row}'] = office_names[0]
-            ws1[f'O{row + 1}'] = office_names[1]
+            ws1[f'O{row}'] = office.office_names[0]
+            ws1[f'O{row + 1}'] = office.office_names[1]
 
             for i, calendar_day in enumerate(calendar):
                 col = get_column_letter(25 + i)
@@ -104,8 +103,8 @@ def create_service_sheet(context):
 
             for addon_key, addon_name in sorted(addon_names.items(), key=lambda item: item[1]):
                 _auto_newline(addon_name, ws1, f'H{row}')
-                ws1[f'O{row}'] = office_names[0]
-                ws1[f'O{row + 1}'] = office_names[1]
+                ws1[f'O{row}'] = office.office_names[0]
+                ws1[f'O{row + 1}'] = office.office_names[1]
                 ws1[f'B{row}'] = ''
                 addon_count = 0
 
@@ -132,28 +131,72 @@ def create_service_sheet(context):
         ws2['AH2'] = user.insured_number
         ws2['AW2'] = user.name
         current_row = 6
-        office_name = context['office'].name.split()[:2]
+        office.simple_name = office.name.split()[:2]
 
-        # Sheet2 はサービスコード別明細と、必要なサービス種類別集計行を出力する。
-        sheet2_rows = build_sheet2_rows(
+        # Sheet2はPlan・加算の明細を出し、全体集計とデフォルト加算を続ける。
+        detail_rows = build_sheet2_rows(
             res['plan_items'],
             res['addon_items'],
-            context['office'],
+            office,
         )
-        sheet2_rows = calc.apply_detail_amounts(
-            sheet2_rows, res['within_units']
+        detail_rows = calc.apply_detail_amounts(
+            detail_rows, res['within_units']
         )
-        for item in sheet2_rows:
-            if item['row_type'] == 'service_type_total':
-                write_service_type_total(
-                    ws2, current_row, item,
-                    context['office'].office_number, office_name,
-                )
-            else:
-                write_billing_line(
-                    ws2, current_row, item,
-                    context['office'].office_number, office_name,
-                )
+        for item in detail_rows:
+            item['is_hogo'] = is_hogo
+            item['is_subtotal'] = False
+            write_billing_line(
+                ws2, current_row, item, office
+            )
+            current_row += 1
+
+        # Plan・加算の集計は1行だけ出し、単位数を括弧で囲む。
+        if detail_rows:
+            summary_item = {
+                'name': '地域密着通所合計',
+                'subtotal': sum(int(item.get('subtotal') or 0) for item in detail_rows),
+                'cost_total': sum(int(item.get('cost_total') or 0) for item in detail_rows),
+                'benefit_rate': calc.benefit_rate,
+                'benefit_amount': sum(int(item.get('benefit_amount') or 0) for item in detail_rows),
+                'public_amount': sum(int(item.get('public_amount') or 0) for item in detail_rows),
+                'user_share_amount': sum(int(item.get('user_share_amount') or 0) for item in detail_rows),
+                'is_hogo': is_hogo,
+                'parenthesize_subtotal': True,
+                'within_units': res['within_units'],
+            }
+            write_service_type_total(
+                ws2, current_row, summary_item,context['office'],
+            )
+            current_row += 1
+
+        # 集計行の直下にデフォルト加算（処遇改善加算）を出す。
+        default_service = context['office'].default_service
+        default_units = int(res.get('def_unit') or 0)
+        if default_service and default_units > 0:
+            default_cost = int(res.get('def_total_cost') or 0)
+            default_benefit = int(default_cost * calc.benefit_rate)
+            default_share = 0 if is_hogo else default_cost - default_benefit
+            default_public = default_cost - default_benefit if is_hogo else 0
+            default_item = {
+                'name': default_service.service_name,
+                'code': f"{context['office'].service_type_code}{default_service.code}",
+                'unit': '',
+                'count': '',
+                'subtotal': default_units,
+                'cost_total': default_cost,
+                'benefit_rate': calc.benefit_rate,
+                'benefit_amount': default_benefit,
+                'public_amount': default_public,
+                'user_share_amount': default_share,
+                'is_hogo': is_hogo,
+                'parenthesize_subtotal': True,
+                'is_subtotal': True,
+                'is_default': True,
+                'within_units': res['within_units'],
+            }
+            write_billing_line(
+                ws2, current_row, default_item, office
+            )
             current_row += 1
 
         # row 20は既存の最終合計欄として使うため、明細/サービス種類集計がここまで達したら
@@ -166,11 +209,11 @@ def create_service_sheet(context):
         # 最終合計行 (20行目固定)
         ws2['AT20'] = format_comma(res['total_cost'])
         ws2['AX20'] = format_comma(res['benefit_amount'])
-        if is_hogo:
-            ws2['BD20'] = format_comma(res['public_amount'])
-            ws2['BG20'] = "0"
-        else:
-            ws2['BG20'] = format_comma(res['user_share_amount'])
+        # if is_hogo:
+        #     ws2['BD20'] = format_comma(res['public_amount'])
+        #     ws2['BG20'] = "0"
+        # else:
+        ws2['BG20'] = format_comma(res['user_share_amount'])
 
         # --- 生活保護情報の印字を追加 ---
         bikou_text = []
@@ -208,115 +251,78 @@ def create_service_sheet(context):
 
 
 
-SERVICE_TYPE_NAMES = {
-    "78": "地域密着型通所介護",
-}
-
-
 def build_sheet2_rows(plan_items, addon_items, office):
-    """Sheet2用の明細と、必要なサービス種類別集計行を作る。
-
-    同じ事業所・サービスコード・単位数のPlan/加算は明細1行にまとめる。
-    Plan数ではなく、同じ事業所・サービス種類に異なるサービスコードが
-    複数ある場合だけ、グループ末尾に集計行を1行作る。
-    """
-    office_number = str(office.office_number)
-    groups = defaultdict(dict)
-
+    """Plan・加算を個別明細のまま返し、集計は呼び出し元で1行だけ作る。"""
+    rows = []
     for item in [*plan_items, *addon_items]:
-        code = str(item["code"])
-        unit = int(item["unit"])
-        count = int(item.get("count") or 0)
-        subtotal = item.get("subtotal")
+        row = dict(item)
+        unit = int(row.get("unit") or 0)
+        count = int(row.get("count") or 0)
+        subtotal = row.get("subtotal")
         subtotal = int(subtotal) if subtotal is not None else unit * count
 
         # 実績がない明細は出力しない。ただし負の減算単位は残す。
         if count == 0 and subtotal == 0:
             continue
 
-        service_type_code = item.get("service_type_code")
-        if service_type_code is None:
-            raise ValueError(f"service_type が未設定です: code={code}")
-        service_type_code = str(service_type_code).strip().zfill(2)
-        if len(service_type_code) != 2 or not service_type_code.isdigit():
-            raise ValueError(f"service_type は2桁の数字で指定してください: code={code}")
-
-        group_key = (office_number, service_type_code)
-        detail_key = (code, unit)
-        details = groups[group_key]
-
-        if detail_key not in details:
-            details[detail_key] = {
-                "row_type": "detail",
-                "name": item["name"],
-                "code": code,
-                "unit": unit,
-                "count": 0,
-                "subtotal": 0,
-            }
-
-        details[detail_key]["count"] += count
-        details[detail_key]["subtotal"] += subtotal
-
-    rows = []
-    for (group_office_number, service_type_code), detail_map in sorted(groups.items()):
-        details = sorted(
-            detail_map.values(),
-            key=lambda row: (row["code"], row["unit"]),
-        )
-        rows.extend(details)
-
-        # 公式記載要領に合わせ、サービス種類内にコードが複数ある場合だけ集計行を出す。
-        distinct_service_codes = {row["code"] for row in details}
-        if len(distinct_service_codes) > 1:
-            service_type_name = SERVICE_TYPE_NAMES.get(
-                service_type_code,
-                f"サービス種類 {service_type_code}",
-            )
-            rows.append({
-                "row_type": "service_type_total",
-                "name": f"{service_type_name} 集計",
-                "code": "",
-                "unit": "",
-                "count": "",
-                "subtotal": sum(row["subtotal"] for row in details),
-            })
+        row["row_type"] = "detail"
+        row["unit"] = unit
+        row["count"] = count
+        row["subtotal"] = subtotal
+        rows.append(row)
 
     return rows
 
 
-def write_service_type_total(ws, row, item, office_number, office_names):
-    """サービス種類別の集計行を書く。セル位置は既存write_billing_lineに合わせる。"""
-    ws[f'A{row}'] = "\n".join(office_names)
-    ws[f'A{row}'].alignment = Alignment(wrap_text=True)
-    ws[f'G{row}'] = office_number
-    _auto_newline(item["name"], ws, f'L{row}', 6)
-    ws[f'Q{row}'] = ""  # 集計行にサービスコードは書かない
-    ws[f'T{row}'] = ""  # 集計行に1回当たりの単位数は書かない
-    ws[f'Y{row}'] = ""  # 集計行に回数は書かない
-    # 既存の明細出力で単位合計を書いている列に、グループ合計を出す。
-    # 実テンプレートで集計値欄の列が異なる場合は、この2列を帳票に合わせる。
-    ws[f'Z{row}'] = format_comma(item["subtotal"])
-    ws[f'AC{row}'] = format_comma(item["subtotal"])
+def write_service_type_total(ws, row, item, office):
+    """Plan・加算の集計行を書く。単位数を括弧で囲み、金額欄も出力する。"""
+    total_item = dict(item)
+    total_item.update({
+        "code": "",
+        "unit": "",
+        "count": "",
+        "parenthesize_subtotal": True,
+        "is_subtotal": True,
+    })
+    write_billing_line(ws, row, total_item, office)
 
 
-def write_billing_line(ws, row, item, office_number, office_names):
+def write_billing_line(ws, row, item, office):
     """別表の1行分を書き込むヘルパー"""
-    ws[f'A{row}'] = "\n".join(office_names)
+    ws[f'A{row}'] = "\n".join(office.simple_name)
     ws[f'A{row}'].alignment = Alignment(wrap_text=True)
-    ws[f'G{row}'] = office_number
+    ws[f'G{row}'] = office.office_number
     _auto_newline(item['name'], ws, f'L{row}', 6)
     ws[f'Q{row}'] = item['code']
     ws[f'T{row}'] = item['unit']
     ws[f'Y{row}'] = item['count']
-    ws[f'Z{row}'] = format_comma(item['subtotal'])
-    ws[f'AC{row}'] = format_comma(item['subtotal'])
+    subtotal_text = format_comma(item.get('subtotal'),9999)
+    if item.get('parenthesize_subtotal'):
+        subtotal_text = f'({subtotal_text})'
+    ws[f'Z{row}'] = subtotal_text
+    ws[f'AC{row}'] = subtotal_text
 
-    # 明細行：費用総額・給付率・保険給付額・利用者負担
-    # ws[f'AT{row}'] = format_comma(item['cost_total'])
-    # ws[f'AW{row}'] = int(item['benefit_rate'] * 100)
-    # ws[f'AX{row}'] = format_comma(item['benefit_amount'])
-    # ws[f'BG{row}'] = format_comma(item['user_share_amount'])
+    # 費用総額・給付率・保険給付額・利用者負担
+    if item.get('is_subtotal', False):
+        if item.get('is_default', False):
+            units = item.get('subtotal')
+            units_text = f"({format_comma(units)})" if units is not None else ""
+        else:
+            units = item.get('within_units')
+            units_text = format_comma(units) if units is not None else ""
+
+        # 区分支給 限度基準内 単位数
+        ws[f'AO{row}'] = units_text
+        ws[f'AR{row}'] = office.unit_price
+        ws[f'AT{row}'] = format_comma(item.get('cost_total'))
+        benefit_rate = float(item.get('benefit_rate') or 0)
+        ws[f'AW{row}'] = int(benefit_rate * 100) if benefit_rate else ''
+        ws[f'AX{row}'] = format_comma(item.get('benefit_amount'))
+        if item.get('is_hogo'):
+            ws[f'BD{row}'] = format_comma(item.get('public_amount'))
+            ws[f'BG{row}'] = "0"
+        else:
+            ws[f'BG{row}'] = format_comma(item.get('user_share_amount'))
 
 def write_schedule_header(ws, user, office, year, month, created_date):
     """Sheet1上部の利用者・認定情報（第6表の基本情報欄）を書く。"""
