@@ -1,7 +1,7 @@
 """Sheet2（別表（実績））：Plan・加算の明細、集計行、合計欄を書く"""
 from openpyxl.styles import Alignment
 
-from dashboard.excel.service_calculator import format_comma
+from dashboard.excel.service_calculator import format_comma, _yen
 from dashboard.excel.excel_utils import auto_newline
 from dashboard.calendar_table import format_wareki_date
 import logging
@@ -13,6 +13,10 @@ TOTAL_ROW = 20  # 最終合計行（テンプレートで固定）
 BIKOU_START_ROW = 23  # 備考欄（AK列）の1行目
 SERVICE_TYPE_TOTAL_NAME = '地域密着通所合計'
 
+# Sheet2の行の種類
+DETAIL = 'detail'    # Plan・加算の明細
+TOTAL = 'total'      # 地域密着通所合計
+DEFAULT = 'default'  # 処遇改善加算（デフォルト加算）
 
 def write_billing_sheet(ws, calc, res, user, office, created_date, pub):
     """Sheet2に明細・サービス種類集計・デフォルト加算・合計・備考を書く"""
@@ -34,8 +38,7 @@ def write_billing_sheet(ws, calc, res, user, office, created_date, pub):
     )
     logger.info('Writing detail rows to state')
     for item in detail_rows:
-        item['is_subtotal'] = False
-        write_billing_line(ws, current_row, item, office)
+        write_billing_line(ws, current_row, item, office, kind=DETAIL)
         current_row += 1
 
     # Plan・加算の集計は1行だけ出し、単位数を括弧で囲む
@@ -48,11 +51,11 @@ def write_billing_sheet(ws, calc, res, user, office, created_date, pub):
     default_item = _build_default_item(office, calc, res)
     if default_item is not None:
         logger.info(f'Writing default add-on service to state with {current_row=}')
-        write_billing_line(ws, current_row, default_item, office)
+        write_billing_line(ws, current_row, default_item, office, kind=DETAIL)
         current_row += 1
 
     # 20行目は最終合計欄のため、明細・集計行がここまで達したらエラーにする
-    if current_row >= TOTAL_ROW:
+    if current_row > TOTAL_ROW:
         raise ValueError("Sheet2の明細・集計行が固定合計欄（20行目）に重なります")
 
     _write_total_row(ws, res)
@@ -89,44 +92,43 @@ def write_service_type_total(ws, row, item, office):
         "code": "",
         "unit": "",
         "count": "",
-        "parenthesize_subtotal": True,
-        "is_subtotal": True,
     })
-    write_billing_line(ws, row, total_item, office)
+    write_billing_line(ws, row, total_item, office, kind=TOTAL)
 
-
-def write_billing_line(ws, row, item, office):
-    """別表の1行分を書き込むヘルパー"""
+def write_billing_line(ws, row, item, office, kind=DETAIL):
+    """別表の1行分を書き込む。kind で明細・集計行・処遇改善加算を出し分ける"""
     ws[f'A{row}'] = "\n".join(office.simple_name)
     ws[f'A{row}'].alignment = Alignment(wrap_text=True)
     ws[f'G{row}'] = office.office_number
     auto_newline(item['name'], ws, f'L{row}', 6)
-    ws[f'Q{row}'] = item['code']
-    ws[f'T{row}'] = format_comma(item['unit'])
-    ws[f'Y{row}'] = item['count']
+    ws[f'Q{row}'] = item.get('code', '')
+    ws[f'T{row}'] = format_comma(item.get('unit'))
+    ws[f'Y{row}'] = item.get('count', '')
+
     subtotal_text = format_comma(item.get('subtotal'))
-    if item.get('parenthesize_subtotal'):
-        subtotal_text = f'({subtotal_text})'
+
+    # 明細行は単位数（Z・AC）まで
+    if kind == DETAIL:
+        ws[f'Z{row}'] = subtotal_text
+        ws[f'AC{row}'] = subtotal_text
+        return
+
+    # 集計行・処遇改善加算は単位数を括弧で囲む
+    subtotal_text = f'({subtotal_text})'
     ws[f'Z{row}'] = subtotal_text
-    ws[f'AC{row}'] = subtotal_text
+    if kind == DEFAULT:
+        # 処遇改善加算は限度額管理の対象外：AC（給付管理単位数）は空欄、AOは自分の単位数
+        ws[f'AO{row}'] = subtotal_text
+    elif kind == TOTAL:
+        ws[f'AC{row}'] = subtotal_text
+        ws[f'AO{row}'] = format_comma(item.get('within_units'))
 
-    # 費用総額・給付率・保険給付額・利用者負担
-    if item.get('is_subtotal', False):
-        if item.get('is_default', False):
-            units = item.get('subtotal')
-            units_text = f"({format_comma(units)})" if units is not None else ""
-        else:
-            units = item.get('within_units')
-            units_text = format_comma(units) if units is not None else ""
-
-        # 区分支給 限度基準内 単位数
-        ws[f'AO{row}'] = units_text
-        ws[f'AR{row}'] = office.unit_price
-        ws[f'AT{row}'] = format_comma(item.get('cost_total'))
-        benefit_rate = float(item.get('benefit_rate') or 0)
-        ws[f'AW{row}'] = int(benefit_rate * 100) if benefit_rate else ''
-        ws[f'AX{row}'] = format_comma(item.get('benefit_amount'))
-        ws[f'BG{row}'] = format_comma(item.get('user_share_amount'))
+    ws[f'AR{row}'] = office.unit_price
+    ws[f'AT{row}'] = format_comma(item.get('cost_total'))
+    benefit_rate = float(item.get('benefit_rate') or 0)
+    ws[f'AW{row}'] = int(benefit_rate * 100) if benefit_rate else ''
+    ws[f'AX{row}'] = format_comma(item.get('benefit_amount'))
+    ws[f'BD{row}'] = format_comma(item.get('user_share_amount'))  # 保険/事業対象分
 
 def _build_summary_item(detail_rows, calc, res):
     """明細を合算し、サービス種類の集計行（地域密着通所合計）を作る"""
@@ -138,9 +140,6 @@ def _build_summary_item(detail_rows, calc, res):
         'benefit_amount': _sum_int(detail_rows, 'benefit_amount'),
         'public_amount': _sum_int(detail_rows, 'public_amount'),
         'user_share_amount': _sum_int(detail_rows, 'user_share_amount'),
-        'parenthesize_subtotal': True,
-        'is_subtotal': False,
-        'is_default': False,
         'within_units': res['within_units'],
     }
 
@@ -153,7 +152,7 @@ def _build_default_item(office, calc, res):
         return None
 
     default_cost = int(res.get('def_total_cost') or 0)
-    default_benefit = int(default_cost * calc.benefit_rate)
+    default_benefit = _yen(default_cost, calc.benefit_rate)
     default_share =  default_cost - default_benefit
     return {
         'name': default_service.service_name,
@@ -165,9 +164,6 @@ def _build_default_item(office, calc, res):
         'benefit_rate': calc.benefit_rate,
         'benefit_amount': default_benefit,
         'user_share_amount': default_share,
-        'parenthesize_subtotal': True,
-        'is_subtotal': True,
-        'is_default': True,
         'within_units': res['within_units'],
     }
 
