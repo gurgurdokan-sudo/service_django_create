@@ -80,7 +80,7 @@ def create_plan(request,user_id):
                     monthly_record.save(update_fields=["addon_pattern"])
                 if weekdays and not created:
                     monthly_record.weekday_pattern = [int(i) for i in weekdays]
-                    monthly_record.save(update_fields=["addon_pattern"])
+                    monthly_record.save(update_fields=["weekday_pattern"])
                 # 認定情報ごとに ServicePlan を作成（1行 or 2行）
                 for item in certs_to_save:
                     cert = item['cert']

@@ -44,7 +44,7 @@ def write_billing_sheet(ws, calc, res, user, office, created_date, pub):
     # Plan・加算の集計は1行だけ出し、単位数を括弧で囲む
     if detail_rows:
         summary_item = _build_summary_item(detail_rows, calc, res)
-        write_service_type_total(ws, current_row, summary_item, office)
+        write_billing_line(ws, current_row, summary_item, office)
         current_row += 1
 
     # 集計行の直下にデフォルト加算（処遇改善加算）を出す
@@ -82,18 +82,6 @@ def build_sheet2_rows(plan_items, addon_items):
         rows[key]["subtotal"] += subtotal
 
     return list(rows.values())
-
-
-def write_service_type_total(ws, row, item, office):
-    """Plan・加算の集計行を書く
-    単位数を括弧で囲み、金額欄も出力する"""
-    total_item = dict(item)
-    total_item.update({
-        "code": "",
-        "unit": "",
-        "count": "",
-    })
-    write_billing_line(ws, row, total_item, office, kind=TOTAL)
 
 def write_billing_line(ws, row, item, office, kind=DETAIL):
     """別表の1行分を書き込む。kind で明細・集計行・処遇改善加算を出し分ける"""
@@ -164,7 +152,6 @@ def _build_default_item(office, calc, res):
         'benefit_rate': calc.benefit_rate,
         'benefit_amount': default_benefit,
         'user_share_amount': default_share,
-        'within_units': res['within_units'],
     }
 
 

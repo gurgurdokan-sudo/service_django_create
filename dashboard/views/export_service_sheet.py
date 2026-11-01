@@ -26,7 +26,7 @@ def download_service_sheet(request, user_id):
 # ローカルの場合
     if settings.DJANGO_ENV == 'dev':
         file_path, filename = get_service_sheet_path(user, year, month)
-        if not (file_path or os.path.exists(file_path)):
+        if not os.path.exists(file_path):
             messages.error(request, 'ファイルが作成されていません')
             return redirect('dashboard:user_list')
         with open(file_path, 'rb') as f:
