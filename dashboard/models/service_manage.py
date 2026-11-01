@@ -327,7 +327,7 @@ class ServicePlan(models.Model):
             addon_data = dict(day_data.get("addon") or {})
 
             for addon_id in addon_ids:
-                addon = addon_objects.get(int(addon_id))
+                addon: AddOnService = addon_objects.get(int(addon_id))
                 if addon:
                     addon_data.setdefault(str(addon.pk), addon.service_name)
 
@@ -348,6 +348,7 @@ class ServicePlan(models.Model):
             self.service_name = service.service_name
             self.service_code = service.service_code
             self.unit = service.unit
+            self.save()
 
     def __str__(self):
         return f"{self.user.name} - {self.year}年{self.month}月"

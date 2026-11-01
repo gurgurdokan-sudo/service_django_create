@@ -352,35 +352,37 @@ def create_plan(request, user_id):
     start_time = request.data.get("start_time")
     end_time = request.data.get("end_time")
 
-    if master_id is None:
-        return _error("サービスが選択されていません")
-    if year is None or month is None:
-        return _error("年月が正しくありません")
-    if not start_time or not end_time:
-        return _error("開始時刻と終了時刻を入力してください")
+    start, end = parse_time(start_time), parse_time(end_time)
+    if start is None or end is None:
+        return _error("時刻の形式が正しくありません")
+    if end <= start:
+        return _error("終了時刻は開始時刻より後にしてください")
+
+    cert = target_user.get_certificate(year, month)
+    if cert is None:
+        return _error("対象月の認定情報がありません")
+    change_cert = target_user.latest_changed_cert(year, month)
+    if change_cert and change_cert.limit_start.day > 1:
+        return _error("区分変更月は計画作成画面から作成してください")
 
     master = get_object_or_404(ServiceMaster, id=master_id)
+    category = ServicePlan(start_time=start, end_time=end).stay_time_category
+    if master.care_level != cert.care_level or master.stay_time_category != category:
+        return _error("選択したサービスが介護度・利用時間と合っていません")
+
     with transaction.atomic():
-        monthly_record, _ = ServiceMonthlyRecord.objects.get_or_create(
-            user=target_user,
-            date=date(year, month, 1),
-            defaults={"office": office},
+        monthly_record, _ = ServiceMonthlyRecord.objects.select_for_update().get_or_create(
+            user=target_user, date=date(year, month, 1), defaults={"office": office},
         )
-        monthly_record.save(update_fields=["updated_at"])
         if monthly_record.confirmed:
             return _error("確定済みのためプランを追加できません", 409)
 
         plan = ServicePlan.objects.create(
-            monthly_record=monthly_record,
-            user=target_user,
-            year=year,
-            month=month,
-            start_time=start_time,
-            end_time=end_time,
-            service_name=master.service_name,
-            service_code=master.service_code,
-            unit=master.unit,
+            monthly_record=monthly_record, user=target_user, year=year, month=month,
+            start_time=start, end_time=end, cert=cert, care_level=cert.care_level,
+            service_name=master.service_name, service_code=master.service_code, unit=master.unit,
         )
+        monthly_record.save(update_fields=["updated_at"])  # updated_at
     logger.info("サービスプランを作成: user_id=%s, plan_id=%s", target_user.id, plan.id)
     return Response({
         "status": "ok",
@@ -821,7 +823,7 @@ def service_master_preview(request):
             "service_name": None,
         })
 
-    service = (
+    service: ServiceMaster = (
         ServiceMaster.objects
         .filter(
             care_level=care_level,
