@@ -143,7 +143,6 @@ def create_service_sheet(context):
             detail_rows, res['within_units']
         )
         for item in detail_rows:
-            item['is_hogo'] = is_hogo
             item['is_subtotal'] = False
             write_billing_line(
                 ws2, current_row, item, office
@@ -160,7 +159,6 @@ def create_service_sheet(context):
                 'benefit_amount': sum(int(item.get('benefit_amount') or 0) for item in detail_rows),
                 'public_amount': sum(int(item.get('public_amount') or 0) for item in detail_rows),
                 'user_share_amount': sum(int(item.get('user_share_amount') or 0) for item in detail_rows),
-                'is_hogo': is_hogo,
                 'parenthesize_subtotal': True,
                 'within_units': res['within_units'],
             }
@@ -188,7 +186,6 @@ def create_service_sheet(context):
                 'benefit_amount': default_benefit,
                 'public_amount': default_public,
                 'user_share_amount': default_share,
-                'is_hogo': is_hogo,
                 'parenthesize_subtotal': True,
                 'is_subtotal': True,
                 'is_default': True,
@@ -318,11 +315,7 @@ def write_billing_line(ws, row, item, office):
         benefit_rate = float(item.get('benefit_rate') or 0)
         ws[f'AW{row}'] = int(benefit_rate * 100) if benefit_rate else ''
         ws[f'AX{row}'] = format_comma(item.get('benefit_amount'))
-        if item.get('is_hogo'):
-            ws[f'BD{row}'] = format_comma(item.get('public_amount'))
-            ws[f'BG{row}'] = "0"
-        else:
-            ws[f'BG{row}'] = format_comma(item.get('user_share_amount'))
+        ws[f'BG{row}'] = format_comma(item.get('user_share_amount'))
 
 def write_schedule_header(ws, user, office, year, month, created_date):
     """Sheet1上部の利用者・認定情報（第6表の基本情報欄）を書く。"""
