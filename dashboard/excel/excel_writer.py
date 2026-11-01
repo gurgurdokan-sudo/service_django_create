@@ -127,6 +127,9 @@ def create_service_sheet(context):
             res['addon_items'],
             context['office'],
         )
+        sheet2_rows = calc.apply_detail_amounts(
+            sheet2_rows, res['within_units']
+        )
         for item in sheet2_rows:
             if item['row_type'] == 'service_type_total':
                 write_service_type_total(
@@ -144,16 +147,6 @@ def create_service_sheet(context):
         if current_row >= 20:
             raise ValueError("Sheet2の明細・集計行が固定合計欄（20行目）に重なります")
 
-        # 小計行 (地域密着通所合計)
-        ws2[f'AT{current_row}'] = format_comma(res['total_cost'])  # 10割分
-        ws2[f'AX{current_row}'] = format_comma(res['benefit_amount'])  # 保険分(9割)
-
-        # 本人負担欄 (BD列) の制御
-        if res['is_hogo']:
-            ws2[f'BA{current_row}'] = format_comma(res['public_amount'])  # 公費分(1割)
-            ws2[f'BD{current_row}'] = "0"  # 本人は0
-        else:
-            ws2[f'BD{current_row}'] = format_comma(res['user_share_amount'])  # 本人が払う
 
         # 最終合計行 (20行目固定)
         ws2['AT20'] = format_comma(res['total_cost'])
@@ -303,6 +296,12 @@ def write_billing_line(ws, row, item, office_number, office_names):
     ws[f'Y{row}'] = item['count']
     ws[f'Z{row}'] = format_comma(item['subtotal'])
     ws[f'AC{row}'] = format_comma(item['subtotal'])
+
+    # 明細行：費用総額・給付率・保険給付額・利用者負担
+    ws[f'AT{row}'] = format_comma(item['cost_total'])
+    ws[f'AW{row}'] = int(item['benefit_rate'] * 100)
+    ws[f'AX{row}'] = format_comma(item['benefit_amount'])
+    ws[f'BD{row}'] = format_comma(item['user_share_amount'])
 
 
 def _auto_newline(text, ws, cell, line=10):

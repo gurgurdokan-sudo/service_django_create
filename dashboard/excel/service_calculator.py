@@ -1,4 +1,3 @@
-from dashboard.models import AddOnService
 from decimal import Decimal, ROUND_DOWN
 
 class ServiceSheetCalculator:
@@ -110,6 +109,44 @@ class ServiceSheetCalculator:
                 self.total_act_price_unit += add_total
 
         self.actual_days = len(actual_days)
+
+    def apply_detail_amounts(self, sheet2_rows, within_units):
+        """Sheet2のサービスコード明細ごとに、限度額内の金額を計算する。
+
+        限度額超過分は、Sheet2の明細順（サービス種類・コード順）で
+        後続明細から順に利用者負担側へ回す。
+        """
+        details = [
+            item for item in sheet2_rows
+            if item.get("row_type") == "detail"
+        ]
+        negative_units = sum(
+            min(0, int(item["subtotal"])) for item in details
+        )
+        remaining_covered_units = max(
+            0, int(within_units) - negative_units
+        )
+
+        for item in details:
+            line_units = int(item["subtotal"])
+            if line_units < 0:
+                covered_units = line_units
+            else:
+                covered_units = min(line_units, remaining_covered_units)
+                remaining_covered_units -= covered_units
+
+            cost_total = _yen(covered_units, self.unit_price)
+            benefit_amount = _yen(cost_total, self.benefit_rate)
+            item.update({
+                "cost_total": cost_total,
+                "benefit_rate": self.benefit_rate,
+                "benefit_amount": benefit_amount,
+                "user_share_amount": (
+                    0 if self.is_hogo else cost_total - benefit_amount
+                ),
+            })
+
+        return sheet2_rows
 
     def get_results(self):
         # 1. 限度額振り分け
