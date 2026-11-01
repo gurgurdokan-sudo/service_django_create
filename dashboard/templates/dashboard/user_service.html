@@ -58,15 +58,17 @@
   <!-- アクションバー -->
   <div class="action-bar main-toolbar hide-on-mobile">
     <div class="left-group">
-      <button type="button" id="openServiceModal" class="btn-outline blue-text">
-        <span class="icon">＋</span><span>サービス追加</span>
-      </button>
-      <button type="button" id="copyPlannedToActual" class="btn-outline blue-text" onclick="toAct({{user.id}})">
-        <span class="icon">✔</span><span>予定通り</span>
-      </button>
-       <button type="button" id="btn_validate" class="btn-outline blue-text">
-        <span class="icon" >▶</span><span>入力チェック</span>
-      </button>
+      {% if not confirmed %}
+        <button type="button" id="openServiceModal" class="btn-outline blue-text">
+          <span class="icon">＋</span><span>サービス追加</span>
+        </button>
+        <button type="button" id="copyPlannedToActual" class="btn-outline blue-text" onclick="toAct({{ user.id }})">
+          <span class="icon">✔</span><span>予定通り</span>
+        </button>
+        <button type="button" id="btn_validate" class="btn-outline blue-text">
+          <span class="icon">▶</span><span>入力チェック</span>
+        </button>
+      {% endif %}
     </div>
 
     <div class="right-group month-controller">

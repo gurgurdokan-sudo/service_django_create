@@ -117,8 +117,8 @@ body {
    ========================================================================== */
 .calendar-row {
     display: grid;
-    grid-template-columns: 50px repeat(auto-fill, 25px) 75px;
-    width: auto;
+    grid-template-columns: 50px repeat(31, 25px) 75px;
+    width: 900px;
     height: 40px; /* 高さを40pxに固定 */
     margin: 0;
     padding: 0;
