@@ -11,7 +11,7 @@ from openpyxl.styles import Alignment
 from openpyxl.utils import get_column_letter
 
 from dashboard.models import AddOnService
-from dashboard.calendar_table import get_month_days, _to_wareki_parts, _format_wareki_date
+from dashboard.calendar_table import get_month_days, to_wareki_parts, format_wareki_date
 from dashboard.excel.service_calculator import ServiceSheetCalculator, format_comma
 
 import logging
@@ -332,16 +332,6 @@ CARE_LEVEL_LIMIT_UNITS = {
     "要介護5": 36217,
 }
 
-# 元号の開始日。年だけで判定すると昭和元年・平成元年などの境目でずれる。
-ERA_START_DATES = (
-    ("令和", date(2019, 5, 1)),
-    ("平成", date(1989, 1, 8)),
-    ("昭和", date(1926, 12, 25)),
-    ("大正", date(1912, 7, 30)),
-    ("明治", date(1868, 1, 25)),
-)
-
-
 def write_schedule_header(ws, user, office, year, month, created_date):
     """Sheet1上部の利用者・認定情報（第6表の基本情報欄）を書く。"""
     cert, changed_cert = _get_month_certificates(user, year, month)
@@ -357,7 +347,7 @@ def write_schedule_header(ws, user, office, year, month, created_date):
     ws['AJ6'] = care_manager.name if care_manager else ''
 
     # 作成年月日
-    ws['AX5'] = _format_wareki_date(created_date)
+    ws['AX5'] = format_wareki_date(created_date)
 
     # 被保険者番号・フリガナ・被保険者氏名
     _write_digits(ws, 7, 7, user.insured_number, 10)  # G7:P7
@@ -366,7 +356,7 @@ def write_schedule_header(ws, user, office, year, month, created_date):
 
     # 生年月日・性別
     birth_date = user.date_of_birth
-    era_name, era_year = _to_wareki_parts(birth_date)
+    era_name, era_year = to_wareki_parts(birth_date)
     ws['G9'] = f"{era_name}{era_year}年"
     ws['G11'] = f"{birth_date.month}月{birth_date.day}日"
     ws['N9'] = user.get_gender_display()[:1]
@@ -379,7 +369,7 @@ def write_schedule_header(ws, user, office, year, month, created_date):
     if changed_cert and changed_cert.care_level != cert.care_level:
         changed_at = changed_cert.care_level_changed_at or changed_cert.limit_start
         ws['W11'] = changed_cert.care_level
-        ws['W12'] = _format_wareki_date(changed_at)
+        ws['W12'] = format_wareki_date(changed_at)
 
 
 def _get_month_certificates(user, year, month):
