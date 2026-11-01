@@ -49,7 +49,15 @@ class AddOnService(models.Model):
     class Meta:
         verbose_name_plural= "加算マスタ"
 
-    service_type_code =  models.IntegerField(choices=SERVICE_TYPE_CHOICES, blank=True, null=True)
+    service_type_code =  models.IntegerField(
+        choices=SERVICE_TYPE_CHOICES,
+        default=SERVICE_TYPE_CODE,
+        verbose_name = '種類コード',
+        help_text="""地域密着型通所介護 → 78
+                    通所介護（通常規模） → 79
+                    通所介護（大規模Ⅰ） → 80
+                    通所介護（大規模Ⅱ） → 81"""
+        ) #種類コード: 78 （地域密着型通所介護）
     code = models.CharField(max_length=20)
     type = models.CharField(choices=[("unit", "単位"), ("rate", "率")])
     unit = models.IntegerField( null=True, blank=True)

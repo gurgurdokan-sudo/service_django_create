@@ -1,7 +1,7 @@
 from django.db import models
 from django.core.exceptions import ValidationError
 from datetime import datetime, date
-from .const import LEVEL_CHOICES
+from .const import LEVEL_CHOICES, SERVICE_TYPE_CHOICES, SERVICE_TYPE_CODE
 
 from dashboard.calendar_table import get_month_days
 from .master import AddOnService,ServiceMaster
@@ -45,6 +45,7 @@ class ServiceMonthlyRecord(models.Model):
     # csv出力用
     actual_count = models.IntegerField(verbose_name='実績日数', default=0)
     service_units = models.IntegerField(verbose_name='サービス＋加算などの単位数合計', default=0)
+
     @property
     def all_addons(self):
         addon_summary = {}
@@ -96,6 +97,15 @@ class ServicePlan(models.Model):
     end_day = models.IntegerField(verbose_name="介護認定情報が月の中で変わる時に代わる日を記録", null=True, blank=True)
     cert = models.ForeignKey('Certificate', null=True, blank=True, on_delete=models.CASCADE)
 
+    service_type_code = models.IntegerField(
+        choices=SERVICE_TYPE_CHOICES,
+        default=SERVICE_TYPE_CODE,
+        verbose_name = '種類コード',
+        help_text="""地域密着型通所介護 → 78
+                    通所介護（通常規模） → 79
+                    通所介護（大規模Ⅰ） → 80
+                    通所介護（大規模Ⅱ） → 81"""
+        ) #種類コード: 78 （地域密着型通所介護）
     @property
     def stay_time_category(self):
         delta = datetime.combine(date.min, self.end_time) - datetime.combine(date.min, self.start_time)

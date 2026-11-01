@@ -14,6 +14,9 @@ from openpyxl.utils import get_column_letter
 from dashboard.excel.service_calculator import ServiceSheetCalculator, format_comma
 
 import logging
+
+from dashboard.models import AddOnService
+
 logger = logging.getLogger(__name__)
 
 
@@ -66,13 +69,28 @@ def create_service_sheet(context):
             row += 2
 
             # Planに紐づく加算：実績がある日をカレンダーに表示
+            insurance_addons = list(
+                AddOnService.objects.filter(insurance_type="insurance")
+                .values_list("id", "service_name")
+            )
+            insurance_addon_ids = {str(addon_id) for addon_id, _ in insurance_addons}
+            insurance_addon_names = {str(name) for _, name in insurance_addons}
+
             addon_names = {}
             for day_data in actual_by_day.values():
                 addons = (day_data or {}).get('addon') or {}
                 if isinstance(addons, dict):
-                    addon_names.update({str(addon_id): str(name) for addon_id, name in addons.items()})
+                    addon_names.update({
+                        str(addon_id): str(name)
+                        for addon_id, name in addons.items()
+                        if str(addon_id) in insurance_addon_ids
+                    })
                 elif isinstance(addons, (list, tuple, set)):
-                    addon_names.update({str(name): str(name) for name in addons})
+                    addon_names.update({
+                        str(name): str(name)
+                        for name in addons
+                        if str(name) in insurance_addon_names
+                    })
 
             for addon_key, addon_name in sorted(addon_names.items(), key=lambda item: item[1]):
                 _auto_newline(addon_name, ws1, f'H{row}')
@@ -207,7 +225,7 @@ def build_sheet2_rows(plan_items, addon_items, office):
         if count == 0 and subtotal == 0:
             continue
 
-        service_type_code = item.get("service_type")
+        service_type_code = item.get("service_type_code")
         if service_type_code is None:
             raise ValueError(f"service_type が未設定です: code={code}")
         service_type_code = str(service_type_code).strip().zfill(2)
@@ -261,7 +279,7 @@ def build_sheet2_rows(plan_items, addon_items, office):
 
 def write_service_type_total(ws, row, item, office_number, office_names):
     """サービス種類別の集計行を書く。セル位置は既存write_billing_lineに合わせる。"""
-    ws[f'A{row}'] = "\\n".join(office_names)
+    ws[f'A{row}'] = "\n".join(office_names)
     ws[f'A{row}'].alignment = Alignment(wrap_text=True)
     ws[f'G{row}'] = office_number
     _auto_newline(item["name"], ws, f'L{row}', 6)

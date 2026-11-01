@@ -52,7 +52,7 @@ class ServiceSheetCalculator:
                 "end_time": plan.end_time,
                 "schedule": plan.schedule_dict,
                 "actual": plan.actual_dict,
-                "service_type": plan.service_type_code,
+                "service_type_code": plan.service_type_code,
             })
 
             # 実利用日数は、加算ループの外で集計する。
@@ -68,6 +68,7 @@ class ServiceSheetCalculator:
                     "unit": unit,
                     "count": count,
                     "subtotal": subtotal,
+                    "service_type_code": plan.service_type_code,
                 })
 
             self.total_act_price_unit += subtotal
@@ -104,7 +105,7 @@ class ServiceSheetCalculator:
                     "unit": add_unit,
                     "count": add_count,
                     "subtotal": add_total,
-                    "service_type": addon_obj.service_type,
+                    "service_type_code": addon_obj.service_type_code,
                 })
                 self.total_act_price_unit += add_total
 
