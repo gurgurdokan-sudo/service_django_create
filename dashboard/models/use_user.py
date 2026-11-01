@@ -3,6 +3,7 @@ from datetime import date
 
 from django.db import models
 from django.utils import timezone
+from dashboard.models.const import CARE_LEVEL_LIMIT_UNITS
 
 class UseUser(models.Model):
     """被保険者の情報を管理するモデル"""
@@ -75,25 +76,9 @@ class UseUser(models.Model):
         ).first()
 
     @property
-    def max_separate_payment(self):
-        """ 利用者の区分支給限度基準額を返す。認定情報がない場合はNoneを返す """
-        match self.care_level:
-            case '要支援1':
-                return 5003
-            case '要支援2':
-                return 10473
-            case '要介護1':
-                return 16692
-            case '要介護2':
-                return 19705
-            case '要介護3':
-                return 27048
-            case '要介護4':
-                return 30938
-            case '要介護5':
-                return 36217
-            case _:
-                return None
+    def max_separate_payment(care_level: str) -> int | None:
+        """要介護度に応じた区分支給限度基準額（単位）を返す"""
+        return CARE_LEVEL_LIMIT_UNITS.get(care_level)
 
     @property
     def care_level(self):  # certificateとlimit_endは存在する前提

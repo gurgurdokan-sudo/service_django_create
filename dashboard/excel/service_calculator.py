@@ -1,5 +1,5 @@
 from decimal import Decimal, ROUND_DOWN
-
+from dashboard.models.const import CARE_LEVEL_LIMIT_UNITS
 class ServiceSheetCalculator:
     def __init__(self, context):
         self.office = context['office']
@@ -17,7 +17,7 @@ class ServiceSheetCalculator:
         self.benefit_rate = float(cert.benefit_rate) # 0.9など
 
         # 介護度別の支給限度額
-        limits = {'要介護1': 16692, '要介護2': 19705, '要介護3': 27048, '要介護4': 30938, '要介護5': 36217}
+        limits = CARE_LEVEL_LIMIT_UNITS
         self.max_payment = limits.get(cert.care_level, 0)
 
         # 生活保護判定
