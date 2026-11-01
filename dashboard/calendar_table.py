@@ -29,18 +29,13 @@ ERA_TABLE = [
     ("大正", 1912),
 ]
 
-def to_wareki(date: datetime.date) -> str:
-    year = date.year
-    for era_name, start_year in ERA_TABLE:
-        if year >= start_year:
-            era_year = year - start_year + 1
-            return f"{era_name}{era_year}年{date.month}月{date.day}日"
-    return f"{year}年{date.month}月{date.day}日"  # 明治以前は西暦のまま
+def _to_wareki_parts(value):
+    for era_name, start_date in ERA_START_DATES:
+        if value >= start_date:
+            return era_name, value.year - start_date.year + 1
+    raise ValueError(f"和暦に変換できない日付です: {value}")
 
 
-def from_wareki(era_name: str, era_year: int, month: int, day: int) -> datetime.date:
-    for name, start_year in ERA_TABLE:
-        if name == era_name:
-            year = start_year + era_year - 1
-            return datetime.date(year, month, day)
-    raise ValueError(f"不明な元号です: {era_name}")
+def _format_wareki_date(value):
+    era_name, era_year = _to_wareki_parts(value)
+    return f"{era_name}{era_year}年{value.month}月{value.day}日"

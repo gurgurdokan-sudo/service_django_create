@@ -11,6 +11,7 @@ from openpyxl.styles import Alignment
 from openpyxl.utils import get_column_letter
 
 from dashboard.models import AddOnService
+from dashboard.calendar_table import get_month_days, _to_wareki_parts, _format_wareki_date
 from dashboard.excel.service_calculator import ServiceSheetCalculator, format_comma
 
 import logging
@@ -42,11 +43,19 @@ def create_service_sheet(context):
             ws1['V9'] = pa.recipient_number  # 受給者番号(10桁)
 
         # --- Sheet 1: 予定・実績カレンダー ---
-        calendar = context['calendar']
         plans = context['plans']
         office = context['office']
         office_names = (office.name.split() + ["", ""])[:2]
         row = 17
+
+        # 日付（15行目）・曜日（16行目）。祝日は曜日欄に◎を出す。
+        calendar = get_month_days(year, month)
+        for i, calendar_day in enumerate(calendar):
+            col = get_column_letter(25 + i)
+            ws1[f'{col}15'] = calendar_day['day']
+            ws1[f'{col}16'] = (
+                '◎' if calendar_day['is_holiday'] else calendar_day['weekday_jp']
+            )
 
         for plan in plans:
             actual_by_day = {
@@ -413,19 +422,6 @@ def _write_digits(ws, row, start_col, value, length):
         raise ValueError(f"{length}桁の番号を設定してください: {text!r}")
     for i, char in enumerate(text):
         ws[f"{get_column_letter(start_col + i)}{row}"] = char
-
-
-def _to_wareki_parts(value):
-    for era_name, start_date in ERA_START_DATES:
-        if value >= start_date:
-            return era_name, value.year - start_date.year + 1
-    raise ValueError(f"和暦に変換できない日付です: {value}")
-
-
-def _format_wareki_date(value):
-    era_name, era_year = _to_wareki_parts(value)
-    return f"{era_name}{era_year}年{value.month}月{value.day}日"
-
 
 def _auto_newline(text, ws, cell, line=10):
     """セル内で自動改行するためのヘルパー"""
