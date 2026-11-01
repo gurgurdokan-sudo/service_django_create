@@ -1,3 +1,4 @@
+# 現在
 import os
 import io
 from datetime import date
@@ -9,6 +10,7 @@ from collections import defaultdict
 
 from openpyxl import load_workbook
 from openpyxl.styles import Alignment
+from openpyxl.utils import get_column_letter
 
 from dashboard.excel.service_calculator import ServiceSheetCalculator, format_comma
 
@@ -24,17 +26,42 @@ def create_service_sheet(context):
 
         user = context['user']
         year, month = context['dis_year'], context['dis_month']
-        ws1 = wb['1']  # スケジュール
+        ws1 = wb['1']
+        ws1.title = 'スケジュール'
 
-        # --- Sheet 1: ヘッダー (生活保護情報の印字) ---Sheet1は予定・実績カレンダー用
+        # --- Sheet 1: 生活保護情報の印字 ---
         if res['is_hogo']:
             pa = res['pa_data']
             ws1['G5'] = "25"  # 法別番号
             ws1['I5'] = pa.hogo_number  # 保護番号(8桁)
             ws1['V9'] = pa.recipient_number  # 受給者番号(10桁)
 
+        # --- Sheet 1: 予定・実績カレンダー ---
+        calendar = context['calendar']
+        plans = context['plans']
+        office = context['office']
+        office_names = (office.name.split() + ["", ""])[:2]
+        row = 17
+
+        for plan in plans:
+            ws1[f'B{row}'] = f'{plan.start_time:%H:%M}～{plan.end_time:%H:%M}'
+            _auto_newline(plan.service_name, ws1, f'H{row}')
+            ws1[f'O{row}'] = office_names[0]
+            ws1[f'O{row + 1}'] = office_names[1]
+
+            for i, calendar_day in enumerate(calendar):
+                col = get_column_letter(25 + i)
+                day = str(calendar_day['day'])
+                ws1[f'{col}{row}'] = plan.schedule_dict.get(day, '')
+                ws1[f'{col}{row + 1}'] = plan.actual_dict.get(day, {}).get('main', '')
+
+            ws1[f'BD{row}'] = plan.get_total_count('schedule')
+            ws1[f'BD{row + 1}'] = plan.get_total_count('actual')
+            row += 2
+
         # --- Sheet 2: 別表（実績） ---
         ws2 = wb['2']
+        ws2.title = '別表（実績）'
         current_row = 6
         office_name = context['office'].name.split()[:2]
 
