@@ -59,5 +59,5 @@ def export_excel(request,user_id):
     context = build_user_service_context(user_id=user_id,year=year,month=month)
     
     create_service_sheet(context)
-    messages.success(request,'Excelを作成しました')
+    messages.success(request,f'{context["user"].name} 様のExcelを作成しました')
     return redirect('dashboard:user_list')

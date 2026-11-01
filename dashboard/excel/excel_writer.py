@@ -1,4 +1,3 @@
-# 現在
 import os
 import io
 from datetime import date
@@ -44,6 +43,12 @@ def create_service_sheet(context):
         row = 17
 
         for plan in plans:
+            actual_by_day = {
+                str(day): value or {}
+                for day, value in (plan.actual_dict or {}).items()
+            }
+
+            # 基本サービス：予定行と実績行
             ws1[f'B{row}'] = f'{plan.start_time:%H:%M}～{plan.end_time:%H:%M}'
             _auto_newline(plan.service_name, ws1, f'H{row}')
             ws1[f'O{row}'] = office_names[0]
@@ -52,12 +57,45 @@ def create_service_sheet(context):
             for i, calendar_day in enumerate(calendar):
                 col = get_column_letter(25 + i)
                 day = str(calendar_day['day'])
+                day_data = actual_by_day.get(day, {})
                 ws1[f'{col}{row}'] = plan.schedule_dict.get(day, '')
-                ws1[f'{col}{row + 1}'] = plan.actual_dict.get(day, {}).get('main', '')
+                ws1[f'{col}{row + 1}'] = day_data.get('main', '')
 
             ws1[f'BD{row}'] = plan.get_total_count('schedule')
             ws1[f'BD{row + 1}'] = plan.get_total_count('actual')
             row += 2
+
+            # Planに紐づく加算：実績がある日をカレンダーに表示
+            addon_names = {}
+            for day_data in actual_by_day.values():
+                addons = (day_data or {}).get('addon') or {}
+                if isinstance(addons, dict):
+                    addon_names.update({str(addon_id): str(name) for addon_id, name in addons.items()})
+                elif isinstance(addons, (list, tuple, set)):
+                    addon_names.update({str(name): str(name) for name in addons})
+
+            for addon_key, addon_name in sorted(addon_names.items(), key=lambda item: item[1]):
+                _auto_newline(addon_name, ws1, f'H{row}')
+                ws1[f'O{row}'] = office_names[0]
+                ws1[f'O{row + 1}'] = office_names[1]
+                ws1[f'B{row}'] = ''
+                addon_count = 0
+
+                for i, calendar_day in enumerate(calendar):
+                    col = get_column_letter(25 + i)
+                    day = str(calendar_day['day'])
+                    addons = (actual_by_day.get(day, {}) or {}).get('addon') or {}
+                    if isinstance(addons, dict):
+                        present = addon_key in {str(addon_id) for addon_id in addons}
+                    else:
+                        present = addon_name in {str(name) for name in addons}
+                    ws1[f'{col}{row}'] = ''
+                    ws1[f'{col}{row + 1}'] = '1' if present else ''
+                    addon_count += int(present)
+
+                ws1[f'BD{row}'] = ''
+                ws1[f'BD{row + 1}'] = addon_count
+                row += 2
 
         # --- Sheet 2: 別表（実績） ---
         ws2 = wb['2']
@@ -169,7 +207,13 @@ def build_sheet2_rows(plan_items, addon_items, office):
         if count == 0 and subtotal == 0:
             continue
 
-        service_type_code = code[:2]
+        service_type_code = item.get("service_type")
+        if service_type_code is None:
+            raise ValueError(f"service_type が未設定です: code={code}")
+        service_type_code = str(service_type_code).strip().zfill(2)
+        if len(service_type_code) != 2 or not service_type_code.isdigit():
+            raise ValueError(f"service_type は2桁の数字で指定してください: code={code}")
+
         group_key = (office_number, service_type_code)
         detail_key = (code, unit)
         details = groups[group_key]
