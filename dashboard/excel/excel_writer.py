@@ -1,22 +1,19 @@
 import os
 import io
 from datetime import date
-from django.utils.timezone import now
+from django.utils.timezone import localdate, now
 from django.conf import settings
 import boto3
 import textwrap
 from collections import defaultdict
-
 from openpyxl import load_workbook
 from openpyxl.styles import Alignment
 from openpyxl.utils import get_column_letter
 
+from dashboard.models import AddOnService
 from dashboard.excel.service_calculator import ServiceSheetCalculator, format_comma
 
 import logging
-
-from dashboard.models import AddOnService
-
 logger = logging.getLogger(__name__)
 
 
@@ -30,6 +27,12 @@ def create_service_sheet(context):
         year, month = context['dis_year'], context['dis_month']
         ws1 = wb['1']
         ws1.title = 'スケジュール'
+
+        # --- Sheet 1: 基本情報（第6表の利用者・認定欄） ---
+        created_date = localdate()
+        write_schedule_header(
+            ws1, user, context['office'], year, month, created_date
+        )
 
         # --- Sheet 1: 生活保護情報の印字 ---
         if res['is_hogo']:
@@ -107,17 +110,20 @@ def create_service_sheet(context):
                         present = addon_key in {str(addon_id) for addon_id in addons}
                     else:
                         present = addon_name in {str(name) for name in addons}
-                    ws1[f'{col}{row}'] = ''
+                    ws1[f'{col}{row}'] = plan.schedule_dict.get(day, '')  # 予定はPlanと同じ
                     ws1[f'{col}{row + 1}'] = '1' if present else ''
                     addon_count += int(present)
 
-                ws1[f'BD{row}'] = ''
+                ws1[f'BD{row}'] = plan.get_total_count('schedule')  # 予定の合計回数
                 ws1[f'BD{row + 1}'] = addon_count
                 row += 2
 
         # --- Sheet 2: 別表（実績） ---
         ws2 = wb['2']
         ws2.title = '別表（実績）'
+        ws2['AW1'] = f"{created_date.year}年{created_date.month}月{created_date.day}日"
+        ws2['AH2'] = user.insured_number
+        ws2['AW2'] = user.name
         current_row = 6
         office_name = context['office'].name.split()[:2]
 
@@ -147,6 +153,8 @@ def create_service_sheet(context):
         if current_row >= 20:
             raise ValueError("Sheet2の明細・集計行が固定合計欄（20行目）に重なります")
 
+        # 費用総額・保険給付額・利用者負担は各明細行に出力済み。
+        # 明細の直後に合計金額を重ねて書くと二重計上になるため、全体合計は20行目だけに出す。
 
         # 最終合計行 (20行目固定)
         ws2['AT20'] = format_comma(res['total_cost'])
@@ -302,6 +310,121 @@ def write_billing_line(ws, row, item, office_number, office_names):
     ws[f'AW{row}'] = int(item['benefit_rate'] * 100)
     ws[f'AX{row}'] = format_comma(item['benefit_amount'])
     ws[f'BD{row}'] = format_comma(item['user_share_amount'])
+
+
+# 区分支給限度基準額（単位／月）。令和元年10月改定値。
+CARE_LEVEL_LIMIT_UNITS = {
+    "要支援1": 5032,
+    "要支援2": 10531,
+    "要介護1": 16765,
+    "要介護2": 19705,
+    "要介護3": 27048,
+    "要介護4": 30938,
+    "要介護5": 36217,
+}
+
+# 元号の開始日。年だけで判定すると昭和元年・平成元年などの境目でずれる。
+ERA_START_DATES = (
+    ("令和", date(2019, 5, 1)),
+    ("平成", date(1989, 1, 8)),
+    ("昭和", date(1926, 12, 25)),
+    ("大正", date(1912, 7, 30)),
+    ("明治", date(1868, 1, 25)),
+)
+
+
+def write_schedule_header(ws, user, office, year, month, created_date):
+    """Sheet1上部の利用者・認定情報（第6表の基本情報欄）を書く。"""
+    cert, changed_cert = _get_month_certificates(user, year, month)
+
+    # 保険者番号・保険者名
+    municipality = office.municipality
+    _write_digits(ws, 5, 11, municipality.municipality_code, 6)  # K5:P5
+    ws['V5'] = municipality.name
+
+    # 居宅介護支援事業者事業所名・担当者名
+    care_manager = user.care_manager
+    ws['AJ5'] = care_manager.office_name if care_manager else ''
+    ws['AJ6'] = care_manager.name if care_manager else ''
+
+    # 作成年月日
+    ws['AX5'] = _format_wareki_date(created_date)
+
+    # 被保険者番号・フリガナ・被保険者氏名
+    _write_digits(ws, 7, 7, user.insured_number, 10)  # G7:P7
+    ws['V7'] = user.name_kana
+    ws['V8'] = user.name
+
+    # 生年月日・性別
+    birth_date = user.date_of_birth
+    era_name, era_year = _to_wareki_parts(birth_date)
+    ws['G9'] = f"{era_name}{era_year}年"
+    ws['G11'] = f"{birth_date.month}月{birth_date.day}日"
+    ws['N9'] = user.get_gender_display()[:1]
+
+    # 要介護状態区分は対象月1日時点の認定を使う（user.care_levelは今日時点）。
+    ws['W9'] = cert.care_level
+    # 月途中の区分変更がある月は、限度額が大きい方の限度額を出す。
+    ws['AI9'] = format_comma(_month_limit_units(cert, changed_cert))
+    # 変更後要介護状態区分・変更日（月途中で区分が変わった場合だけ書く）
+    if changed_cert and changed_cert.care_level != cert.care_level:
+        changed_at = changed_cert.care_level_changed_at or changed_cert.limit_start
+        ws['W11'] = changed_cert.care_level
+        ws['W12'] = _format_wareki_date(changed_at)
+
+
+def _get_month_certificates(user, year, month):
+    """対象月1日時点の認定と、月途中から有効になる認定を返す。"""
+    cert = user.get_certificate(year, month)
+    if cert is None:
+        raise ValueError(f"{year}年{month}月の認定情報がありません")
+
+    changed_cert = user.latest_changed_cert(year, month)
+    if (
+        changed_cert is None
+        or changed_cert.pk == cert.pk
+        or changed_cert.limit_start.day == 1
+    ):
+        changed_cert = None
+    return cert, changed_cert
+
+
+def _limit_units(cert):
+    """認定1件分の区分支給限度基準額（単位）を返す。"""
+    if cert.limit_amount_type == "任意" and cert.limit_amount_value:
+        return int(cert.limit_amount_value)
+    return CARE_LEVEL_LIMIT_UNITS.get(cert.care_level)
+
+
+def _month_limit_units(cert, changed_cert=None):
+    limits = [
+        _limit_units(item)
+        for item in (cert, changed_cert)
+        if item is not None
+    ]
+    limits = [value for value in limits if value is not None]
+    return max(limits) if limits else None
+
+
+def _write_digits(ws, row, start_col, value, length):
+    """番号を1マス1文字で書く。桁数違いは帳票の欄ずれになるためエラーにする。"""
+    text = str(value or "").strip()
+    if len(text) != length:
+        raise ValueError(f"{length}桁の番号を設定してください: {text!r}")
+    for i, char in enumerate(text):
+        ws[f"{get_column_letter(start_col + i)}{row}"] = char
+
+
+def _to_wareki_parts(value):
+    for era_name, start_date in ERA_START_DATES:
+        if value >= start_date:
+            return era_name, value.year - start_date.year + 1
+    raise ValueError(f"和暦に変換できない日付です: {value}")
+
+
+def _format_wareki_date(value):
+    era_name, era_year = _to_wareki_parts(value)
+    return f"{era_name}{era_year}年{value.month}月{value.day}日"
 
 
 def _auto_newline(text, ws, cell, line=10):
