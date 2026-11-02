@@ -57,7 +57,10 @@ def export_excel(request,user_id):
     month = int(request.GET.get('month', now.month))
     logger.info(f'{year}-{month}をExcel出力')
     context = build_user_service_context(user_id=user_id,year=year,month=month)
-    
-    create_service_sheet(context)
+    try:
+        create_service_sheet(context)
+    except PermissionError as pe:
+        logger.warning(f"Excel出力時のパーミッションエラー (ファイルが開かれています): {pe}")
+        return redirect('dashboard:user_list')
     messages.success(request,f'{context["user"].name} 様のExcelを作成しました')
     return redirect('dashboard:user_list')
