@@ -163,13 +163,18 @@ def _write_total_row(ws, res):
     # 明細の直後に合計金額を重ねて書くと二重計上になるため、全体合計は20行目だけに出す
     ws[f'T{TOTAL_ROW}'] = format_comma(res['max_payment'])
     # サービス合計
-    ws[f'Z{TOTAL_ROW}'] = format_comma(res['total_cost'])
-    # 給付管理 単位数
-    ws[f'AC{TOTAL_ROW}'] = format_comma(res['total_cost'])
+    ws[f'Z{TOTAL_ROW}'] = format_comma(res['service_units'])
+    # 給付管理単位数：限度額適用前
+    ws[f'AC{TOTAL_ROW}'] = format_comma(res['service_units'])
+    # 区分支給額限度 基準を超える 単位数
+    if res['over_units']:
+        ws[f'AO{TOTAL_ROW}'] = format_comma(res['over_units'])
+    # 区分支給限度 基準内 単位数：限度額を適用した後
+    ws[f'AO{TOTAL_ROW}'] = format_comma(res['within_units'])
     # 区分支給 単位数
     ws[f'AT{TOTAL_ROW}'] = format_comma(res['total_cost'])
     ws[f'AX{TOTAL_ROW}'] = format_comma(res['benefit_amount'])
-    ws[f'BD{TOTAL_ROW}'] = format_comma(res['user_share_amount'])
+    ws[f'BD{TOTAL_ROW}'] = format_comma(res['user_amount'])
 
 
 def _write_bikou(ws, pub):

@@ -155,20 +155,41 @@ def _aggregate_plan_rows(plans, plan_items):
 
     return sorted(grouped.values(), key=lambda row: row["code"])
 
+def _aggregate_addon_rows(addon_items):
+    """同じサービスコード・単位数の加算を1行に集約する。"""
+    if not addon_items:
+        return []
+
+    grouped = {}
+    for item in addon_items:
+        code = str(item.get("code") or item.get("name") or "")
+        unit = _to_int(item.get("unit"))
+        key = (code, unit)
+
+        row = grouped.get(key)
+        if row is None:
+            row = {
+                **item,
+                "code": code,
+                "unit": unit,
+                "count": 0,
+                "subtotal": 0,
+            }
+            grouped[key] = row
+
+        row["count"] += _to_int(item.get("count"))
+        row["subtotal"] += _to_int(item.get("subtotal"))
+
+    return sorted(
+        grouped.values(),
+        key=lambda row: (row["code"], row["unit"]),
+    )
+
 
 def _insurance_summary(record, plans, res):
     # 同一サービスコードの別時間PlanもAPI上で1行にまとめて返す。
     plan_rows = _aggregate_plan_rows(plans, res.get("plan_items", []))
-
-    addons = [
-        {
-            **item,
-            "unit": _to_int(item.get("unit")),
-            "count": _to_int(item.get("count")),
-            "subtotal": _to_int(item.get("subtotal")),
-        }
-        for item in res.get("addon_items", [])
-    ]
+    addons = _aggregate_addon_rows(res.get("addon_items", []))
 
     rate_addon = None
     default = record.office.default_service
@@ -179,9 +200,14 @@ def _insurance_summary(record, plans, res):
             "rate": str(default.rate),
             "units": _to_int(res.get("def_unit")),
         }
-    addon_units = sum(a["subtotal"] for a in addons)
-    return {"plans": plan_rows, "addons": addons, "addon_units": addon_units, "rate_addon": rate_addon}
 
+    addon_units = sum(item["subtotal"] for item in addons)
+    return {
+        "plans": plan_rows,
+        "addons": addons,
+        "addon_units": addon_units,
+        "rate_addon": rate_addon,
+    }
 
 # ------------------------------------------------------------
 # 自費分
