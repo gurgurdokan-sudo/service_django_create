@@ -98,15 +98,15 @@ class ClaimBuilder:
 
     @staticmethod
     def _ins_units(r):
-        return r.total_units - (r.over_units or 0)       # 限度超過分は保険対象外
+        return r.total_units
 
     @staticmethod
     def _ins_cost(r):
-        return r.total_cost - (r.over_cost or 0)
+        return r.total_cost
 
     @staticmethod
     def _ins_user_share(r):
-        return (r.user_share_amount or 0) - (r.over_user_share or 0)
+        return r.over_user_share or 0
 
     # ---------- コントロールレコード（12列） ----------
     def build_office_claim_header(self, data_count=0):
@@ -144,7 +144,7 @@ class ClaimBuilder:
         ]
 
     def build_office_claim_details(self):
-        records = list(self.records)
+        records: list[ServiceMonthlyRecord] = list(self.records)
         rows = [self._claim_summary_row(
             self.INSURANCE_CLAIM, 0, len(records),
             sum(self._ins_units(r) for r in records),
@@ -153,12 +153,12 @@ class ClaimBuilder:
             sum(r.public_amount or 0 for r in records),
             sum(self._ins_user_share(r) for r in records),
         )]
-        public = [r for r in records if r.user.get_public_assistance(self.year, self.month)]
+        public: list[ServiceMonthlyRecord] = [r for r in records if r.user.get_public_assistance(self.year, self.month)]
         if public:
             rows.append(self._claim_summary_row(
                 self.PUBLIC_CLAIM, self.LAW_NUMBER_WELFARE, len(public),
                 sum(self._ins_units(r) for r in public),
-                sum(self._ins_cost(r) for r in public),   # 修正：単位数ではなく費用合計
+                sum(self._ins_cost(r) for r in public),   # 単位数ではなく費用合計
                 0,                                         # 公費請求行の保険請求額
                 sum(r.public_amount or 0 for r in public),
                 0,                                         # 生保の本人負担（本人支払額がある場合は設定）
