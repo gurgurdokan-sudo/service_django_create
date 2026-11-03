@@ -106,7 +106,7 @@ class ClaimBuilder:
 
     @staticmethod
     def _ins_user_share(r):
-        return r.over_user_share or 0
+        return r.user_share_amount or 0
 
     # ---------- コントロールレコード（12列） ----------
     def build_office_claim_header(self, data_count=0):
