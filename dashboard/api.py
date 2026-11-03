@@ -1,7 +1,6 @@
 from datetime import date
 from typing import Optional, Any
 from django.db import transaction
-from django.db.models import QuerySet
 from django.shortcuts import get_object_or_404
 from django.http import JsonResponse
 from django.utils.dateparse import parse_time
@@ -25,8 +24,8 @@ logger = logging.getLogger(__name__)
 # ------------------------------------------------------------
 # 共通ヘルパー
 # ------------------------------------------------------------
-def _error(message, status=400):
-    return Response({"status": "error", "message": message}, status=status)
+def _error(message, s=400):
+    return Response({"status": "error", "message": message}, status=s)
 
 
 def _parse_int(value:Any, min_value=None, max_value=None):
@@ -371,6 +370,7 @@ def create_plan(request, user_id):
         return _error("選択したサービスが介護度・利用時間と合っていません")
 
     with transaction.atomic():
+        monthly_record: ServiceMonthlyRecord
         monthly_record, _ = ServiceMonthlyRecord.objects.select_for_update().get_or_create(
             user=target_user, date=date(year, month, 1), defaults={"office": office},
         )
@@ -583,7 +583,7 @@ def validate_monthly_record(request, user_id):
     errors = []
     warnings = []
 
-    def parse_to_int(value:Any, d:int, service_name:str, field_type:str) -> Optional[int]:
+    def parse_to_int(value:Any, service_name:str, field_type:str) -> Optional[int]:
         """
         数値を安全にパースする。
         数値化できない不正な文字列の場合はエラーリストに追加し、Noneを返す。
@@ -615,6 +615,7 @@ def validate_monthly_record(request, user_id):
     actual_data_by_plan = {}
     main_count_by_plan_day = {}
     actual_main_days_all_plans = set()
+    actual_main_plan_labels_by_day = {} # 実績のある日
     total_actual_main_count = 0
 
     for plan in plans:
@@ -632,7 +633,7 @@ def validate_monthly_record(request, user_id):
 
             day_key = str(day)
             main_count = parse_to_int(
-                day_info.get("main", ""), day_key, plan.service_name, "基本サービス"
+                day_info.get("main", ""), plan.service_name, "基本サービス"
             )
             main_count_by_plan_day[(plan.id, day_key)] = main_count
 
@@ -640,6 +641,17 @@ def validate_monthly_record(request, user_id):
                 total_actual_main_count += main_count
                 if main_count > 0:
                     actual_main_days_all_plans.add(day_key)
+                    actual_main_plan_labels_by_day.setdefault(day_key, []).append(
+                        f"{plan.service_name}（{plan.start_time}〜{plan.end_time}）"
+                    )
+
+    # 同じ日に複数のPlanで基本サービス実績がある場合はエラー 別Plan間の同日実績を検出する。
+    for day_key, plan_labels in actual_main_plan_labels_by_day.items():
+        if len(plan_labels) > 1:
+            errors.append(
+                f"{day_key}日: 同日に複数のPlanで基本サービス実績があります"
+                f"（{', '.join(plan_labels)}）。同日の別時間帯利用を確認してください。"
+            )
 
     # 加算の月額算定回数を利用者・月単位で集計する。
     global_monthly_addon_counts = {}
@@ -676,7 +688,6 @@ def validate_monthly_record(request, user_id):
                 )
 
         # 自費: どのPlanに付いていても、同じ日に全Planのどこにも基本サービス実績がなければエラー
-        # 保険加算: 紐付く同じPlanの日別実績を確認する。
         for day, day_info in actual_data.items():
             if not isinstance(day_info, dict):
                 continue
@@ -772,9 +783,8 @@ def validate_monthly_record(request, user_id):
             "算定要件を確認してください。"
         )
 
-    status = "error" if errors else "warning" if warnings else "ok"
     return JsonResponse({
-        "status": status,
+        "status": "error" if errors else "warning" if warnings else "ok",
         "errors": errors,
         "warnings": warnings,
         "message": "チェックが完了しました。",
