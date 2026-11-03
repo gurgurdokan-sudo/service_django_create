@@ -12,6 +12,17 @@ BENEFIT_RATE_CHOICES = [
     (0.8, "給付率80%（2割負担）"),
     (0.7, "給付率70%（3割負担）"),
 ]
+# 給付制限用に一段下げる
+def benefit_limit_rate(benefit_rate: float) -> float:
+    rate_map = {
+        0.9: 0.7,
+        0.8: 0.7,
+        0.7: 0.6,
+    }
+    rate = round(float(benefit_rate), 2)
+    if rate not in rate_map:
+        raise ValueError(f"未対応の給付率です: {benefit_rate}")
+    return rate_map[rate]
 # 区分支給限度基準額（単位／月）。令和元年10月改定値。
 CARE_LEVEL_LIMIT_UNITS = {
     "要支援1": 5032,

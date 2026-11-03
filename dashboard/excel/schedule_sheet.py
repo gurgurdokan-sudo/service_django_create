@@ -189,16 +189,17 @@ def _get_month_certificates(user, year, month):
 
 def _limit_units(cert):
     """認定1件分の区分支給限度基準額（単位）を返す"""
+    if cert is None: return None
     if cert.limit_amount_type == "任意" and cert.limit_amount_value:
         return int(cert.limit_amount_value)
     return CARE_LEVEL_LIMIT_UNITS.get(cert.care_level)
 
 
 def _month_limit_units(cert, changed_cert=None):
-    limits = [
-        _limit_units(item)
-        for item in (cert, changed_cert)
-        if item is not None
-    ]
-    limits = [value for value in limits if value is not None]
-    return max(limits) if limits else None
+    """変更前後それぞれの限度額を求め、大きい方を返す"""
+    limits = []
+    for item in (cert, changed_cert):
+        limit = _limit_units(item)
+        if limit is not None:
+            limits.append(limit)
+    return max(limits, default=None)

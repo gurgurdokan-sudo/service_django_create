@@ -1,5 +1,5 @@
 from decimal import Decimal, ROUND_DOWN
-from dashboard.models.const import CARE_LEVEL_LIMIT_UNITS
+from dashboard.models.const import CARE_LEVEL_LIMIT_UNITS, benefit_limit_rate
 class ServiceSheetCalculator:
     def __init__(self, context):
         self.office = context['office']
@@ -15,11 +15,16 @@ class ServiceSheetCalculator:
 
         self.unit_price = float(self.office.unit_price)
         self.benefit_rate = float(cert.benefit_rate) # 0.9など
+        # 給付制限がある場合は一段さげる
+        if cert.benefit_limit_flag:
+            self.benefit_rete = benefit_limit_rate(self.benefit_rate)
 
         # 介護度別の支給限度額
         limits = CARE_LEVEL_LIMIT_UNITS
         self.max_payment = limits.get(cert.care_level, 0)
-
+        # 任意の場合は上書き
+        if cert.limit_amount_type == '任意' and cert.limit_amount_value:
+            self.max_payment = cert.limit_amount_value
         # 生活保護判定
         self.pa_data = self.user.get_public_assistance(self.year, self.month)
         self.is_hogo = self.pa_data is not None
@@ -177,16 +182,14 @@ class ServiceSheetCalculator:
             user_share_amount = raw_user_share
 
         return {
-            'is_hogo': self.is_hogo,
-            'pa_data': self.pa_data,
-            'actual_count': self.actual_days, # 日数
-            'within_units': within_units,
-            'over_units': over_units,
-            'total_cost': total_cost,     # 費用合計(10割)
-            'benefit_amount': benefit_amount, # 保険請求
-            'public_amount': public_amount,       # 公費請求
+            'actual_count': self.actual_days,                   # 日数
+            'within_units': within_units,                       # 限度内単位数
+            'over_units': over_units,                           # 限度額を超えた単位数
+            'total_cost': total_cost,                           # 費用合計(10割)
+            'benefit_amount': benefit_amount,                   # 保険請求
+            'public_amount': public_amount,                     # 公費請求
             'user_share_amount': user_share_amount + over_cost, # 本人支払(超過分込)
-            'def_unit': def_unit,
+            'def_unit': def_unit,                               # 改善加算の単位数
             'def_total_cost': def_total_cost,
             'plan_items': self.plan_items,
             'addon_items': self.addon_items,
