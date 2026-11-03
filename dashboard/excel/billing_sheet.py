@@ -2,7 +2,7 @@
 from openpyxl.styles import Alignment
 
 from dashboard.excel.service_calculator import format_comma, _yen
-from dashboard.excel.excel_utils import auto_newline
+from dashboard.excel.excel_utils import auto_newline, sum_int
 from dashboard.calendar_table import format_wareki_date
 import logging
 logger = logging.getLogger(__name__)
@@ -119,18 +119,29 @@ def write_billing_line(ws, row, item, office, kind=DETAIL):
     ws[f'AW{row}'] = int(benefit_rate * 100) if benefit_rate else ''
     # 保険/事業費 請求額
     ws[f'AX{row}'] = format_comma(item.get('benefit_amount'))
-    ws[f'BD{row}'] = format_comma(int(item.get('cost_total') / office.unit_price))  # 保険/事業対象分
+    ws[f'BD{row}'] = format_comma(item.get('user_share_amount'))  # 保険/事業対象分
+    if item.get('over_units'): # 0なら表示しない
+        ws[f'BG{row}'] = format_comma(item.get('over_units'))
 
 def _build_summary_item(detail_rows, calc, res):
     """明細を合算し、サービス種類の集計行（地域密着通所合計）を作る"""
-    cost_total = _sum_int(detail_rows, 'cost_total')
+    cost_total = sum_int(detail_rows, "cost_total")
+    benefit_amount = _yen(cost_total, calc.benefit_rate)
+    user_share_amount = cost_total - benefit_amount
+    logger.info(
+                "start building summary item for rate=%s "
+                "費用合計(AO)=%s 給付額(AT)=%s 請求額(AX)=%s 個人負担(BD)=%s",
+                calc.benefit_rate, cost_total, benefit_amount, res['within_units'], user_share_amount
+                )
     return {
         'name': SERVICE_TYPE_TOTAL_NAME,
-        'subtotal': _sum_int(detail_rows, 'subtotal'),
+        'subtotal': sum_int(detail_rows, 'subtotal'),
         'cost_total': cost_total,
         'benefit_rate': calc.benefit_rate,
-        'benefit_amount': _sum_int(detail_rows, 'benefit_amount'),
+        'benefit_amount': benefit_amount,
         'within_units': res['within_units'],
+        'user_share_amount': user_share_amount,
+        'over_units': res.get('over_units',0),
     }
 
 def _build_default_item(office, calc, res):
@@ -154,28 +165,34 @@ def _build_default_item(office, calc, res):
         'benefit_rate': calc.benefit_rate,
         'benefit_amount': default_benefit,
         'user_share_amount': default_share,
+        'over_units': res.get('over_units', 0),
     }
 
 
 def _write_total_row(ws, res):
     """最終合計行（20行目固定）を書く"""
     # 費用総額・保険給付額・利用者負担は各明細行に出力済み
-    # 明細の直後に合計金額を重ねて書くと二重計上になるため、全体合計は20行目だけに出す
+
     ws[f'T{TOTAL_ROW}'] = format_comma(res['max_payment'])
     # サービス合計
     ws[f'Z{TOTAL_ROW}'] = format_comma(res['service_units'])
     # 給付管理単位数：限度額適用前
     ws[f'AC{TOTAL_ROW}'] = format_comma(res['service_units'])
     # 区分支給額限度 基準を超える 単位数
-    if res['over_units']:
+    if res['over_units']: # 0なら記述しない
         ws[f'AO{TOTAL_ROW}'] = format_comma(res['over_units'])
     # 区分支給限度 基準内 単位数：限度額を適用した後
     ws[f'AO{TOTAL_ROW}'] = format_comma(res['within_units'])
     # 区分支給 単位数
-    ws[f'AT{TOTAL_ROW}'] = format_comma(res['total_cost'])
-    ws[f'AX{TOTAL_ROW}'] = format_comma(res['benefit_amount'])
+    ws[f'AT{TOTAL_ROW}'] = format_comma(res['total_cost']) # 341,882
+    ws[f'AX{TOTAL_ROW}'] = format_comma(res['benefit_amount']) #307,693
     ws[f'BD{TOTAL_ROW}'] = format_comma(res['user_amount'])
-
+    if res['over_units']: # 0なら出力しない
+        logger.info(
+            f"over_units: {res['over_units']} "
+            f"利用者が全額負担の単位が存在します"
+        )
+        ws[f'BG{TOTAL_ROW}'] = format_comma(res['over_units'])
 
 def _write_bikou(ws, pub):
     """生活保護の場合、備考欄に法別番号・公費負担者番号・公費受給者番号を書く"""
@@ -188,8 +205,3 @@ def _write_bikou(ws, pub):
     ]
     for i, text in enumerate(bikou_text):
         ws[f'AK{BIKOU_START_ROW + i}'] = text
-
-
-def _sum_int(rows, key):
-    """明細の指定キーを整数として合計する"""
-    return sum(int(row.get(key) or 0) for row in rows)

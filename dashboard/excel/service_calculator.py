@@ -158,34 +158,38 @@ class ServiceSheetCalculator:
 
             cost_total = _yen(covered_units, self.unit_price)
             benefit_amount = _yen(cost_total, self.benefit_rate)
+            rate = (100 - self.benefit_rate) or 10
             item.update({
                 "cost_total": cost_total,
                 "benefit_rate": self.benefit_rate,
                 "benefit_amount": benefit_amount,
-                "user_share_amount": (
-                    0 if self.is_hogo else cost_total - benefit_amount
-                ),
+                "user_share_amount":  (cost_total + 5) // rate,
+                "over_units": max(0, self.total_act_price_unit - self.max_payment),
             })
 
         return sheet2_rows
 
     def get_results(self):
-        # 1. 限度額振り分け
+        # 1. 限度額振り分け（処遇改善加算は限度額判定の対象外）
         within_units = min(self.total_act_price_unit, self.max_payment)
         over_units = max(0, self.total_act_price_unit - self.max_payment)
 
-        # 2. デフォルト加算
+        # 2. デフォルト加算（処遇改善加算）
         def_unit = 0
         if self.office.default_service:
             def_unit = self.office.default_service.get_unit(within_units)
-        def_total_cost = _yen(def_unit, self.office.unit_price)
 
-        # 3. 金額算出：単位を合計してから円にする
-        total_cost = _yen(within_units + def_unit, self.office.unit_price)
-        over_cost = _yen(over_units, self.office.unit_price)
+        # 3. 表示する集計行ごとに金額を計算する 行ごとに1円未満を切り捨ててから最終合計を足す
+        service_total_cost = _yen(within_units, self.unit_price)
+        def_total_cost = _yen(def_unit, self.unit_price)
+        total_cost = service_total_cost + def_total_cost
+        over_cost = _yen(over_units, self.unit_price)
 
-        # 4. 保険請求分
-        benefit_amount = _yen(total_cost, self.benefit_rate)
+        # 4. 各集計行で保険給付額を計算し、その後に合算
+        service_benefit_amount = _yen(service_total_cost, self.benefit_rate)
+        def_benefit_amount = _yen(def_total_cost, self.benefit_rate)
+
+        benefit_amount = service_benefit_amount + def_benefit_amount
         raw_user_share = total_cost - benefit_amount
 
         if self.is_hogo:
@@ -201,8 +205,8 @@ class ServiceSheetCalculator:
             'actual_count': self.actual_days,                   # 日数
             'within_units': within_units,                       # 限度内単位数
             'over_units': over_units,                           # 限度額を超えた単位数
-            'total_cost': total_cost,                           # 費用合計(10割)
-            'benefit_amount': benefit_amount,                   # 保険請求
+            'total_cost': total_cost,                           # 集計行ごとの費用総額の合計(10割)
+            'benefit_amount': benefit_amount,                   # 集計行ごとの保険給付額の合計
             'public_amount': public_amount,                     # 公費請求
             'user_amount': raw_user_share + over_cost,          # 本人支払(超過分込)
             'user_share_amount': user_share_amount + over_cost, # React用 本人支払(超過分込)
@@ -210,7 +214,7 @@ class ServiceSheetCalculator:
             'def_total_cost': def_total_cost,
             'plan_items': self.plan_items,
             'addon_items': self.addon_items,
-            'total_units': self.total_act_price_unit + def_unit, #処遇改善を含む単位数
+            'total_units': self.total_act_price_unit + def_unit, # 処遇改善を含む単位数
             'service_units': self.total_act_price_unit,
             'schedule_plan_items': self.schedule_plan_items,
             'max_payment': self.max_payment,                    # 区分限度額
