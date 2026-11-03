@@ -442,14 +442,31 @@ def delete_plan(request, plan_id):
             for other in other_plans
         }
 
+        logger.info(
+            "加算付け替え開始: source_plan=%s other_plan_ids=%s source_day_count=%s",
+            plan.pk,
+            [other.pk for other in other_plans],
+            len(source_actual),
+        )
+
         # actual_json[日付]["addon"]
         # 削除操作で月次Recordごと削除する。
         # 別のPlanがあるとき加算を同日対応のPlanへ移す。
-        if len(other_plans) == 1:
+        if other_plans:
             for day_key, source_day in source_actual.items():
-                source_addons = (source_day or {}).get("addon") or {}
-                if not source_addons:
-                    continue
+                if not isinstance(source_day, dict):
+                    return Response({
+                        "status": "error",
+                        "code": "ADDON_REASSIGN_FAILED",
+                        "message": f"{day_key}日の実績データ形式が不正なため削除を中止しました。",
+                    }, status=status.HTTP_409_CONFLICT)
+
+                source_addons = source_day.get("addon")
+
+                # addonキーなし／Noneは「加算なし」として扱う
+                if source_addons is None:
+                    source_addons = {}
+
                 if not isinstance(source_addons, dict):
                     return Response({
                         "status": "error",
@@ -457,24 +474,43 @@ def delete_plan(request, plan_id):
                         "message": f"{day_key}日の加算データ形式が不正なため削除を中止しました。",
                     }, status=status.HTTP_409_CONFLICT)
 
+                if not source_addons:
+                    continue
+
                 day = _parse_day(day_key)
                 if day is None:
+                    logger.warning(
+                        "加算付け替え中止: source_plan=%s day_key=%s reason=invalid_day",
+                        plan.pk, day_key,
+                    )
                     return Response({
                         "status": "error",
                         "code": "ADDON_REASSIGN_FAILED",
                         "message": f"日付キー {day_key} を解釈できないため削除を中止しました。",
                     }, status=status.HTTP_409_CONFLICT)
 
+                logger.debug(
+                    "加算付け替え対象: source_plan=%s day=%s addon_count=%s addon_ids=%s",
+                    plan.pk, day_key, len(source_addons), sorted(source_addons.keys()),
+                )
                 candidates = []
                 for other in other_plans:
                     # 認定期間外のPlanには付け替えない。
-                    if not other.can_edit_day(day):
-                        continue
-
+                    can_edit = other.can_edit_day(day)
                     target_day = _get_day(target_actual[other.pk], day_key)
-                    is_actual_main = target_day["main"] == "1"
-                    is_scheduled = target_schedules[other.pk].get(day_key) == "1"
-                    if not (is_actual_main or is_scheduled):
+                    main_value = target_day.get("main")
+                    schedule_value = target_schedules[other.pk].get(day_key)
+                    is_actual_main = str(main_value) == "1"
+                    is_scheduled = str(schedule_value) == "1"
+
+                    logger.debug(
+                        "加算移し先判定: source_plan=%s target_plan=%s day=%s "
+                        "can_edit=%s main=%r scheduled=%r target_addon_count=%s",
+                        plan.pk, other.pk, day_key, can_edit, main_value,
+                        schedule_value, len(target_day.get("addon", {})),
+                    )
+
+                    if not can_edit or not (is_actual_main or is_scheduled):
                         continue
 
                     candidates.append((other, is_actual_main))
@@ -482,32 +518,53 @@ def delete_plan(request, plan_id):
                 # 実績mainがあるPlanを優先し、それ以外は予定日が一致するPlanを使う。
                 actual_candidates = [item[0] for item in candidates if item[1]]
                 eligible = actual_candidates or [item[0] for item in candidates]
+                logger.debug(
+                    "加算候補確定: source_plan=%s day=%s candidate_ids=%s "
+                    "actual_candidate_ids=%s eligible_ids=%s",
+                    plan.pk, day_key,
+                    [item[0].pk for item in candidates],
+                    [item.pk for item in actual_candidates],
+                    [item.pk for item in eligible],
+                )
 
                 if not eligible:
                     # 認定期間などの条件に合う移し先がなければ、加算は引き継がずPlanを削除する。
+                    logger.warning(
+                        "加算未付け替え: source_plan=%s day=%s addon_count=%s reason=no_eligible_target",
+                        plan.pk, day_key, len(source_addons),
+                    )
                     unassigned_addon_count += len(source_addons)
                     continue
                 if len(eligible) > 1:
-                    return Response({
-                        "status": "error",
-                        "code": "ADDON_REASSIGN_FAILED",
-                        "message": (
-                            f"{day}日の加算を移せるPlanを一意に決められません。"
-                            "データは変更していません。加算を確認してから再実行してください。"
-                        ),
-                    }, status=status.HTTP_409_CONFLICT)
+                    logger.info(
+                        "複数の加算移し先候補からPK最小を選択: source_plan=%s day=%s eligible_ids=%s selected_plan=%s",
+                        plan.pk, day_key,
+                        [item.pk for item in eligible], eligible[0].pk,
+                    )
 
+                # other_plansはPK昇順。候補が複数なら、優先後の候補からPK最小を選ぶ。
                 target = eligible[0]
                 target_day = _get_day(target_actual[target.pk], day_key)
+                duplicate_addon_ids = set(source_addons) & set(target_day["addon"])
                 addons_to_move = {
                     addon_id: addon_name
                     for addon_id, addon_name in source_addons.items()
                     if addon_id not in target_day["addon"]
                 }
+                if duplicate_addon_ids:
+                    logger.warning(
+                        "同一加算IDは移し替えをスキップ: source_plan=%s target_plan=%s day=%s duplicate_addon_ids=%s",
+                        plan.pk, target.pk, day_key, sorted(duplicate_addon_ids),
+                    )
+                logger.info(
+                    "加算付け替え決定: source_plan=%s target_plan=%s day=%s moved_addon_ids=%s skipped_duplicate_ids=%s",
+                    plan.pk, target.pk, day_key,
+                    sorted(addons_to_move.keys()), sorted(duplicate_addon_ids),
+                )
                 target_day["addon"].update(addons_to_move)
                 _put_day(target_actual[target.pk], day_key, target_day)
                 reassigned_addon_count += len(addons_to_move)
-        else: # 移し先を選ばないケース（他Planが0件または複数件）で、Planと一緒に削除される加算数を数える。
+        else: # 他Planが0件のため移し先がなく、Planと一緒に削除される加算数を数える。
             for source_day in source_actual.values():
                 if not isinstance(source_day, dict):
                     continue
@@ -547,7 +604,6 @@ def delete_plan(request, plan_id):
         "record_deleted": record_deleted,
         "summary": summary,
     })
-
 
 @api_view(["GET"])
 def service_summary(request, user_id):

@@ -73,7 +73,6 @@ def create_plan(request,user_id):
                         'start_time': form.cleaned_data['start_time'],
                         'end_time': form.cleaned_data['end_time'],
                         'addon_pattern': addon_ids,
-                        "over_cost": 0,
                     }
                 )
                 if use_previous_pattern and not created:
