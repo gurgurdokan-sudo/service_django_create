@@ -341,6 +341,7 @@ def update_schedule(request, plan_id):
 def create_plan(request, user_id):
     office = getattr(request.user, "office", None)
     if office is None:
+        logger.error('ログインユーザーの事業所が設定されていません')
         return _error("ログインユーザーの事業所が設定されていません", 400)
 
     target_user = get_object_or_404(UseUser, id=user_id)
@@ -353,12 +354,14 @@ def create_plan(request, user_id):
 
     start, end = parse_time(start_time), parse_time(end_time)
     if start is None or end is None:
+        logger.error('時刻の形式が正しくありません')
         return _error("時刻の形式が正しくありません")
     if end <= start:
         return _error("終了時刻は開始時刻より後にしてください")
 
     cert = target_user.get_certificate(year, month)
     if cert is None:
+        logger.error('対象月の認定情報がありません')
         return _error("対象月の認定情報がありません")
     change_cert = target_user.latest_changed_cert(year, month)
     if change_cert and change_cert.limit_start.day > 1:
