@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 from decimal import Decimal, ROUND_DOWN
 from dashboard.models.const import CARE_LEVEL_LIMIT_UNITS, benefit_limit_rate
 class ServiceSheetCalculator:
@@ -34,6 +37,19 @@ class ServiceSheetCalculator:
         self.addon_items = []
         self.schedule_plan_items = []
         self._calculate_base_and_addons()
+
+        logger.debug(
+            "Service sheet calculation: year=%s month=%s care_level=%s "
+            "limit_type=%s max_payment=%s benefit_limit=%s benefit_rate=%s->%s",
+            self.year,
+            self.month,
+            cert.care_level,
+            cert.limit_amount_type,
+            self.max_payment,
+            cert.benefit_limit_flag,
+            float(cert.benefit_rate),
+            self.benefit_rate,
+        )
 
     def _calculate_base_and_addons(self):
         actual_days = set()
@@ -172,14 +188,13 @@ class ServiceSheetCalculator:
         benefit_amount = _yen(total_cost, self.benefit_rate)
         raw_user_share = total_cost - benefit_amount
 
-        if self.is_hogo:
-            # 生活保護：本来の負担分を「公費」へ、本人は「0円」
-            public_amount = raw_user_share
-            user_share_amount = 0
-        else:
+        # if self.is_hogo:
+        #     # 生活保護：本来の負担分を「公費」へ、本人は「0円」
+        #     public_amount = raw_user_share
+        #     user_share_amount = 0
+        # else:
             # 一般：公費は「0円」、本人が「負担分」を払う
-            public_amount = 0
-            user_share_amount = raw_user_share
+        user_share_amount = raw_user_share
 
         return {
             'actual_count': self.actual_days,                   # 日数
@@ -187,7 +202,7 @@ class ServiceSheetCalculator:
             'over_units': over_units,                           # 限度額を超えた単位数
             'total_cost': total_cost,                           # 費用合計(10割)
             'benefit_amount': benefit_amount,                   # 保険請求
-            'public_amount': public_amount,                     # 公費請求
+            # 'public_amount': public_amount,                   # 公費請求
             'user_share_amount': user_share_amount + over_cost, # 本人支払(超過分込)
             'def_unit': def_unit,                               # 改善加算の単位数
             'def_total_cost': def_total_cost,

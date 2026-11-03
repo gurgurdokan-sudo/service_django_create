@@ -26,7 +26,7 @@
     "fields": {
         "code": "6107",
         "type": "rate",
-        "rate": 0.09,
+        "rate": 0.115,
         "service_name": "通所介護処遇改善加算Ⅱ",
         "unit": 0,
         "category": "通所介護",

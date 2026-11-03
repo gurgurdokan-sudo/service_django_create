@@ -76,9 +76,9 @@ class UseUser(models.Model):
         ).first()
 
     @property
-    def max_separate_payment(care_level: str) -> int | None:
+    def max_separate_payment(self) -> int | None:
         """要介護度に応じた区分支給限度基準額（単位）を返す"""
-        return CARE_LEVEL_LIMIT_UNITS.get(care_level)
+        return CARE_LEVEL_LIMIT_UNITS.get(self.care_level)
 
     @property
     def care_level(self):  # certificateとlimit_endは存在する前提

@@ -44,14 +44,14 @@ def write_billing_sheet(ws, calc, res, user, office, created_date, pub):
     # Plan・加算の集計は1行だけ出し、単位数を括弧で囲む
     if detail_rows:
         summary_item = _build_summary_item(detail_rows, calc, res)
-        write_billing_line(ws, current_row, summary_item, office)
+        write_billing_line(ws, current_row, summary_item, office, kind=TOTAL)
         current_row += 1
 
     # 集計行の直下にデフォルト加算（処遇改善加算）を出す
     default_item = _build_default_item(office, calc, res)
     if default_item is not None:
         logger.info(f'Writing default add-on service to state with {current_row=}')
-        write_billing_line(ws, current_row, default_item, office, kind=DETAIL)
+        write_billing_line(ws, current_row, default_item, office, kind=DEFAULT)
         current_row += 1
 
     # 20行目は最終合計欄のため、明細・集計行がここまで達したらエラーにする
@@ -112,22 +112,24 @@ def write_billing_line(ws, row, item, office, kind=DETAIL):
         ws[f'AO{row}'] = format_comma(item.get('within_units'))
 
     ws[f'AR{row}'] = office.unit_price
+    ws[f"AR{row}"].number_format = "0.00"
     ws[f'AT{row}'] = format_comma(item.get('cost_total'))
     benefit_rate = float(item.get('benefit_rate') or 0)
+    # 給付率
     ws[f'AW{row}'] = int(benefit_rate * 100) if benefit_rate else ''
+    # 保険/事業費 請求額
     ws[f'AX{row}'] = format_comma(item.get('benefit_amount'))
-    ws[f'BD{row}'] = format_comma(item.get('user_share_amount'))  # 保険/事業対象分
+    ws[f'BD{row}'] = format_comma(int(item.get('cost_total') / office.unit_price))  # 保険/事業対象分
 
 def _build_summary_item(detail_rows, calc, res):
     """明細を合算し、サービス種類の集計行（地域密着通所合計）を作る"""
+    cost_total = _sum_int(detail_rows, 'cost_total')
     return {
         'name': SERVICE_TYPE_TOTAL_NAME,
         'subtotal': _sum_int(detail_rows, 'subtotal'),
-        'cost_total': _sum_int(detail_rows, 'cost_total'),
+        'cost_total': cost_total,
         'benefit_rate': calc.benefit_rate,
         'benefit_amount': _sum_int(detail_rows, 'benefit_amount'),
-        'public_amount': _sum_int(detail_rows, 'public_amount'),
-        'user_share_amount': _sum_int(detail_rows, 'user_share_amount'),
         'within_units': res['within_units'],
     }
 
@@ -159,9 +161,15 @@ def _write_total_row(ws, res):
     """最終合計行（20行目固定）を書く"""
     # 費用総額・保険給付額・利用者負担は各明細行に出力済み
     # 明細の直後に合計金額を重ねて書くと二重計上になるため、全体合計は20行目だけに出す
+    ws[f'T{TOTAL_ROW}'] = format_comma(res['max_payment'])
+    # サービス合計
+    ws[f'Z{TOTAL_ROW}'] = format_comma(res['total_cost'])
+    # 給付管理 単位数
+    ws[f'AC{TOTAL_ROW}'] = format_comma(res['total_cost'])
+    # 区分支給 単位数
     ws[f'AT{TOTAL_ROW}'] = format_comma(res['total_cost'])
     ws[f'AX{TOTAL_ROW}'] = format_comma(res['benefit_amount'])
-    ws[f'BG{TOTAL_ROW}'] = format_comma(res['user_share_amount'])
+    ws[f'BD{TOTAL_ROW}'] = format_comma(res['user_share_amount'])
 
 
 def _write_bikou(ws, pub):

@@ -347,4 +347,4 @@ class ServicePlan(models.Model):
             self.save()
 
     def __str__(self):
-        return f"{self.user.name} - {self.year}年{self.month}月"
+        return f"{self.user.name} - {self.year}年{self.month}月 - {self.service_name} - {self.care_level}"
