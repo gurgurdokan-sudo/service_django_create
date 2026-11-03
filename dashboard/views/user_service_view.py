@@ -169,7 +169,7 @@ def _build_user_info(user, year: int, month: int, office) -> dict[str, Any]:
 
     limit_amount_value = const.max_separate_payment(certificate.care_level)
     if certificate.limit_amount_type == '任意': # 任意なら上書き
-        limit_amount_value = _related_value(certificate, "limit_amount_value"),
+        limit_amount_value = _related_value(certificate, "limit_amount_value")
     info.update({
         "care_level": certificate.care_level,
         "care_start": _related_value(certificate, "limit_start"),
