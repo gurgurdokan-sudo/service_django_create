@@ -211,6 +211,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (response.ok) {
                     location.reload(); // 成功したら新しいPlanを表示する
                     console.log('POST RESPONSE OK');
+                }else{
+                    const err = await response.json()
+                    alert(err.message);
                 }
                 return;
             }
