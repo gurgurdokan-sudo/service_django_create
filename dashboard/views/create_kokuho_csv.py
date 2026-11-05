@@ -7,6 +7,7 @@ from django.utils import timezone
 from django.http import FileResponse, HttpResponse
 from django.views.decorators.http import require_POST
 
+from dashboard.context_processors import get_office
 from dashboard.kokuho.exporter import CsvExporter
 from dashboard.kokuho.builder import ClaimBuilder
 from dashboard.kokuho.validator import ClaimValidator
@@ -28,7 +29,7 @@ def create_kokuho_csv(request):
     except (TypeError, ValueError):
         return HttpResponse("請求年月が不正です", status=400)
 # 情報が不足していたらエラーで返す
-    office = Office.objects.get(pk=1)  # todo request.userからオフィスを取得する
+    office = get_office(request)
 
     # Export前にModelを作成
     monthly_records = ServiceMonthlyRecord.objects.filter(
@@ -42,7 +43,6 @@ def create_kokuho_csv(request):
         return HttpResponse("未確定のサービス提供表があります", status=400)
 
     try:
-    
         records = ClaimBuilder(office=office, year=year, month=month).build()
         # ClaimValidatorをCSV出力前確認
         is_valid, error_list = ClaimValidator().validate(records)

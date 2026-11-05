@@ -6,6 +6,7 @@ from django.http import JsonResponse, HttpResponseBase
 from django.urls import reverse
 from django.utils.http import urlencode
 
+from dashboard.context_processors import get_office
 from dashboard.models import ServiceMonthlyRecord, OfficeMonthlyBilling, Office
 from dashboard.utils import BreadcrumbUtil  
 import logging
@@ -31,9 +32,7 @@ def created_service_list_api(request):
     year = int(request.GET.get("year"))
     month = int(request.GET.get("month"))
 
-    # todo 事業所（Office）の取得方法（ログインユーザーに紐づく事業所）
-    # office = request.user.office
-    office = Office.objects.get(id=1)  # 事業所ID  
+    office = get_office(request)
 
     billing_date = date(year, month, 1)
 

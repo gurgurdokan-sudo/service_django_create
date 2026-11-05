@@ -1,4 +1,7 @@
 from django.conf import settings
+from logging import getLogger
+logger = getLogger(__name__)
+
 from employees.permissions import has_delete_permission
 
 def django_env(request):
@@ -10,3 +13,14 @@ def delete_permission(request):
     }
 def vite(request):
     return {'VITE_DEV': getattr(settings, 'VITE_DEV', False)}
+def get_office(request):
+    user = request.GET.get('user')
+    try:
+        if user.office:
+            return {'office': office}
+        else:
+            logger.error('Officeが設定されていないユーザ')
+            return {'office': None}
+    except Exception as e:
+        logger.error('Officeが設定されていないユーザ')
+        raise ValueError('Officeが設定されていないユーザ')

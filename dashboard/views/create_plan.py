@@ -5,13 +5,12 @@ from django.db import transaction
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.urls import reverse
-
+from dashboard.context_processors import get_office
 from dashboard.models import (
     UseUser,
     ServicePlan,
     ServiceMaster,
     ServiceMonthlyRecord,
-    Office,
     )
 from dashboard.forms import PlanForm
 from dashboard.utils import BreadcrumbUtil
@@ -66,7 +65,7 @@ def create_plan(request,user_id):
                 # ServiceMonthlyRecord の作成
                 monthly_record,created = ServiceMonthlyRecord.objects.get_or_create(
                     user=user,
-                    office=Office.objects.get(id=1), #todo: 事業所を選択できるようにする
+                    office=get_office(request),
                     date=date(year, month, 1),
                     defaults={
                         'weekday_pattern': [int(i) for i in weekdays],

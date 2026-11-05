@@ -137,7 +137,7 @@ def _write_plan_rows(ws, row, plan, columns, office, insurance_addons):
                 present = addon_key in {str(addon_id) for addon_id in addons}
             else:
                 present = addon_name in {str(name) for name in addons}
-            ws[f'{col}{row}'] = plan.schedule_dict.get(day, '')  # 予定はPlanと同じ
+            ws[f'{col}{row}'] = '1' if present else '' # 実績と同じ
             ws[f'{col}{row + 1}'] = '1' if present else ''
             addon_count += int(present)
 

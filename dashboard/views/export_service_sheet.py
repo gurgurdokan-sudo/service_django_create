@@ -8,6 +8,7 @@ from django.contrib import messages
 from django.shortcuts import get_object_or_404, redirect
 from django.utils import timezone
 
+from dashboard.context_processors import get_office
 from dashboard.models import UseUser
 from dashboard.excel.excel_writer import get_service_sheet_path, create_service_sheet
 from dashboard.views.user_service_view import build_user_service_context
@@ -56,7 +57,7 @@ def export_excel(request,user_id):
     year = int(request.GET.get('year', now.year))
     month = int(request.GET.get('month', now.month))
     logger.info(f'{year}-{month}をExcel出力')
-    context = build_user_service_context(user_id=user_id,year=year,month=month)
+    context = build_user_service_context(office=get_office(request),user_id=user_id,year=year,month=month)
     try:
         create_service_sheet(context)
     except PermissionError as pe:

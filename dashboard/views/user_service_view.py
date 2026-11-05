@@ -8,13 +8,13 @@ from django.utils import timezone
 from django.contrib import messages
 from django.urls import reverse
 
+from dashboard.context_processors import get_office
 from dashboard.utils import BreadcrumbUtil
 from dashboard.models import (
     UseUser,
     ServicePlan,
     ServiceMaster,
     AddOnService,
-    Office,
     ServiceMonthlyRecord,
     Certificate,
     const
@@ -24,10 +24,9 @@ from dashboard.calendar_table import get_month_days
 import logging
 logger = logging.getLogger(__name__)
 
-def build_user_service_context(user_id, year, month):
+def build_user_service_context(office, user_id, year, month):
     """画面やExcelに渡すcontextを組み立てる"""
     now = timezone.now()
-    office:Office = Office.objects.filter(id=1).first() #todoログインユーザー事務所
     default = AddOnService.objects.get(pk=office.default_service.pk)
 
     target:UseUser = (UseUser.objects.select_related('care_manager').get(id=user_id))
@@ -243,7 +242,7 @@ def prev_month_plan(request, user_id):
             f'{url}?year={year}&month={prev_month}'
             )
     logger.info(f'prev{year}-{prev_month}のサービス提供票に遷移')
-    context = build_user_service_context(user_id=user_id,year=year,month=prev_month)
+    context = build_user_service_context(office=get_office(request), user_id=user_id,year=year,month=prev_month)
     return render(request,'dashboard/user_service.html',context)
 
 #予定通り
