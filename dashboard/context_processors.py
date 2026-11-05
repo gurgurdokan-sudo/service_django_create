@@ -19,7 +19,11 @@ def vite(request):
 
 def display_office(request):
     office = get_office(request)
-    name = str(office.name).split(" ")[1]
+    try:
+        name = str(office.name).split(" ")[1]
+    except IndexError:
+        logger.error('事務所名が不正')
+        office = None
     if office:
         return {'display_office': name}
     return {'display_office': None}

@@ -25,7 +25,6 @@ def write_billing_sheet(ws, calc, res, user, office, created_date, pub):
     ws['AW1'] = created_date_str
     ws['AH2'] = user.insured_number
     ws['AW2'] = user.name
-    office.simple_name = office.name.split()[:2]
 
     # Sheet2はPlan・加算の明細を出し、全体集計とデフォルト加算を続ける
     current_row = FIRST_DETAIL_ROW

@@ -129,7 +129,12 @@ class Office(models.Model):
         help_text='xapp- で始まるトークン（Socket Mode接続用）',
     )
 
-
+    @property
+    def simple_name(self):
+        try:
+            return self.name.split()[:2]
+        except IndexError:
+            raise IndexError('事務所名がスペース区切りできない')
     @property # 地域区分ごとの単位単価テーブル
     def unit_price(self):
         return UNIT_PRICE_TABLE.get(self.municipality.area_grade, 1)
