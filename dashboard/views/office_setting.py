@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect
 
+from dashboard.context_processors import get_office
 from dashboard.forms import OfficeSettingForm
 from employees.permissions import delete_permission_required
 
@@ -7,7 +8,7 @@ import logging
 logger = logging.getLogger(__name__)
 @delete_permission_required
 def office_setting(request):
-    office = getattr(request.user, 'office', None)
+    office = get_office(request)
     display_labels = {}
     if office:
         for field in office._meta.fields:

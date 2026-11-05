@@ -1,5 +1,8 @@
 from django.conf import settings
 from logging import getLogger
+
+from dashboard.models import Office
+
 logger = getLogger(__name__)
 
 from employees.permissions import has_delete_permission
@@ -13,14 +16,21 @@ def delete_permission(request):
     }
 def vite(request):
     return {'VITE_DEV': getattr(settings, 'VITE_DEV', False)}
+
+def display_office(request):
+    office = get_office(request)
+    name = str(office.name).split(" ")[1]
+    if office:
+        return {'display_office': name}
+    return {'display_office': None}
+
 def get_office(request):
-    user = request.GET.get('user')
-    try:
-        if user.office:
-            return {'office': office}
-        else:
-            logger.error('Officeが設定されていないユーザ')
-            return {'office': None}
-    except Exception as e:
-        logger.error('Officeが設定されていないユーザ')
-        raise ValueError('Officeが設定されていないユーザ')
+    user = getattr(request, "user", None)
+    office = getattr(user, "office", None)
+
+    if office is None:
+        logger.warning(
+            "リクエストユーザーに事業所が設定されていません: user_id=%s",
+            getattr(request.user, "pk", None),
+        )
+    return office
