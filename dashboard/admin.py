@@ -1,6 +1,6 @@
 from django.contrib import admin
-from dashboard.models import UseUser, ServiceMaster, ServicePlan, ServiceMonthlyRecord, \
-    AddOnService, Office, Municipality, CareManager, Certificate, PublicAssistance, OfficeMonthlyBilling
+from dashboard.models import UseUser, ServiceMaster, ServicePlan, ServiceMonthlyRecord, AddOnService,\
+    Office, Municipality, CareManager, Certificate, PublicAssistance, OfficeMonthlyBilling, OfficeAddOnSetting
 
 admin.site.register(ServiceMaster)
 admin.site.register(ServicePlan)
@@ -9,6 +9,7 @@ admin.site.register(Municipality)
 admin.site.register(CareManager)
 admin.site.register(Certificate)
 admin.site.register(PublicAssistance)
+admin.site.register(OfficeAddOnSetting)
 
 @admin.register(OfficeMonthlyBilling)
 class OfficeMonthlyBillingAdmin(admin.ModelAdmin):

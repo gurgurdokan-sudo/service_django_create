@@ -11,5 +11,6 @@ from .master import (
         ServiceMaster,
         AddOnService,
         Municipality,
-        Office
+        Office,
+        OfficeAddOnSetting
     )

@@ -19,14 +19,18 @@ def vite(request):
 
 def display_office(request):
     office = get_office(request)
-    try:
-        name = str(office.name).split(" ")[1]
-    except IndexError:
-        logger.error('事務所名が不正')
-        office = None
+    display_name = None
+
     if office:
-        return {'display_office': name}
-    return {'display_office': None}
+        try:
+            name_parts = str(office.name or "").split(" ")
+            display_name = name_parts[1]
+        except IndexError:
+            logger.error("事務所名が不正: スペースが含まれていません")
+    else:
+        logger.warning("事務所が存在しません")
+
+    return {"display_office": display_name}
 
 def get_office(request):
     user = getattr(request, "user", None)

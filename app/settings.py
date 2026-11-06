@@ -100,6 +100,7 @@ ADMIN_REORDER = (
             'dashboard.Office',
             'dashboard.ServiceMaster',
             'dashboard.AddOnService',
+            'dashboard.OfficeAddOnSetting',
         )
     },    
     'diary',       # 「DIARY」を表示

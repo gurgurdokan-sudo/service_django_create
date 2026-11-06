@@ -104,7 +104,12 @@ class Municipality(models.Model):
 class Office(models.Model):
     class Meta:
         verbose_name_plural = "事務所マスタ"
-
+    addons = models.ManyToManyField(
+        "AddOnService",
+        through="OfficeAddOnSetting",
+        related_name="offices",
+        blank=True,
+    )
     name = models.CharField(max_length=100)
     office_number = models.IntegerField()
     municipality = models.ForeignKey('Municipality',verbose_name='保険者（地域）', on_delete=models.PROTECT)
@@ -144,3 +149,25 @@ class Office(models.Model):
    
     def __str__(self):
         return self.name
+
+class OfficeAddOnSetting(models.Model):
+    office = models.ForeignKey(
+        Office,
+        on_delete=models.CASCADE,
+        related_name="addon_settings",
+    )
+    addon = models.ForeignKey(
+        AddOnService,
+        on_delete=models.CASCADE,
+        related_name="office_settings",
+    )
+    is_enabled = models.BooleanField(default=True)
+    is_archived = models.BooleanField(default=False)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["office", "addon"],
+                name="unique_office_addon_setting",
+            ),
+        ]
