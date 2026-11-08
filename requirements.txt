@@ -10,3 +10,4 @@ python-dateutil
 django-modeladmin-reorder
 pydantic
 dotenv
+pypdf

@@ -72,6 +72,22 @@ def build_user_service_context(office, user_id, year, month):
     logger.info(f'{year}-{month}のサービス提供票の確認状態を取得')
     record:ServicePlan = ServiceMonthlyRecord.objects.filter(user=target, date=date(year, month, 1)).first()
 
+    claim_invoice_profile = {
+        "title": "利用者負担額請求書",
+        "service_name": "通所介護サービス利用料",
+        "recipient_name": target.name,
+        "postal_address": f"{target.display_postal_code or ""} {target.address or ""}",
+        "user_phone": target.phone or "",
+        "office_name": office.name,
+        "office_address": f'{office.display_postal_code} {office.address}',
+        # 任意項目
+        "office_phone": office.phone or "",
+        "registration_no": office.office_number,
+        "payment_terms": "当月末締め翌月末払い",
+        "bank_account": "", #todo 事務所口座番号
+        "due_date": "月末払い",
+        "bikou": "",
+    }
     addon_service = AddOnService.objects.filter(
         office_settings__office=office,
         office_settings__is_enabled=True,
@@ -86,7 +102,8 @@ def build_user_service_context(office, user_id, year, month):
         'calendar': get_month_days(year, month),
         'dis_year': year,
         'dis_month': month,
-
+        # 請求PDF用
+        'claim_invoice_profile': claim_invoice_profile,
         # 画面用　batchアラート
         'monthly_record': target.get_monthly_record(year, month), # サービス提供票の確定状態
         'public_assistance':target.get_public_assistance(year,month),

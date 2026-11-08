@@ -16,7 +16,8 @@ class UserForm(forms.ModelForm):
 
     class Meta:
         model = UseUser
-        fields = ['care_manager', 'name', 'name_kana', 'insured_number', 'date_of_birth', 'gender', 'notes']
+        fields = ['care_manager', 'name', 'name_kana', 'insured_number', 'date_of_birth',
+                  'gender', 'phone', 'postal_code', 'address', 'notes']
         labels = {
             'name': '氏名',
             'name_kana': 'フリガナ',

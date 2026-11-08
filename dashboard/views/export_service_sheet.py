@@ -9,9 +9,11 @@ from django.shortcuts import get_object_or_404, redirect
 from django.utils import timezone
 
 from dashboard.context_processors import get_office
+from dashboard.excel.excel_utils import convert_xlsx_to_pdf
 from dashboard.models import UseUser
 from dashboard.excel.excel_writer import get_service_sheet_path, create_service_sheet
 from dashboard.excel.claim_excel_writer import create_claim_invoice_excel, get_claim_invoice_path
+from dashboard.services.summary import build_service_summary
 from dashboard.views.user_service_view import build_user_service_context
 
 import logging
@@ -62,7 +64,7 @@ def download_claim_invoice_pdf(request, user_id):
     month = int(request.GET["month"])
     xlsx_path, filename = get_claim_invoice_path(user, year, month)
 
-    pdf_bytes = convert_xlsx_to_pdf(xlsx_path)  # 一時領域で変換
+    pdf_bytes = convert_xlsx_to_pdf(xlsx_path)
     response = HttpResponse(pdf_bytes, content_type="application/pdf")
     response["Content-Disposition"] = (
         f"attachment; filename*=UTF-8''{quote(filename.replace('.xlsx', '.pdf'))}"
@@ -76,7 +78,16 @@ def export_excel(request,user_id):
     context = build_user_service_context(office=get_office(request),user_id=user_id,year=year,month=month)
     try:
         create_service_sheet(context)
-        create_claim_invoice_excel(context)
+        summary = build_service_summary(
+            context["user"], year, month, save=False
+        )
+        create_claim_invoice_excel(
+            summary=summary,
+            profile=context["claim_invoice_profile"],
+            user=context["user"],
+            year=year,
+            month=month,
+        )
     except PermissionError as pe:
         logger.warning(f"Excel出力時のパーミッションエラー (ファイルが開かれています): {pe}")
         return redirect('dashboard:user_list')

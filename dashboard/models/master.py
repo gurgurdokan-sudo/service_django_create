@@ -134,6 +134,11 @@ class Office(models.Model):
                     通所介護（大規模Ⅱ） → 81"""
         ) #種類コード: 78 （地域密着型通所介護）
 
+    # 請求書利用フィールド
+    phone = models.CharField(max_length=20, null=True, blank=True)
+    postal_code = models.CharField(max_length=20, null=True, blank=True)
+    address = models.CharField(max_length=100, null=True, blank=True)
+
     # Slack連携設定（事業所ごとにボットを持てるようにする。値は管理サイトから設定）
     _slack_bot_token = models.CharField(
         'Slack Botトークン', max_length=100, blank=True, default='',
@@ -143,7 +148,10 @@ class Office(models.Model):
         'Slack Appトークン', max_length=100, blank=True, default='',
         help_text='xapp- で始まるトークン（Socket Mode接続用）',
     )
-
+    @property
+    def display_postal_code(self):
+        postal_code = self.postal_code
+        return f'〒{postal_code[:3]}-{postal_code[3:]}'
     @property
     def simple_name(self):
         try:

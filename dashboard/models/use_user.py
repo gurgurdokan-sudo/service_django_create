@@ -25,6 +25,10 @@ class UseUser(models.Model):
     GENDER_CHOICES = [('male', '男性'), ('female', '女性'), ]
     gender = models.CharField(max_length=10, choices=GENDER_CHOICES, verbose_name='性別')
 
+    # 請求書利用フィールド
+    phone = models.CharField(max_length=20, null=True, blank=True)
+    postal_code = models.CharField(max_length=20, null=True, blank=True)
+    address = models.CharField(max_length=100, null=True, blank=True)
     notes = models.TextField(blank=True, default="", verbose_name='メモ')
 
     def __str__(self):
@@ -43,6 +47,10 @@ class UseUser(models.Model):
         return self.monthly_records.filter(
             date=date(year, month, 1),
         )
+    @property
+    def display_postal_code(self):
+        postal_code = self.postal_code
+        return f'〒{postal_code[:3]}-{postal_code[3:]}'
     @property
     def birth_date_value(self) ->str:
         return (

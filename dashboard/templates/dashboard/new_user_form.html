@@ -94,6 +94,36 @@
       </div>
     </div>
 
+    {# --- 電話番号 --- #}
+    <div class="label-input-err">
+      <div class="label-input">
+        {{ form.phone.label_tag }}{{ form.phone }}
+      </div>
+      <div class="post-err">
+          {% for error in form.phone.errors %}{{ error }}{% endfor %}
+      </div>
+    </div>
+
+    {# --- 郵便番号 --- #}
+    <div class="label-input-err">
+      <div class="label-input">
+        {{ form.postal_code.label_tag }}{{ form.postal_code }}
+      </div>
+      <div class="post-err">
+          {% for error in form.postal_code.errors %}{{ error }}{% endfor %}
+      </div>
+    </div>
+
+    {# --- 住所 --- #}
+    <div class="label-input-err">
+      <div class="label-input">
+        {{ form.address.label_tag }}{{ form.address }}
+      </div>
+      <div class="post-err">
+          {% for error in form.address.errors %}{{ error }}{% endfor %}
+      </div>
+    </div>
+
     {# --- メモ --- #}
     <div class="label-input-err">
       <div class="label-input">
