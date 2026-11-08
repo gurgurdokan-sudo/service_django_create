@@ -208,6 +208,8 @@ def _insurance_summary(record, plans, res):
         "addons": addons,
         "addon_units": addon_units,
         "rate_addon": rate_addon,
+        # 請求書で「費用総額＝単位数×1単位あたり単価」を表示するために返す。
+        "unit_price": str(record.office.unit_price),
     }
 
 # ------------------------------------------------------------

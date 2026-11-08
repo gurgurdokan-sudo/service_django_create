@@ -57,20 +57,21 @@ def create_claim_invoice_excel(*, summary, profile, user, year, month):
     sheet["B6"] = profile["postal_address"]
     sheet["B7"] = profile.get("user_phone", "")
     sheet["F5"] = total
+    sheet["F4"] = profile.get("issue_date")
 
     _write_detail_rows(sheet, items)
 
     sheet["F20"] = subtotal
     sheet["F21"] = tax
     sheet["F22"] = total
-    sheet["C24"] = profile.get("payment_terms", "")
-    sheet["C25"] = profile.get("bank_account", "")
+    sheet["C24"] = profile.get("claim_period")
+    sheet["C25"] = profile.get("medical_expense_amount")
     # E24:E27は見出しなので、値はF列に書く。
     sheet["F24"] = profile["office_name"]
     sheet["F25"] = profile["office_address"]
     sheet["F26"] = profile.get("office_phone", "")
     sheet["F27"] = profile.get("registration_no", "")
-    # 備考欄はB30:F30（結合セル）。未指定ならテンプレートの文言を残す。
+    # お知らせ・備考欄はB30:F30（結合セル）。
     if profile.get("bikou"):
         sheet["B30"] = profile["bikou"]
     _apply_print_setup(sheet)
@@ -97,6 +98,7 @@ def create_claim_invoice_excel(*, summary, profile, user, year, month):
 
     logger.info("請求書Excelを作成: %s", filename)
     return path, filename
+
 
 def build_claim_items(summary):
     """請求書の明細行と小計（円）を返す。
@@ -141,7 +143,30 @@ def build_claim_items(summary):
         raise ValueError("保険分の利用者負担額の内訳が一致しません。")
 
     if items:
-        unit_price = float(insurance["unit_price"])
+        unit_price_value = insurance.get("unit_price")
+        if unit_price_value is None:
+            plans = insurance.get("plans") or []
+            addons = insurance.get("addons") or []
+            rate_addon = insurance.get("rate_addon") or {}
+            logger.error(
+                "請求書の単価欠落: insurance_keys=%s, plans=%s, addons=%s, default_addon=%s",
+                sorted(insurance.keys()),
+                [(p.get("code"), p.get("name")) for p in plans],
+                [
+                    (a.get("code"), a.get("name"), a.get("unit"), a.get("subtotal"))
+                    for a in addons
+                ],
+                {
+                    "code": rate_addon.get("code"),
+                    "name": rate_addon.get("name"),
+                    "units": rate_addon.get("units"),
+                },
+            )
+            raise ValueError(
+                "summary['insurance']['unit_price'] がありません。"
+                "上のログで保険内の明細・加算を確認してください。"
+            )
+        unit_price = float(unit_price_value)
         covered_units = int(record.get("within_units") or 0) + rate_units
         items.append(_yen_item(
             "費用総額（保険給付対象）", total_cost,
