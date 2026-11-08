@@ -350,4 +350,4 @@ class OfficeSettingForm(forms.ModelForm):
 
     class Meta:
         model = Office
-        fields = ['_slack_bot_token', '_slack_app_token']
+        fields = ['_phone', '_postal_code', '_address', '_bank_account', '_slack_bot_token', '_slack_app_token']

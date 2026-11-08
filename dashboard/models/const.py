@@ -106,7 +106,6 @@ CLAIM_PROFILES = {
 # ClaimBuilder が項目レイアウトまで実装済みの区分
 SUPPORTED_CLAIM_PROFILES = {"care_home"}
 
-
 def get_claim_profile(service_type_code):
     """サービス種類コードから請求区分を返す。未対応なら ValueError"""
     service = SERVICE_TYPES.get(int(service_type_code))
@@ -116,3 +115,6 @@ def get_claim_profile(service_type_code):
     if key not in SUPPORTED_CLAIM_PROFILES:
         raise ValueError(f"請求区分 {key} のCSV出力は未対応です")
     return {"key": key, **CLAIM_PROFILES[key]}
+
+# 加算の請求書で'食'と出すList
+SYOKU_ADDONS = ['昼食代','捕食','夕食代']

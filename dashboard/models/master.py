@@ -1,3 +1,4 @@
+import re
 from decimal import Decimal, ROUND_HALF_UP
 
 from django.db import models
@@ -135,9 +136,10 @@ class Office(models.Model):
         ) #種類コード: 78 （地域密着型通所介護）
 
     # 請求書利用フィールド
-    phone = models.CharField(max_length=20, null=True, blank=True)
-    postal_code = models.CharField(max_length=20, null=True, blank=True)
-    address = models.CharField(max_length=100, null=True, blank=True)
+    _phone = models.CharField(verbose_name='電話番号',max_length=20, null=True, blank=True)
+    _postal_code = models.CharField(verbose_name='郵便番号',max_length=20, null=True, blank=True)
+    _address = models.CharField(verbose_name='住所',max_length=100, null=True, blank=True)
+    _bank_account = models.CharField(verbose_name='口座情報',max_length=100, null=True, blank=True)
 
     # Slack連携設定（事業所ごとにボットを持てるようにする。値は管理サイトから設定）
     _slack_bot_token = models.CharField(
@@ -150,8 +152,13 @@ class Office(models.Model):
     )
     @property
     def display_postal_code(self):
-        postal_code = self.postal_code
-        return f'〒{postal_code[:3]}-{postal_code[3:]}'
+        digits = re.sub(r"\D", "", self._postal_code or "")
+
+        if not digits:
+            return ""
+        if len(digits) == 7:
+            return f"〒{digits[:3]}-{digits[3:]}"
+        return f"〒{self.postal_code.strip()}"
     @property
     def simple_name(self):
         try:

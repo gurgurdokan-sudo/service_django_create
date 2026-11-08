@@ -6,6 +6,7 @@ from pathlib import Path
 from django.conf import settings
 from openpyxl import load_workbook
 
+from dashboard.models.const import SYOKU_ADDONS
 import logging
 logger = logging.getLogger(__name__)
 TEMPLATE_PATH = 'templatesExcel/claim_template.xlsx'
@@ -28,25 +29,37 @@ def create_claim_invoice_excel(*, summary, profile, user, year, month):
     self_pay = summary.get("self_pay") or {"items": [], "total": 0}
     self_pay_total = int(self_pay.get("total") or 0)
 
+    # ServiceSummaryPanel.jsxと同様、insurance.plansの実績回数を合算して表示する。
+    insurance_plans = (summary.get("insurance") or {}).get("plans", [])
+    insurance_actual_count = sum(
+        int(plan.get("actual_count") or 0)
+        for plan in insurance_plans
+    )
+
     items = []
     if insurance_share:
         items.append({
             "name": "介護保険利用者負担額",
-            "quantity": 1,
-            "unit": "式",
-            "unit_price": insurance_share,
+            "quantity": insurance_actual_count,
+            "unit": "回",
+            # summaryには1回あたりの自己負担額がないため単価は空欄にする。
+            "unit_price": None,
             "subtotal": insurance_share,
         })
     for item in self_pay.get("items", []):
+        unit = "回"
+        name = item["name"]
+        if name in SYOKU_ADDONS:
+            unit = '食'
         items.append({
-            "name": item["name"],
+            "name": name,
             "quantity": item["count"],
-            "unit": item.get("apply_unit") or "回",
+            "unit": unit,
             "unit_price": item["price"],
             "subtotal": item["subtotal"],
         })
-    if len(items) > 6:
-        raise ValueError(f"明細がテンプレートの6行を超えています（{len(items)}件）。")
+    if len(items) > 10:
+        raise ValueError(f"明細がテンプレートの10行を超えています（{len(items)}件）。")
 
     subtotal = insurance_share + self_pay_total
     # 提示されたsummaryには税額がないため、税額はsummaryに追加されるまで0扱い。
@@ -56,7 +69,6 @@ def create_claim_invoice_excel(*, summary, profile, user, year, month):
     workbook = load_workbook(Path(settings.BASE_DIR) / TEMPLATE_PATH)
     sheet = workbook["Sheet1"]
 
-    # 事前に確認したテンプレートのセルへ表示情報をセット
     sheet["B2"] = profile["title"]
     sheet["B3"] = profile["service_name"]
     sheet["B5"] = profile["recipient_name"]
@@ -75,17 +87,17 @@ def create_claim_invoice_excel(*, summary, profile, user, year, month):
         sheet.cell(row=row, column=5, value=item["unit_price"])
         sheet.cell(row=row, column=6, value=item["subtotal"])
 
-    sheet["F16"] = subtotal
-    sheet["F17"] = tax
-    sheet["F18"] = total
-    sheet["C20"] = profile.get("payment_terms", "")
-    sheet["C21"] = profile.get("bank_account", "")
-    sheet["C22"] = profile.get("due_date", "")
-    sheet["E20"] = profile["office_name"]
-    sheet["E21"] = profile["office_address"]
-    sheet["E22"] = profile.get("office_phone", "")
-    sheet["E23"] = profile.get("registration_no", "")
-    sheet["B27"] = profile.get("bikou", "")
+    sheet["F20"] = subtotal
+    sheet["F21"] = tax
+    sheet["F22"] = total
+    sheet["C24"] = profile.get("payment_terms", "")
+    sheet["B26"] = profile.get("bank_account", "")
+    sheet["C26"] = profile.get("due_date", "")
+    sheet["E24"] = profile["office_name"]
+    sheet["E25"] = profile["office_address"]
+    sheet["E26"] = profile.get("office_phone", "")
+    sheet["E27"] = profile.get("registration_no", "")
+    sheet["B28"] = profile.get("bikou", "")
 
     buffer = BytesIO()
     workbook.save(buffer)

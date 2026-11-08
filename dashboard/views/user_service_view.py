@@ -79,13 +79,12 @@ def build_user_service_context(office, user_id, year, month):
         "postal_address": f"{target.display_postal_code or ""} {target.address or ""}",
         "user_phone": target.phone or "",
         "office_name": office.name,
-        "office_address": f'{office.display_postal_code} {office.address}',
+        "office_address": f'{office.display_postal_code} {office._address}',
         # 任意項目
-        "office_phone": office.phone or "",
+        "office_phone": office._phone or "",
         "registration_no": office.office_number,
         "payment_terms": "当月末締め翌月末払い",
-        "bank_account": "", #todo 事務所口座番号
-        "due_date": "月末払い",
+        "bank_account": f"振込先: {office._bank_account}", #todo 事務所口座番号
         "bikou": "",
     }
     addon_service = AddOnService.objects.filter(

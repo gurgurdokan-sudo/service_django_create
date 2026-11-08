@@ -1,5 +1,7 @@
 {% extends "dashboard/base/base.html" %}
+{% load static %}
 {% block css %}
+    <link rel="stylesheet" href="{% static 'dashboard/css/temp.css' %}">
     <style>
         .addon-list-item {
           display: grid;
@@ -29,7 +31,7 @@
 {% block body %}
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <div class="container py-4" style="max-width: 1000px;">
-
+{% include "dashboard/components/messages.html" %}
   <!-- タイトル -->
   <div class="header-container mb-4 border-bottom pb-2" style="border-color: #2c3e50 !important;">
     <h2 class="page-title m-0" style="color: #2c3e50; font-weight: bold; border-left: 8px solid #2c3e50; padding-left: 15px;">事務所設定</h2>
@@ -187,7 +189,6 @@
       </form>
     </div>
   </div>
-
 </div>
 {% block script %}
     {% load static %}
