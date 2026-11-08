@@ -22,7 +22,7 @@ async function archiveAddonSetting(button) {
       },
       body: JSON.stringify({
         addon_id: button.dataset.addonId,
-        is_archived: false,
+        is_archived: true,
       }),
     });
     const result = await response.json();
