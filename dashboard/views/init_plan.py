@@ -1,24 +1,44 @@
-from dashboard.models import ServiceMaster
+from dashboard.context_processors import get_office
+from dashboard.models import ServiceMaster, OfficeAddOnSetting
 from django.shortcuts import render,redirect, get_object_or_404
 from django.http import HttpResponse
 from django.contrib import messages
 from dashboard.models import AddOnService
 
 def init_plan(request):
+    # office = get_office(request)
+    # addons = AddOnService.objects.exclude(
+    #     office_settings__office=office,
+    # )
+    #
+    # settings = [
+    #     OfficeAddOnSetting(
+    #         office=office,
+    #         addon=addon,
+    #         is_enabled=True,
+    #         is_archived=False,
+    #     )
+    #     for addon in addons
+    # ]
+    #
+    # OfficeAddOnSetting.objects.bulk_create(
+    #     settings,
+    #     ignore_conflicts=True,  # office/addonの一意制約に対する重複防止
+    # )
     # AddOnService.objects.all().delete()
     # services = [
-    #     AddOnService(code='0',type='unit', service_name='値引き', price=-1000, unit=0, category='自費', is_tax=False, insurance_type='self_pay', apply_unit='per_service', medical_deduction=False),
+    #     AddOnService(code='0',type='unit', service_name='値引き', price=-1000, category='自費', is_tax=False, insurance_type='self_pay', apply_unit='per_service', medical_deduction=False),
     #     AddOnService(code='0',type='unit', service_name='時間サービス', price=1000, category='自費', is_tax=False, insurance_type='self_pay', apply_unit='per_service', medical_deduction=False),
     #     AddOnService(code='0',type='unit', service_name='昼食代', price=690, category='食費', is_tax=False, insurance_type='self_pay', apply_unit='per_day', medical_deduction=False),
-    #     AddOnService(code='0',type='unit', service_name='おやつ代', price=150, unit=0, category='食費', is_tax=False, insurance_type='self_pay', apply_unit='per_day', medical_deduction=False),
+    #     AddOnService(code='0',type='unit', service_name='おやつ代', price=150, category='食費', is_tax=False, insurance_type='self_pay', apply_unit='per_day', medical_deduction=False),
     #     AddOnService(code='0',type='unit', service_name='洗濯代', price=120, category='自費', is_tax=False, insurance_type='self_pay', apply_unit='per_day', medical_deduction=False),
     #     AddOnService(code='0',type='unit', service_name='教養娯楽費', price=50, category='自費', is_tax=False, insurance_type='self_pay', apply_unit='per_day', medical_deduction=False),
-    #     AddOnService(code='0',type='unit', service_name='パット代', price=100, unit=0, category='消耗品', is_tax=True, insurance_type='self_pay', apply_unit='per_service', medical_deduction=False),
-    #     AddOnService(code='0',type='unit', service_name='キャンセル料', price=1000, unit=0, category='自費', is_tax=False, insurance_type='self_pay', apply_unit='per_service', medical_deduction=False),
-    #     AddOnService(code='0',type='unit', service_name='夕食代', price=690, unit=0, category='食費', is_tax=False, insurance_type='self_pay', apply_unit='per_day', medical_deduction=False),
-    #     AddOnService(code='0',type='unit', service_name='宿泊費', price=6800, unit=0, category='宿泊', is_tax=True, insurance_type='self_pay', apply_unit='per_service', medical_deduction=False),
+    #     AddOnService(code='0',type='unit', service_name='パット代', price=100, category='消耗品', is_tax=True, insurance_type='self_pay', apply_unit='per_service', medical_deduction=False),
+    #     AddOnService(code='0',type='unit', service_name='キャンセル料', price=1000, category='自費', is_tax=False, insurance_type='self_pay', apply_unit='per_service', medical_deduction=False),
+    #     AddOnService(code='0',type='unit', service_name='夕食代', price=690, category='食費', is_tax=False, insurance_type='self_pay', apply_unit='per_day', medical_deduction=False),
+    #     AddOnService(code='0',type='unit', service_name='宿泊費', price=6800, category='宿泊', is_tax=True, insurance_type='self_pay', apply_unit='per_service', medical_deduction=False),
     #     AddOnService(code='0',type='unit', service_name='捕食', price=150, category='食費', is_tax=False, insurance_type='self_pay', apply_unit='per_service', medical_deduction=False),
-    #     # AddOnService(code='6107',type='rate', rate=0.115, service_name='通所介護処遇改善加算Ⅱ', unit=0, category='通所介護',insurance_type='insurance',apply_unit='monthly'),
+    #     # AddOnService(code='6107',type='rate', rate=0.115, service_name='通所介護処遇改善加算Ⅱ', category='通所介護',insurance_type='insurance',apply_unit='monthly'),
     #     # 延長・感染症・災害（所定単位数に対する％加算・減算は単位を0として登録）
     #     AddOnService(code='6600',type='rate', service_name='通所介護感染症災害3％加算', unit=0, category='通所介護', insurance_type='insurance', apply_unit='per_service'),
     #     AddOnService(code='6601', service_name='通所介護延長加算1', type='unit', unit=50, category='通所介護', insurance_type='insurance', apply_unit='per_service'),

@@ -85,9 +85,9 @@ class AddOnService(models.Model):
     @property
     def unit_or_price(self):
         if self.unit is not None:
-            return self.unit
+            return f'{self.unit} 単位'
         if self.price is not None:
-            return self.price
+            return f'{self.price} 円'
         if self.rate is not None:
             return f"{self.rate100.normalize():f}%"
         return "-"

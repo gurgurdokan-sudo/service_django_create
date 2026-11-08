@@ -66,15 +66,21 @@
           <table class="table table-hover align-middle m-0">
             <thead class="table-light">
               <tr>
-                <th class="ps-4">加算名</th>
-                <th class="text-center" style="width: 150px;">モーダルに表示</th>
-                <th class="text-center" style="width: 100px;">一覧から非表示</th>
+                <th class="text-truncate">加算名</th>
+                <th class="text-truncate" style="width: 150px;">種別</th>
+                <th class="text-truncate" style="width: 150px;">保険種別</th>
+                <th class="text-truncate text-end" style="width: 150px;">単位・価格</th>
+                <th class="text-center text-truncate" style="width: 200px;">モーダルに表示</th>
+                <th class="text-center text-truncate" style="width: 200px;">非表示</th>
               </tr>
             </thead>
             <tbody>
               {% for setting in addon_settings %}
                 <tr>
-                  <td class="ps-4 fw-bold text-secondary">{{ setting.addon.service_name }}</td>
+                  <td class="addon-list-cell fw-bold text-secondary" title="{{ setting.addon.service_code }}">{{ setting.addon.service_name }}</td>
+                  <td class="addon-list-cell fw-bold text-secondary" title="{{ setting.addon.type }}">{{ setting.addon.get_type_display }}</td>
+                  <td class="addon-list-cell fw-bold text-secondary" title="{{ setting.addon.insurance_type }}">{{ setting.addon.get_insurance_type_display }}</td>
+                  <td class="addon-list-cell fw-bold text-secondary text-end" title="{{ setting.addon.unit_or_price }}">{{ setting.addon.unit_or_price }}</td>
                   <td class="text-center">
                     <div class="form-check form-switch d-flex justify-content-center">
                       <input class="form-check-input" type="checkbox" name="enabled_addon_ids"
@@ -87,7 +93,7 @@
                   </td>
                   <td class="text-center">
                     <button type="button" class="btn btn-sm btn-outline-danger border-0"
-                            title="この事業所の設定一覧から非表示"
+                            title="設定一覧から非表示"
                             data-api-url="{% url 'dashboard:office_addon_setting_api' %}"
                             data-addon-id="{{ setting.addon_id }}"
                             onclick="archiveAddonSetting(this)">🗑
