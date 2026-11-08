@@ -1,3 +1,4 @@
+import re
 from calendar import monthrange
 from datetime import date
 
@@ -42,25 +43,35 @@ class UseUser(models.Model):
             start_date__lte=target_date,
             end_date__gte=target_date
         ).first()
+
     def get_monthly_record(self, year, month):
         """指定した日付時点で有効な生保データを1件返す"""
         return self.monthly_records.filter(
             date=date(year, month, 1),
         )
+
     @property
     def display_postal_code(self):
-        postal_code = self.postal_code
-        return f'〒{postal_code[:3]}-{postal_code[3:]}'
+        digits = re.sub(r"\D", "", self.postal_code or "")
+
+        if not digits:
+            return ""
+        if len(digits) == 7:
+            return f"〒{digits[:3]}-{digits[3:]}"
+        return f"〒{self.postal_code.strip()}"
+
     @property
-    def birth_date_value(self) ->str:
+    def birth_date_value(self) -> str:
         return (
             self.date_of_birth.strftime("%Y%m%d")
             if self.date_of_birth
             else ""
         )
+
     @property
-    def gender_disp(self) ->str:
+    def gender_disp(self) -> str:
         return '1' if self.gender == 'male' else '2'
+
     @property
     def is_public_assistance_for_month(self):
         """ 前月で生保だったか判定する """
@@ -94,7 +105,7 @@ class UseUser(models.Model):
         cert = self.current_certificate
         return cert.care_level if cert else '認定情報更新が必要'
 
-    def get_certificate(self, year, month) :
+    def get_certificate(self, year, month):
         """ 指定した日付時点で有効な認定データを1件返す """
         year = int(year)
         month = int(month)

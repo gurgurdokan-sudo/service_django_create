@@ -105,7 +105,7 @@ class ServiceSheetCalculator:
                     continue
                 if addon_obj.unit is None:
                     raise ValueError(
-                        f"加算単位が設定されていません: {addon_obj.code}"
+                        f"加算単位が設定されていません: {addon_obj.service_code}"
                     )
 
                 add_count = len(value.get("days", []))
@@ -120,7 +120,7 @@ class ServiceSheetCalculator:
                     "plan_id": plan.id,
                     "name": addon_obj.service_name,
                     "code": (
-                        f"{self.office.service_type_code}{addon_obj.code}"
+                        f"{self.office.service_type_code}{addon_obj.service_code}"
                     ),
                     "unit": add_unit,
                     "count": add_count,

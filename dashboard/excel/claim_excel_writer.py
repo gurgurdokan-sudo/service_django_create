@@ -62,7 +62,7 @@ def create_claim_invoice_excel(*, summary, profile, user, year, month):
         raise ValueError(f"明細がテンプレートの10行を超えています（{len(items)}件）。")
 
     subtotal = insurance_share + self_pay_total
-    # 提示されたsummaryには税額がないため、税額はsummaryに追加されるまで0扱い。
+    # todo summaryに追加するまで0扱い。
     tax = int(summary.get("tax") or 0)
     total = subtotal + tax
 

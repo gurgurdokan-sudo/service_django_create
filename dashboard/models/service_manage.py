@@ -53,7 +53,7 @@ class ServiceMonthlyRecord(models.Model):
                 if not addon_obj:
                     continue
 
-                code = str(addon_obj.code)
+                code = str(addon_obj.service_code)
                 if code not in addon_summary:
                     addon_summary[code] = {
                         "addon": addon_obj,
