@@ -152,12 +152,12 @@ class Office(models.Model):
 
 class OfficeAddOnSetting(models.Model):
     office = models.ForeignKey(
-        Office,
+        'Office',
         on_delete=models.CASCADE,
         related_name="addon_settings",
     )
     addon = models.ForeignKey(
-        AddOnService,
+        'AddOnService',
         on_delete=models.CASCADE,
         related_name="office_settings",
     )
@@ -171,3 +171,9 @@ class OfficeAddOnSetting(models.Model):
                 name="unique_office_addon_setting",
             ),
         ]
+    def __str__(self):
+        return (
+            f"{self.addon.service_name} "
+            f"モーダル表示={self.is_enabled} "
+            f"事業所表示={self.is_archived}"
+        )

@@ -72,6 +72,11 @@ def build_user_service_context(office, user_id, year, month):
     logger.info(f'{year}-{month}のサービス提供票の確認状態を取得')
     record:ServicePlan = ServiceMonthlyRecord.objects.filter(user=target, date=date(year, month, 1)).first()
 
+    addon_service = AddOnService.objects.filter(
+        office_settings__office=office,
+        office_settings__is_enabled=True,
+        office_settings__is_archived=False,
+    )
     return {
         'office': office,
         'default': default,
@@ -93,7 +98,7 @@ def build_user_service_context(office, user_id, year, month):
         'year_range': range(min(now.year, year) - 1, max(now.year, year) + 2),
         'month_range': range(1, 13),
         # 画面用　モーダルに出すPlan/Addon
-        'addon_service': AddOnService.objects.all(),
+        'addon_service': addon_service,
         'service_masters': service_masters,  # userの対象全プラン
     }
 

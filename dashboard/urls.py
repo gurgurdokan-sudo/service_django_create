@@ -1,5 +1,5 @@
 from django.urls import path
-from .views.office_setting import office_setting
+from .views.office_setting import office_setting, update_office_addon_setting
 from .views.user_profile_view import (
     user_create,
     public_assistance_create,
@@ -23,6 +23,7 @@ from . import api
 app_name = 'dashboard'
 urlpatterns = [
     path('office_setting/', office_setting, name='office_setting'),
+    path('office_addon_setting_api/', update_office_addon_setting, name='office_addon_setting_api'),
     path('users/', user_list, name='user_list'),
     path('users/caremana_create', care_mana_create, name='care_mana_create'),
     path('user/<int:cm_id>/user_create/', user_create, name='create'),
