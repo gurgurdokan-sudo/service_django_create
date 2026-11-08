@@ -327,14 +327,27 @@ async function toExcel(userId){
     }
   }
 }
-function exportExcel(userId){
+function exportExcel(button){
     const btn = document.getElementById('btn-export');
     btn.disabled = true;
     btn.style.opacity = 0.5;
-    const thisYear = Number(document.getElementById('dis_year').value);
-    const thisMonth = Number(document.getElementById('dis_month').value);
-    console.log(`exportExcel${thisYear}${thisMonth}`);
-    window.location.href = `/user/${userId}/export/?dis_year=${thisYear}&dis_month=${String(thisMonth).padStart(2,'0')}`
+    const year = Number(document.getElementById('dis_year').value);
+    const month = Number(document.getElementById('dis_month').value);
+    console.log(`exportExcel${year}${month}`);
+    const params = new URLSearchParams({
+        dis_year: String(year),
+        dis_month: String(month).padStart(2, '0'),
+    });
+    window.location.href = `${button.dataset.url}?${params}`;
+}
+function downloadClaimInvoicePdf(button) {
+  const year = Number(document.getElementById('dis_year').value);
+  const month = Number(document.getElementById('dis_month').value);
+  const params = new URLSearchParams({
+    dis_year: String(year),
+    dis_month: String(month).padStart(2, '0'),
+  });
+  window.location.href = `${button.dataset.url}?${params}`;
 }
 function animateProgressBar(){
     const bar = document.getElementById('loadingBar');

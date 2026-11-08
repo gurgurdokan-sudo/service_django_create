@@ -3,6 +3,7 @@
 {% load get_item %}
 {% block css %}
   <link rel="stylesheet" href="{% static 'dashboard/css/style.css' %}">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 <style>
   #service-summary-root{width: 100%; max-width: 1500px;min-width: 1000px;overflow: hidden;}
   .summary-table { table-layout: fixed; width: 100%; max-width: 1500px; }
@@ -278,19 +279,28 @@
     ></div>
   <div class="d-flex justify-content-end gap-2 mt-4 mb-5" style="max-width: 1500px;">
     {% if plans %}
-      <button type="button" id="btn-excel" 
-              class="btn btn-success {% if confirmed %}disabled{% endif %}" 
+      <button type="button" id="btn-excel"
+              class="btn btn-success {% if confirmed %}disabled{% endif %}"
               onclick="toExcel({{user.id}})">
         <i class="bi bi-file-earmark-spreadsheet me-1" aria-hidden="true"></i>
         Excelを作成
       </button>
     {% endif %}
 
-    <button type="button" id="btn-export" 
-            class="btn btn-primary {% if not confirmed %}disabled{% endif %}" 
-            onclick="exportExcel({{user.id}})">
+    <button type="button" id="btn-export"
+            class="btn btn-primary {% if not confirmed %}disabled{% endif %}"
+            onclick="exportExcel(this)">
       <i class="bi bi-download me-1" aria-hidden="true"></i>
       Excelを出力
+    </button>
+
+    <button type="button" id="btn-claim-pdf"
+            class="btn btn-danger"
+            {% if not confirmed %}disabled{% endif %}
+            data-url="{% url 'dashboard:download_claim_invoice_pdf' user.id %}"
+            onclick="downloadClaimInvoicePdf(this)">
+      <i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i>
+      請求書PDFを出力
     </button>
   </div>
 
@@ -304,12 +314,12 @@
           <div id="loadingBar"
               class="progress-bar progress-bar-striped progress-bar-animated bg-success"
               role="progressbar"
-              style="width: 10%">
-          </div>
+              style="width: 10%"></div>
         </div>
       </div>
     </div>
   </div>
+</div>
 {% endblock %}
 
 {% block script %}

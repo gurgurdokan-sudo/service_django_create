@@ -156,7 +156,7 @@ def _build_default_item(office, calc, res):
     default_share =  default_cost - default_benefit
     return {
         'name': default_service.service_name,
-        'code': f"{office.service_type_code}{default_service.code}",
+        'code': f"{office.service_type_code}{default_service.service_code}",
         'unit': '',
         'count': '',
         'subtotal': default_units,

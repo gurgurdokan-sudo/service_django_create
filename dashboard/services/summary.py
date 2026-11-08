@@ -116,7 +116,8 @@ def _aggregate_plan_rows(plans, plan_items):
 
     for plan, item in _match_plan_items(plans, plan_items):
         item = item or {}
-        code = str(item.get("code") or plan.service_code)
+
+        code = str(item.get("service_code") or plan.service_code)
         unit = _to_int(item.get("unit", plan.unit))
         schedule_count = _to_int(plan.get_total_count("schedule"))
         actual_count = _to_int(item.get("count"))
@@ -195,7 +196,7 @@ def _insurance_summary(record, plans, res):
     default = record.office.default_service
     if default:
         rate_addon = {
-            "code": f"{record.office.service_type_code}{default.code}",
+            "code": f"{record.office.service_type_code}{default.service_code}",
             "name": default.service_name,
             "rate": str(default.rate),
             "units": _to_int(res.get("def_unit")),

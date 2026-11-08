@@ -10,7 +10,7 @@ from .views.user_profile_view import (
     user_delete,
     )
 from .views.certificate_views import certificate_update, certificate_create, certificate_edit
-from .views.export_service_sheet import download_service_sheet, export_excel
+from .views.export_service_sheet import download_service_sheet, export_excel, download_claim_invoice_pdf
 from .views.user_service_view import user_service, prev_month_plan, service_act
 from .views.create_plan import create_plan
 from .views.init_plan import init_plan
@@ -33,6 +33,7 @@ urlpatterns = [
     path('user/<int:user_id>/ps_create/', public_assistance_create, name='public_assistance_create'),
     path('user/<int:user_id>/ps_edit/<int:public_assistance_id>/', public_assistance_edit, name='public_assistance_edit'),
     path('user/<int:user_id>/create_sheet/', export_excel, name='create_sheet'),
+    path("users/<int:user_id>/claim-invoice/pdf/", download_claim_invoice_pdf, name="download_claim_invoice_pdf"),
     path('user/<int:user_id>/export/', download_service_sheet, name='download_service_sheet'),
     path('user/<int:user_id>/detail/', user_detail, name='detail'),
     path('user/<int:user_id>/edit/', user_update, name='update'),

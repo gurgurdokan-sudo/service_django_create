@@ -11,6 +11,7 @@ from django.utils import timezone
 from dashboard.context_processors import get_office
 from dashboard.models import UseUser
 from dashboard.excel.excel_writer import get_service_sheet_path, create_service_sheet
+from dashboard.excel.claim_excel_writer import create_claim_invoice_excel, get_claim_invoice_path
 from dashboard.views.user_service_view import build_user_service_context
 
 import logging
@@ -52,6 +53,21 @@ def download_service_sheet(request, user_id):
         response['Content-Disposition'] = f"attachment; filename*=UTF-8''{quote(filename)}"
         return response
 
+def download_claim_invoice_pdf(request, user_id):
+    office = get_office(request)
+    # 実際のUseUserとOfficeの紐付けフィールドで必ず権限を確認する
+    user = get_object_or_404(UseUser, id=user_id)
+
+    year = int(request.GET["year"])
+    month = int(request.GET["month"])
+    xlsx_path, filename = get_claim_invoice_path(user, year, month)
+
+    pdf_bytes = convert_xlsx_to_pdf(xlsx_path)  # 一時領域で変換
+    response = HttpResponse(pdf_bytes, content_type="application/pdf")
+    response["Content-Disposition"] = (
+        f"attachment; filename*=UTF-8''{quote(filename.replace('.xlsx', '.pdf'))}"
+    )
+    return response
 def export_excel(request,user_id):
     now = timezone.now()
     year = int(request.GET.get('year', now.year))
@@ -60,6 +76,7 @@ def export_excel(request,user_id):
     context = build_user_service_context(office=get_office(request),user_id=user_id,year=year,month=month)
     try:
         create_service_sheet(context)
+        create_claim_invoice_excel(context)
     except PermissionError as pe:
         logger.warning(f"Excel出力時のパーミッションエラー (ファイルが開かれています): {pe}")
         return redirect('dashboard:user_list')
