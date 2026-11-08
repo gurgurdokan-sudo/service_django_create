@@ -1,5 +1,31 @@
 {% extends "dashboard/base/base.html" %}
-
+{% block css %}
+    <style>
+        .addon-list-item {
+          display: grid;
+          grid-template-columns: minmax(0, 2.2fr) minmax(0, 1.1fr) minmax(0, 1.5fr) minmax(0, 1fr) auto;
+          gap: 1rem;
+          align-items: center;
+        }
+        .addon-list-cell {
+          min-width: 0;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        .addon-list-header {
+          font-weight: 700;
+          color: #6c757d;
+          background: #f8f9fa;
+        }
+        .addon-list-action { margin: 0; white-space: nowrap; }
+        @media (max-width: 600px) {
+          .addon-list-item { grid-template-columns: minmax(0, 1fr) auto; column-gap: .75rem; }
+          .addon-list-header { display: none; }
+          .addon-list-action { grid-column: 2; grid-row: 1 / span 4; }
+        }
+      </style>
+{% endblock css %}
 {% block body %}
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <div class="container py-4" style="max-width: 1000px;">
@@ -89,10 +115,13 @@
     </div>
     <div class="card-body p-0">
       <ul class="list-group list-group-flush">
-         {% for addon in available_addons %}
-          <li class="list-group-item d-flex justify-content-between align-items-center p-3">
-            <span class="fw-bold text-secondary">{{ addon.service_name }}</span>
-            <form method="post" class="m-0" onsubmit="return confirmAddAddon(event, this)">
+        {% for addon in available_addons %}
+          <li class="list-group-item addon-list-item p-3">
+            <span class="addon-list-cell fw-bold text-secondary" title="{{ addon.service_name }}">{{ addon.service_name }}</span>
+            <span class="addon-list-cell fw-bold text-secondary" title="{{ addon.get_type_display }}">{{ addon.get_type_display }}</span>
+            <span class="addon-list-cell fw-bold text-secondary" title="{{ addon.get_insurance_type_display }}">{{ addon.get_insurance_type_display }}</span>
+            <span class="addon-list-cell fw-bold text-secondary" title="{{ addon.unit_or_price }}">{{ addon.unit_or_price }}</span>
+            <form method="post" class="addon-list-action" onsubmit="return confirmAddAddon(event, this)">
               {% csrf_token %}
               <input type="hidden" name="action" value="add_addon_setting">
               <input type="hidden" name="addon_id" value="{{ addon.pk }}">

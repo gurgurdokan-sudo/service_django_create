@@ -24,14 +24,18 @@ def office_setting(request):
         return redirect("dashboard:user_list")
 
     if request.method == "POST":
-        # 加算設定の非表示化はPATCH APIでis_archived=Trueに更新する
+        # 加算設定のアーカイブはPATCH APIでis_archived=Trueに更新
         action = request.POST.get("action")
 
         if action == "save_addon_settings":
             enabled_ids = set(request.POST.getlist("enabled_addon_ids"))
             with transaction.atomic():
+                # 通常画面に表示している設定だけを更新し、アーカイブ済み行は変更しない
                 settings: list[OfficeAddOnSetting] = list(
-                    OfficeAddOnSetting.objects.filter(office=office)
+                    OfficeAddOnSetting.objects.filter(
+                        office=office,
+                        is_archived=False,
+                    )
                 )
                 changed = []
                 for setting in settings:
@@ -67,7 +71,7 @@ def office_setting(request):
     else:
         form = OfficeSettingForm(instance=office)
 
-    # is_archived=Trueの設定は通常画面に出さない
+    # is_archived=Trueの設定は出さない
     addon_settings = (
         OfficeAddOnSetting.objects
         .filter(office=office, is_archived=False)
