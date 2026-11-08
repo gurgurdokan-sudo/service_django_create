@@ -58,7 +58,7 @@ class AddOnService(models.Model):
                     通所介護（大規模Ⅰ） → 80
                     通所介護（大規模Ⅱ） → 81"""
         ) #種類コード: 78 （地域密着型通所介護）
-    code = models.CharField(max_length=20)
+    service_code = models.CharField(max_length=20)
     type = models.CharField(choices=[("unit", "単位"), ("rate", "率")])
     unit = models.IntegerField( null=True, blank=True)
     rate = models.DecimalField(max_digits=5, decimal_places=3, null=True, blank=True)

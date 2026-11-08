@@ -8,17 +8,16 @@ def init_plan(request):
     # AddOnService.objects.all().delete()
     # services = [
     #     AddOnService(code='0',type='unit', service_name='値引き', price=-1000, unit=0, category='自費', is_tax=False, insurance_type='self_pay', apply_unit='per_service', medical_deduction=False),
-    #     AddOnService(code='0',type='unit', service_name='時間サービス', price=1000, unit=0, category='自費', is_tax=False, insurance_type='self_pay', apply_unit='per_service', medical_deduction=False),
-    #     AddOnService(code='0',type='unit', service_name='昼食代', price=690, unit=0, category='食費', is_tax=False, insurance_type='self_pay', apply_unit='per_day', medical_deduction=False),
+    #     AddOnService(code='0',type='unit', service_name='時間サービス', price=1000, category='自費', is_tax=False, insurance_type='self_pay', apply_unit='per_service', medical_deduction=False),
+    #     AddOnService(code='0',type='unit', service_name='昼食代', price=690, category='食費', is_tax=False, insurance_type='self_pay', apply_unit='per_day', medical_deduction=False),
     #     AddOnService(code='0',type='unit', service_name='おやつ代', price=150, unit=0, category='食費', is_tax=False, insurance_type='self_pay', apply_unit='per_day', medical_deduction=False),
-    #     AddOnService(code='0',type='unit', service_name='洗濯代', price=120, unit=0, category='自費', is_tax=False, insurance_type='self_pay', apply_unit='per_day', medical_deduction=False),
-    #     AddOnService(code='0',type='unit', service_name='教養娯楽費', price=50, unit=0, category='自費', is_tax=False, insurance_type='self_pay', apply_unit='per_day', medical_deduction=False),
+    #     AddOnService(code='0',type='unit', service_name='洗濯代', price=120, category='自費', is_tax=False, insurance_type='self_pay', apply_unit='per_day', medical_deduction=False),
+    #     AddOnService(code='0',type='unit', service_name='教養娯楽費', price=50, category='自費', is_tax=False, insurance_type='self_pay', apply_unit='per_day', medical_deduction=False),
     #     AddOnService(code='0',type='unit', service_name='パット代', price=100, unit=0, category='消耗品', is_tax=True, insurance_type='self_pay', apply_unit='per_service', medical_deduction=False),
     #     AddOnService(code='0',type='unit', service_name='キャンセル料', price=1000, unit=0, category='自費', is_tax=False, insurance_type='self_pay', apply_unit='per_service', medical_deduction=False),
     #     AddOnService(code='0',type='unit', service_name='夕食代', price=690, unit=0, category='食費', is_tax=False, insurance_type='self_pay', apply_unit='per_day', medical_deduction=False),
-    #     AddOnService(code='0',type='unit', service_name='時間サービス', price=1500, unit=0, category='自費', is_tax=True, insurance_type='self_pay', apply_unit='per_service', medical_deduction=False),
     #     AddOnService(code='0',type='unit', service_name='宿泊費', price=6800, unit=0, category='宿泊', is_tax=True, insurance_type='self_pay', apply_unit='per_service', medical_deduction=False),
-    #     AddOnService(code='0',type='unit', service_name='捕食', price=150, unit=0, category='食費', is_tax=False, insurance_type='self_pay', apply_unit='per_service', medical_deduction=False),
+    #     AddOnService(code='0',type='unit', service_name='捕食', price=150, category='食費', is_tax=False, insurance_type='self_pay', apply_unit='per_service', medical_deduction=False),
     #     # AddOnService(code='6107',type='rate', rate=0.115, service_name='通所介護処遇改善加算Ⅱ', unit=0, category='通所介護',insurance_type='insurance',apply_unit='monthly'),
     #     # 延長・感染症・災害（所定単位数に対する％加算・減算は単位を0として登録）
     #     AddOnService(code='6600',type='rate', service_name='通所介護感染症災害3％加算', unit=0, category='通所介護', insurance_type='insurance', apply_unit='per_service'),
@@ -29,14 +28,14 @@ def init_plan(request):
     #     AddOnService(code='6605', service_name='通所介護延長加算5', type='unit', unit=250, category='通所介護', insurance_type='insurance', apply_unit='per_service'),
     #
     #     # 共生型サービス減算（％減算のため単位0）
-    #     AddOnService(code='6364', service_name='通所介護共生型サービス生活介護', type='rate', unit=0, category='通所介護', insurance_type='insurance', apply_unit='monthly'),
-    #     AddOnService(code='6365', service_name='通所介護共生型サービス自立訓練', type='rate', unit=0, category='通所介護', insurance_type='insurance', apply_unit='monthly'),
-    #     AddOnService(code='6366', service_name='通所介護共生型サービス児童発達支援', type='rate', unit=0, category='通所介護', insurance_type='insurance', apply_unit='monthly'),
-    #     AddOnService(code='6367', service_name='通所介護共生型サービス放課後等デイ', type='rate', unit=0, category='通所介護', insurance_type='insurance', apply_unit='monthly'),
+    #     AddOnService(code='6364', service_name='通所介護共生型サービス生活介護', type='rate', rate=0.0, category='通所介護', insurance_type='insurance', apply_unit='monthly'),
+    #     AddOnService(code='6365', service_name='通所介護共生型サービス自立訓練', type='rate', rate=0.0, category='通所介護', insurance_type='insurance', apply_unit='monthly'),
+    #     AddOnService(code='6366', service_name='通所介護共生型サービス児童発達支援', type='rate', rate=0.0, category='通所介護', insurance_type='insurance', apply_unit='monthly'),
+    #     AddOnService(code='6367', service_name='通所介護共生型サービス放課後等デイ', type='rate', rate=0.0, category='通所介護', insurance_type='insurance', apply_unit='monthly'),
     #
     #     # 基本加算・入浴・中重度
     #     AddOnService(code='6350', service_name='通所介護生活相談員配置等加算', type='unit', unit=13, category='通所介護', insurance_type='insurance', apply_unit='per_day'),
-    #     AddOnService(code='8110', service_name='通所介護中山間地域等提供加算', type='rate', unit=0, category='通所介護', insurance_type='insurance', apply_unit='per_day'),
+    #     AddOnService(code='8110', service_name='通所介護中山間地域等提供加算', type='rate', rate=0.0, category='通所介護', insurance_type='insurance', apply_unit='per_day'),
     #     AddOnService(code='5301', service_name='通所介護入浴介助加算Ⅰ', type='unit', unit=40, category='通所介護', insurance_type='insurance', apply_unit='per_day'),
     #     AddOnService(code='5303', service_name='通所介護入浴介助加算Ⅱ', type='unit', unit=55, category='通所介護', insurance_type='insurance', apply_unit='per_day'),
     #     AddOnService(code='5306', service_name='通所介護中重度者ケア体制加算', type='unit', unit=45, category='通所介護', insurance_type='insurance', apply_unit='per_day'),
