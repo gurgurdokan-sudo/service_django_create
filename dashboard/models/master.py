@@ -81,13 +81,16 @@ class AddOnService(models.Model):
         if self.rate:
             return (self.rate * 100).normalize()
         return None
+
     @property
     def unit_or_price(self):
-        if self.unit:
+        if self.unit is not None:
             return self.unit
-        elif self.price:
+        if self.price is not None:
             return self.price
-        return '-'
+        if self.rate is not None:
+            return f"{self.rate100.normalize():f}%"
+        return "-"
 
     def full_code(self) ->str:
         return f'{self.service_type_code}{self.code}'

@@ -86,7 +86,7 @@ def office_setting(request):
 
     display_labels = {}
     for field in office._meta.fields:
-        if field.name.startswith("_"):
+        if field.primary_key or field.name.startswith("_"):
             continue
         value = getattr(office, field.name)
         display_labels[field.verbose_name] = value if value is not None else "-"
