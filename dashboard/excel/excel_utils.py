@@ -27,11 +27,25 @@ def sum_int(rows, key):
     """明細の指定キーを整数として合計する"""
     return sum(int(row.get(key) or 0) for row in rows)
 
-def convert_xlsx_to_pdf(xlsx_bytes, filename="claim.xlsx"):
+def convert_xlsx_to_pdf(xlsx_input,stem: str = "document", filename="claim.xlsx"):
     """XLSXのバイト列をLibreOfficeでPDF化し、PDFのバイト列を返す。
 
     呼び出し側は返り値を application/pdf のHttpResponseに設定して返す。
     """
+    if isinstance(xlsx_input, (str, Path)):
+        xlsx_bytes = Path(xlsx_input).read_bytes()
+        if stem == "document" and isinstance(xlsx_input, (str, Path)):
+            stem = Path(xlsx_input).stem
+    elif isinstance(xlsx_input, (bytes, bytearray, memoryview)):
+        xlsx_bytes = bytes(xlsx_input)
+    elif hasattr(xlsx_input, "getvalue"):  # io.BytesIO の場合
+        xlsx_bytes = xlsx_input.getvalue()
+    elif hasattr(xlsx_input, "read"):  # ファイル風オブジェクトの場合
+        xlsx_bytes = xlsx_input.read()
+    else:
+        raise TypeError(
+            f"bytes, Path, または str が必要です (受け取った型: {type(xlsx_input).__name__})"
+        )
     # ファイル名からパス要素を除いて、一時ディレクトリ内にのみ保存する。
     stem = Path(filename).stem or "claim"
 
