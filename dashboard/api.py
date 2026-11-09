@@ -1,4 +1,5 @@
-from datetime import date
+import calendar
+from datetime import date, time
 from typing import Optional, Any
 from django.db import transaction
 from django.shortcuts import get_object_or_404
@@ -9,6 +10,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from dashboard.services.addon_patterns import build_service_addon_record
 from dashboard.models import (
     AddOnService,
     ServiceMaster,
@@ -907,3 +909,213 @@ def service_master_preview(request):
         "category": category,
         "service_name": service.service_name if service else None,
     })
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def copy_last_month(request, user_id):
+    office = getattr(request.user, "office", None)
+    if office is None:
+        return _error("ログインユーザーの事業所が設定されていません", 403)
+
+    year = _parse_int(request.data.get("year"), 2000, 2100)
+    month = _parse_int(request.data.get("month"), 1, 12)
+    if year is None or month is None:
+        return _error("対象年月が正しくありません", 400)
+
+    target_user = get_object_or_404(UseUser, pk=user_id)
+    target_date = date(year, month, 1)
+    prev_year, prev_month = (year - 1, 12) if month == 1 else (year, month - 1)
+    prev_date = date(prev_year, prev_month, 1)
+
+    previous_record: ServiceMonthlyRecord = ServiceMonthlyRecord.objects.filter(
+        user=target_user, office=office, date=prev_date,
+    ).first()
+    if previous_record is None:
+        return _error("前月のサービス提供票が見つかりません", 404)
+
+    previous_plans = list(
+        previous_record.plans.all().order_by("id")
+    )
+    if not previous_plans:
+        return _error("前月に基本プランがありません", 400)
+    last_day = calendar.monthrange(year, month)[1]
+    month_end = date(year, month, last_day)
+
+    certificates = list(target_user.certificates.filter(
+        limit_start__lte=month_end,
+        limit_end__gte=target_date,
+    ).order_by("limit_start", "id"))
+
+    # 前月Recordの曜日設定を予備として使い、Planごとの予定曜日を集約する。
+    prev_last_day = calendar.monthrange(prev_year, prev_month)[1]
+    fallback_weekdays = {
+        int(value) for value in (previous_record.weekday_pattern or [])
+        if str(value).isdigit() and 0 <= int(value) <= 6
+    }
+    groups: dict[tuple[time, time, str], dict[str, set[int]]] = {}
+    for old_plan in previous_plans:
+        key = (old_plan.start_time, old_plan.end_time, old_plan.service_type_code)
+        group = groups.setdefault(key, {"weekdays": set()})
+        for day_key, value in (old_plan.schedule_json or {}).items():
+            if value != "1":
+                continue
+            try:
+                day = int(day_key)
+                if 1 <= day <= prev_last_day:
+                    group["weekdays"].add(date(prev_year, prev_month, day).weekday())
+            except (TypeError, ValueError):
+                continue
+        if not group["weekdays"]:
+            group["weekdays"].update(fallback_weekdays)
+        if not group["weekdays"]:
+            groups.pop(key, None)
+
+    if not groups:
+        return _error("前月の基本プランに予定曜日がありません", 400)
+
+    # 対象月の認定期間。月途中の区分変更にも対応する。
+
+    cert_periods = []
+    uncovered_days = []
+    current_cert = None
+    period_start = None
+    for day in range(1, last_day + 1):
+        service_date = date(year, month, day)
+        candidates = [
+            cert for cert in certificates
+            if cert.limit_start <= service_date <= cert.limit_end
+        ]
+        day_cert = max(
+            candidates,
+            key=lambda cert: (cert.limit_start, cert.is_active, cert.pk),
+            default=None,
+        )
+
+        if day_cert is None:
+            uncovered_days.append(day)
+        if day_cert != current_cert:
+            if current_cert is not None:
+                cert_periods.append((current_cert, period_start, day - 1))
+            current_cert = day_cert
+            period_start = day if day_cert is not None else None
+
+    if current_cert is not None:
+        cert_periods.append((current_cert, period_start, last_day))
+    if not cert_periods:
+        return _error("対象月に有効な介護認定情報がありません", 400)
+        cert_periods = [
+            (old_cert, 1, changed_cert.limit_start.day - 1),
+            (changed_cert, changed_cert.limit_start.day, last_day),
+        ]
+    else:
+        cert = target_user.get_certificate(year, month)
+        if cert is None:
+            return _error("対象月の認定情報がありません", 400)
+        cert_periods = [(cert, 1, last_day)]
+
+    addon_ids = build_service_addon_record(target_user, year, month)
+    all_weekdays = sorted({
+        weekday for group in groups.values() for weekday in group["weekdays"]
+    })
+    created_count = 0
+    skipped_count = 0
+
+    try:
+        with transaction.atomic():
+            target_record, _ = ServiceMonthlyRecord.objects.get_or_create(
+                user=target_user,
+                date=target_date,
+                defaults={
+                    "office": office,
+                    "weekday_pattern": all_weekdays,
+                    "addon_pattern": addon_ids,
+                    "start_time": previous_record.start_time,
+                    "end_time": previous_record.end_time,
+                },
+            )
+            target_record = ServiceMonthlyRecord.objects.select_for_update().get(
+                pk=target_record.pk
+            )
+            if target_record.office_id != office.pk:
+                return _error("対象月のRecordは別事業所に紐づいています", 403)
+            if target_record.confirmed:
+                return _error("対象月のRecordは確定済みです", 409)
+
+            # すでにある基本プランは残す
+            def plan_key(plan):
+                return (
+                    plan.service_code, plan.start_time,
+                    plan.end_time, plan.service_type_code,
+                )
+
+            existing_keys = {
+                plan_key(plan)
+                for plan in ServicePlan.objects.select_for_update().filter(
+                    monthly_record=target_record
+                )
+            }
+
+            if not target_record.weekday_pattern:
+                target_record.weekday_pattern = all_weekdays
+            if not target_record.addon_pattern:
+                target_record.addon_pattern = addon_ids
+            target_record.save(update_fields=[
+                "weekday_pattern", "addon_pattern", "updated_at",
+            ])
+
+            for (start_time, end_time, service_type_code), group in groups.items():
+                weekdays = [str(day) for day in sorted(group["weekdays"])]
+                for cert, start_day, end_day in cert_periods:
+                    draft = ServicePlan(
+                        user=target_user,
+                        monthly_record=target_record,
+                        year=year,
+                        month=month,
+                        start_time=start_time,
+                        end_time=end_time,
+                        service_type_code=service_type_code,
+                        care_level=cert.care_level,
+                        cert=cert,
+                        start_day=start_day,
+                        end_day=end_day,
+                    )
+                    master: ServiceMaster = ServiceMaster.objects.filter(
+                        care_level=cert.care_level,
+                        stay_time_category=draft.stay_time_category,
+                    ).first()
+                    if master is None:
+                        raise ValueError(
+                            f"{cert.care_level}・利用時間{draft.stay_time_category}のサービスマスタがありません"
+                        )
+                    identity = (
+                        master.service_code, start_time, end_time, service_type_code,
+                    )
+                    if identity in existing_keys:
+                        skipped_count += 1
+                        continue
+                    draft.service_name = master.service_name
+                    draft.service_code = master.service_code
+                    draft.unit = master.unit
+                    draft.save()
+                    draft.build_schedule(weekdays, start_day=start_day, end_day=end_day)
+                    draft.save(update_fields=["schedule_json", "actual_json"])
+                    existing_keys.add(identity)
+                    created_count += 1
+
+        return Response({
+            "status": "ok",
+            "created_count": created_count,
+            "skipped_count": skipped_count,
+            "errors": [],
+            "warnings": ([
+                f"介護認定期間外のため、{', '.join(map(str, uncovered_days))}日は予定を作成していません"
+            ] if uncovered_days else []),
+        })
+    except ValueError as exc:
+        return _error(str(exc), 400)
+    except Exception:
+        logger.exception(
+            "前月基本プランのコピーに失敗: user_id=%s, year=%s, month=%s",
+            user_id, year, month,
+        )
+        return _error("前月の基本プランをコピーできませんでした", 500)

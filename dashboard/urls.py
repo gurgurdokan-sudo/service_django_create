@@ -57,4 +57,5 @@ urlpatterns = [
     path("api/users/<user_id>/summary/", api.service_summary, name="service_summary"),
     path("api/user/<user_id>/validate/", api.validate_monthly_record, name="validate_monthly_record"),
     path("api/user/service_master_preview/", api.service_master_preview, name="service_master_preview"),
+    path("api/user/<int:user_id>/copy_last_month/", api.copy_last_month, name="copy_last_month"),
 ]

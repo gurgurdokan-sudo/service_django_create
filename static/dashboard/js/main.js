@@ -364,6 +364,7 @@ function animateProgressBar(){
 }
 document.addEventListener('DOMContentLoaded', () => {
     const btnValidate = document.getElementById('btn_validate');
+    const copyLastMonth = document.getElementById('btn_copy_last_month');
 
     if (btnValidate) {
         btnValidate.addEventListener('click', async () => {
@@ -422,4 +423,75 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+    if (copyLastMonth) {
+                copyLastMonth.addEventListener('click', async () => {
+                const userId = document.getElementById('userid').dataset.userId;
+                const year = document.getElementById('dis_year').value;
+                const month = document.getElementById('dis_month').value;
+
+                try {
+                    // チェック中はローディング
+                    Swal.fire({
+                        title: '移行中...',
+                        text: '基本プランを移行しています',
+                        allowOutsideClick: false,
+                        didOpen: () => { Swal.showLoading(); }
+                    });
+
+                    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value
+                || document.cookie.match(/(?:^|; )csrftoken=([^;]+)/)?.[1];
+            const response = await fetch(`/api/user/${userId}/copy_last_month/`, {
+                method: "POST",
+                credentials: "same-origin",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": decodeURIComponent(csrfToken ?? ""),
+                },
+                body: JSON.stringify({ year: Number(year), month: Number(month) }),
+            });
+                    const data = await response.json();
+
+                    if (data.status === "ok") {
+                        // エラーなし
+                        await Swal.fire({
+                            icon: 'success',
+                            title: [
+		                            ...(data.warnings || []),
+		                            '必要に応じて、基本プランを編集してください。',
+		                        ].join('\n'),
+                            text: '必要に応じて、基本プランを編集してください。',
+                            confirmButtonColor: '#2c3e50'
+                        });
+                        window.location.reload(); //ロードしてカレンダーに反映
+                    } else {
+                        let htmlContent = '<div style="text-align:left; font-size: 0.9rem; max-height: 300px; overflow-y: auto;">';
+
+                        if (data.errors && data.errors.length > 0) {
+                            htmlContent += '<h5 style="color:#d32f2f; font-weight:bold;"> エラー（修正必須）</h5><ul style="color:#d32f2f;">';
+                            data.errors.forEach(err => { htmlContent += `<li>${err}</li>`; });
+                            htmlContent += '</ul>';
+                        }
+
+                        if (data.warnings && data.warnings.length > 0) {
+                            htmlContent += '<h5 style="color:#f39c12; font-weight:bold; margin-top:15px;"> 確認（必要に応じて）</h5><ul>';
+                            data.warnings.forEach(warn => { htmlContent += `<li>${warn}</li>`; });
+                            htmlContent += '</ul>';
+                        }
+
+                        htmlContent += '</div>';
+
+                        Swal.fire({
+                            icon: data.errors.length > 0 ? 'error' : 'warning',
+                            title: '入力チェック結果',
+                            html: htmlContent,
+                            width: '600px',
+                            confirmButtonColor: '#2c3e50'
+                        });
+                    }
+                } catch (error) {
+                    console.error(error);
+                    Swal.fire('通信エラー', '移行処理に失敗しました', 'error');
+                }
+            });
+        }
 });
