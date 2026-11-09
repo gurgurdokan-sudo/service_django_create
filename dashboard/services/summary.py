@@ -1,4 +1,5 @@
 from datetime import date
+from typing import Any
 
 from dashboard.excel.service_calculator import ServiceSheetCalculator
 from dashboard.models import ServiceMonthlyRecord
@@ -47,7 +48,7 @@ def _calc_values(res):
 # メイン
 # ------------------------------------------------------------
 def build_service_summary(user, year, month, save=True):
-    summary = _empty_summary()
+    summary: dict[str, Any] = _empty_summary()
 
     record:ServiceMonthlyRecord = (
         ServiceMonthlyRecord.objects
@@ -163,7 +164,7 @@ def _aggregate_plan_rows(plans, plan_items):
         row["actual_count"] += actual_count
         row["subtotal"] += subtotal
 
-    return sorted(grouped.values(), key=lambda row: row["code"])
+    return sorted(grouped.values(), key=lambda r: r["code"])
 
 def _aggregate_addon_rows(addon_items):
     """同じサービスコード・単位数の加算を1行に集約する。"""
@@ -192,7 +193,7 @@ def _aggregate_addon_rows(addon_items):
 
     return sorted(
         grouped.values(),
-        key=lambda row: (row["code"], row["unit"]),
+        key=lambda r: (r["code"], r["unit"]),
     )
 
 
@@ -252,7 +253,7 @@ def _self_pay_items(plans):
             item["count"] = min(item["count"], 1)
         item["subtotal"] = item["price"] * item["count"]
 
-    return sorted(items.values(), key=lambda item: item["id"])
+    return sorted(items.values(), key=lambda itm: itm["id"])
 
 
 # ------------------------------------------------------------

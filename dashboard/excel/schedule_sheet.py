@@ -84,7 +84,8 @@ def write_schedule_calendar(ws, office, plans, year, month):
             continue
         row = _write_plan_rows(ws, row, plan, columns, office, insurance_addons)
     if office.default_service:
-        row = _write_default_service_rows(ws, row, office)
+        # row =\
+        _write_default_service_rows(ws, row, office)
 
 def _write_calendar_days(ws, calendar):
     """日付（15行目）・曜日（16行目）を書く祝日は曜日欄に◎を出す"""

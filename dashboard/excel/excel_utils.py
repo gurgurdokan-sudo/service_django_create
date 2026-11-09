@@ -27,7 +27,7 @@ def sum_int(rows, key):
     """明細の指定キーを整数として合計する"""
     return sum(int(row.get(key) or 0) for row in rows)
 
-def convert_xlsx_to_pdf(xlsx_input,stem: str = "document", filename="claim.xlsx"):
+def convert_xlsx_to_pdf(xlsx_input, stem: str = "document"):
     """XLSXのバイト列をLibreOfficeでPDF化し、PDFのバイト列を返す。
 
     呼び出し側は返り値を application/pdf のHttpResponseに設定して返す。
@@ -47,7 +47,7 @@ def convert_xlsx_to_pdf(xlsx_input,stem: str = "document", filename="claim.xlsx"
             f"bytes, Path, または str が必要です (受け取った型: {type(xlsx_input).__name__})"
         )
     # ファイル名からパス要素を除いて、一時ディレクトリ内にのみ保存する。
-    stem = Path(filename).stem or "claim"
+    stem = stem or "claim"
 
     with tempfile.TemporaryDirectory(prefix="claim_pdf_") as temp_dir:
         temp_path = Path(temp_dir)
