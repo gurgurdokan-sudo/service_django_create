@@ -27,10 +27,11 @@ class UseUser(models.Model):
     gender = models.CharField(max_length=10, choices=GENDER_CHOICES, verbose_name='性別')
 
     # 請求書利用フィールド
-    phone = models.CharField(max_length=20, null=True, blank=True)
-    postal_code = models.CharField(max_length=20, null=True, blank=True)
-    address = models.CharField(max_length=100, null=True, blank=True)
-    notes = models.TextField(blank=True, default="", verbose_name='メモ')
+    phone = models.CharField(verbose_name='電話番号', max_length=20, null=True, blank=True)
+    postal_code = models.CharField(verbose_name='郵便番号', max_length=20, null=True, blank=True)
+    address = models.CharField(verbose_name='住所', max_length=100, null=True, blank=True)
+
+    notes = models.TextField(verbose_name='メモ', blank=True, default="")
 
     def __str__(self):
         return self.name

@@ -270,27 +270,34 @@ def prev_month_plan(request, user_id):
 def service_act(request, user_id):
     user = get_object_or_404(UseUser, id=user_id)
     now = timezone.now()
-    year = int(request.GET.get('year', now.year))
-    month = int(request.GET.get('month', now.month))
+    year = int(request.GET.get("year", now.year))
+    month = int(request.GET.get("month", now.month))
 
     col = get_month_days(year=year, month=month)
-
-    query_plans: QuerySet[ServicePlan] =\
-        ServicePlan.objects.filter(user=user, year=year, month=month)
+    query_plans: QuerySet[ServicePlan] = ServicePlan.objects.filter(
+        user=user, year=year, month=month
+    )
 
     for plan in query_plans:
-        schedule = plan.schedule_dict      # {"1": "1", "5": "1", ...}
-        actual = plan.actual_dict          # {"1": {"main": "", "addon": []}, ...}
-        plan.add_addon_pattern_to_actual(plan.schedule_json)
+        schedule = plan.schedule_dict
+        scheduled_days = [
+            day for day, value in schedule.items() if value == "1"
+        ]
+        plan.add_addon_pattern_to_actual(scheduled_days)
+
+        # 加算反映後の実績を再取得
+        actual = plan.actual_dict
         for day in col:
-            day_str = str(day['day'])
-            if schedule.get(day_str) == '1':
-                actual[day_str]['main'] = '1'
+            day_str = str(day["day"])
+            if schedule.get(day_str) == "1":
+                actual[day_str]["main"] = "1"
             else:
-                actual[day_str]['main'] = ''
+                actual[day_str]["main"] = ""
 
         plan.actual_json = actual
-        plan.save()
+        plan.save(update_fields=["actual_json"])
 
-    messages.success(request, '予定で実績を作成しました')
-    return redirect(f"{reverse('dashboard:service', args=[user_id])}?year={year}&month={month}")
+    messages.success(request, "予定で実績を作成しました")
+    return redirect(
+        f"{reverse('dashboard:service', args=[user_id])}?year={year}&month={month}"
+    )
