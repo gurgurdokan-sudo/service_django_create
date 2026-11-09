@@ -65,9 +65,9 @@ def write_schedule_header(ws, user, office, year, month, created_date):
 
 
 def write_schedule_calendar(ws, office, plans, year, month):
-    """日付・曜日を書き、Planごとに予定・実績行を続けて書く"""
+    """日付・曜日を書き、スケジュールがあるPlanだけ行を出力する"""
     office.office_names = (office.name.split() + ["", ""])[:2]
-    calendar = get_month_days(year, month)
+    calendar = get_month_days(year=year, month=month)
     _write_calendar_days(ws, calendar)
     columns = _calendar_columns(calendar)
 
@@ -79,8 +79,12 @@ def write_schedule_calendar(ws, office, plans, year, month):
 
     row = FIRST_PLAN_ROW
     for plan in plans:
+        schedule = plan.schedule_dict or {}
+        if not any(value == "1" for value in schedule.values()):
+            continue
         row = _write_plan_rows(ws, row, plan, columns, office, insurance_addons)
-
+    if office.default_service:
+        row = _write_default_service_rows(ws, row, office.default_service, office)
 
 def _write_calendar_days(ws, calendar):
     """日付（15行目）・曜日（16行目）を書く祝日は曜日欄に◎を出す"""
@@ -144,9 +148,19 @@ def _write_plan_rows(ws, row, plan, columns, office, insurance_addons):
         ws[f'BD{row}'] = plan.get_total_count('schedule')  # 予定の合計回数
         ws[f'BD{row + 1}'] = addon_count
         row += 2
-
     return row
 
+def _write_default_service_rows(ws, row, office):
+    """default加算を書き、次の行番号を返す"""
+    auto_newline(office.default_service.service_name, ws, f'H{row}')
+    ws[f'O{row}'] = office.office_names[0]
+    ws[f'O{row + 1}'] = office.office_names[1]
+
+    ws[f'BD{row}'] = '1'
+    ws[f'BD{row + 1}'] = '1'
+
+    row += 2
+    return row
 
 def _collect_addon_names(actual_by_day, insurance_addons):
     """1か月分の実績から保険対象の加算を集め、{加算IDまたは加算名: 加算名} で返す"""
@@ -169,7 +183,6 @@ def _collect_addon_names(actual_by_day, insurance_addons):
                 if str(name) in insurance_addon_names
             })
     return addon_names
-
 
 def _get_month_certificates(user, year, month):
     """対象月1日時点の認定と、月途中から有効になる認定を返す"""
