@@ -1,10 +1,12 @@
 from datetime import date
 import calendar as calendar_module
 
-from django.db import transaction
+from django.db import transaction, DatabaseError
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.urls import reverse
+from pydantic import ValidationError
+
 from dashboard.context_processors import get_office
 from dashboard.models import (
     UseUser,
@@ -114,12 +116,13 @@ def create_plan(request,user_id):
                     messages.success(request, 'サービス提供表の計画を作成しました')
                 url = reverse('dashboard:service', args=[user_id])
                 return redirect(f'{url}?year={year}&month={month}')
-        except Exception:
+        except (DatabaseError, ValidationError, ValueError) as err:
             logger.exception(
-                "サービス提供表の計画作成に失敗しました (user_id=%s, %s年%s月)",
+                "サービス提供表の計画作成に失敗しました (user_id=%s, %s年%s月) error=%s ",
                 user_id,
                 year,
                 month,
+                err
             )
             messages.error(request, "計画を作成できませんでした。入力内容を確認してください。")
             return redirect("dashboard:user_list")
