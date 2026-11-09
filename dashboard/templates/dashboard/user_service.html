@@ -35,7 +35,7 @@
   <div id="bread" class="ms-2" data-items="{{ breadcrumbs }}"></div>
   <div class="header-container">
     <h2 id="userid" data-user-id="{{ user.id }}" class="page-title text-truncate">
-      <span>{{ user.name }} さんのサービス提供表 {{ dis_month }} 月  </span>
+      <a class="link-name" href="{% url 'dashboard:detail' user.id %}">{{ user.name }} さんのサービス提供表 {{ dis_month }} 月  </a>
     </h2>
 
     <div id="confirmed-status" data-confirmed="{{ confirmed }}" class="d-none d-md-block">

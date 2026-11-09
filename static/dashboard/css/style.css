@@ -410,3 +410,9 @@ th .calendar-row .total-cell{
     0% { transform: translateX(-100%); }
     100% { transform: translateX(100%); }
 }
+/* 名前リンク */
+.link-name {
+    color: #2c3e50;
+    font-weight: bold;
+    text-decoration: none;
+}
