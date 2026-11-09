@@ -98,22 +98,30 @@ def _match_plan_items(plans, plan_items):
     plan_id があれば ID で、無ければ順番で組み合わせる。
     """
     if plan_items and all("plan_id" in item for item in plan_items):
-        by_id = {item["plan_id"]: item for item in plan_items}
-        return [(plan, by_id.get(plan.id)) for plan in plans]
+        by_id = {str(item["plan_id"]): item for item in plan_items}
+        return [(plan, by_id.get(str(plan.id))) for plan in plans]
 
     if len(plans) != len(plan_items):
         logger.warning(
             "プラン数と計算結果の数が違います: plans=%s, items=%s",
             len(plans), len(plan_items),
         )
-    items = list(plan_items) + [None] * max(0, len(plans) - len(plan_items))
-    return list(zip(plans, items))
 
+    def extract_key(c):
+        return str(c)[-4:] if c else ""  # 例:'781444'も'1444'末尾一致でマッピング
+
+    by_code = {extract_key(item.get("code") or item.get("service_code")): item for item in plan_items}
+    matched = []
+    for plan in plans:
+        plan_code_key = extract_key(plan.service_code)
+        item = by_code.get(plan_code_key)
+        matched.append((plan, item))
+
+    return matched
 
 def _aggregate_plan_rows(plans, plan_items):
     """同じサービスコードのPlanを1行に集約する（時刻は集約条件にしない）。"""
     grouped = {}
-
     for plan, item in _match_plan_items(plans, plan_items):
         item = item or {}
 
@@ -130,6 +138,7 @@ def _aggregate_plan_rows(plans, plan_items):
 
         row = grouped.get(code)
         if row is None:
+            logger.info(f'summary grope get {code=}')
             row = {
                 # 代表PlanのIDを残す。
                 # 念のため plan_ids に保持する。
