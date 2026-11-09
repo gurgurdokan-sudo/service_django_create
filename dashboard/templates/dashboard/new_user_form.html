@@ -76,12 +76,42 @@
 
     {# --- 生年月日 --- #}
     <div class="label-input-err">
-      <div class="label-input">
-        {{ form.date_of_birth.label_tag }}{{ form.date_of_birth }}
+      {{ form.date_of_birth.label_tag }}
+      <div class="d-flex align-items-center gap-2 flex-grow-1">
+        {{ form.date_of_birth }}
+        <button class="btn btn-outline-secondary text-nowrap" type="button" id="openWarekiConverter">和暦変換</button>
+        <div id="currentAge" class="form-text text-muted text-nowrap mb-0" aria-live="polite"></div>
       </div>
-      <div class="post-err">
-          {% for error in form.date_of_birth.errors %}{{ error }}{% endfor %}
+    </div>
+
+    <!-- 和暦変換エリア -->
+    <div id="warekiConverter" class="border rounded p-3 mt-2" hidden>
+      <div class="mb-2">
+        <label for="warekiEraSelect" class="form-label">年号</label>
+        <select id="warekiEraSelect" class="form-select">
+          <option value="">年号を選択</option>
+          <option value="令和">令和</option>
+          <option value="平成">平成</option>
+          <option value="昭和">昭和</option>
+          <option value="大正">大正</option>
+          <option value="明治">明治</option>
+        </select>
       </div>
+      <div class="mb-2">
+        <label for="warekiYear" class="form-label">年</label>
+        <input type="number" id="warekiYear" class="form-control" min="1" step="1" inputmode="numeric">
+      </div>
+      <div class="mb-2">
+        <label for="warekiMonth" class="form-label">月</label>
+        <input type="number" id="warekiMonth" class="form-control" min="1" max="12" step="1" inputmode="numeric">
+      </div>
+      <div class="mb-2">
+        <label for="warekiDay" class="form-label">日</label>
+        <input type="number" id="warekiDay" class="form-control" min="1" max="31" step="1" inputmode="numeric">
+      </div>
+      <p id="warekiPreview" class="form-text" aria-live="polite"></p>
+      <button class="btn btn-primary" type="button" id="applyWarekiDate" disabled>生年月日に反映</button>
+      <button class="btn btn-outline-secondary" type="button" id="closeWarekiConverter">閉じる</button>
     </div>
 
     {# --- 性別 --- #}
@@ -105,13 +135,22 @@
     </div>
 
     {# --- 郵便番号 --- #}
-    <div class="label-input-err">
-      <div class="label-input">
-        {{ form.postal_code.label_tag }}{{ form.postal_code }}
+    <div class="label-input">
+      {{ form.postal_code.label_tag }}
+      <div class="d-inline-flex align-items-center gap-2 flex-nowrap">
+        {{ form.postal_code }}
+        <button class="btn btn-outline-secondary" type="button" id="lookupPostalCode">住所検索</button>
       </div>
-      <div class="post-err">
-          {% for error in form.postal_code.errors %}{{ error }}{% endfor %}
+      <p id="postalCodeMessage" class="form-text" aria-live="polite"></p>
+      <div id="postalCandidatesWrap" class="mt-2" hidden>
+        <label for="postalCandidates" class="form-label">住所候補</label>
+        <select id="postalCandidates" class="form-select">
+          <option value="">住所を選択してください</option>
+        </select>
       </div>
+    </div>
+    <div class="post-err">
+        {% for error in form.postal_code.errors %}{{ error }}{% endfor %}
     </div>
 
     {# --- 住所 --- #}
@@ -142,31 +181,5 @@
 {% endblock %}
 
 {% block script %}
-<script>
-  document.addEventListener('DOMContentLoaded', () => {
-    const form = document.getElementById('userForm');
-    if (!form) return;
-
-    let isDirty = false;
-
-    form.addEventListener('input', () => {
-      isDirty = true;
-    });
-
-    window.addEventListener('beforeunload', (e) => {
-      if (!isDirty) return;
-      e.preventDefault();
-      e.returnValue = ''; 
-    });
-
-    form.addEventListener('submit', (e) => {
-      const btn = form.querySelector('button[value="save"]');
-      if (btn) {
-          // 二重送信防止
-          setTimeout(() => { btn.disabled = true; }, 1);
-      }
-      isDirty = false; 
-    });
-  });
-</script>
+<script src="{% static 'dashboard/js/userFormLogic.js' %}"></script>
 {% endblock script %}

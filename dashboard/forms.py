@@ -13,7 +13,9 @@ logger = logging.getLogger(__name__)
 
 class UserForm(forms.ModelForm):
     _errors = {}
-
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['date_of_birth'].widget.attrs['class'] = 'form-label mb-0 text-nowrap'
     class Meta:
         model = UseUser
         fields = ['care_manager', 'name', 'name_kana', 'insured_number', 'date_of_birth',
