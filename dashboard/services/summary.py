@@ -49,7 +49,7 @@ def _calc_values(res):
 def build_service_summary(user, year, month, save=True):
     summary = _empty_summary()
 
-    record = (
+    record:ServiceMonthlyRecord = (
         ServiceMonthlyRecord.objects
         .filter(user=user, date=date(year, month, 1))
         .select_related("office")
