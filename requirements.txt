@@ -11,3 +11,4 @@ django-modeladmin-reorder
 pydantic
 dotenv
 pypdf
+slack_sdk

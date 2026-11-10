@@ -3,6 +3,10 @@ from datetime import date as date_cls
 from django.urls import reverse
 from dashboard.models import ServicePlan, UseUser
 import json
+from slack_sdk import WebClient
+from slack_sdk.errors import SlackApiError
+import logging
+logger = logging.getLogger(__name__)
 
 class BreadcrumbUtil:
     @staticmethod
@@ -40,10 +44,10 @@ def get_users_scheduled_on(target_date: date_cls) -> list[UseUser]:
     plans = ServicePlan.objects.filter(
         year=year, month=month
     ).select_related('user')
-    
+
     # schedule_json から該当日の予定が '1' のものを抽出し、userを取り出す順序を保持
     scheduled_users = [
-        plan.user for plan in plans 
+        plan.user for plan in plans
         if (plan.schedule_json or {}).get(day_str) == '1'
     ]
     return list(dict.fromkeys(scheduled_users)) # 重複削除
