@@ -63,10 +63,12 @@ class ClaimValidator:
     U_KIND, U_YM, U_OFFICE, U_INSURER, U_INSURED = 3, 4, 5, 6, 7
     # 01 基本情報
     B_INS_UNITS, B_INS_AMOUNT = 34, 35
+    B_PUB1_UNITS, B_PUB1_AMOUNT = 39, 40  # 公費1の単位数・請求額
     # 02 明細情報
     D_ITEM_CODE, D_UNITS = 9, 15
     # 10 集計情報
     T_LIMIT_UNITS, T_NON_LIMIT_UNITS, T_INS_UNITS, T_INS_AMOUNT = 11, 12, 15, 17
+    T_PUB1_UNITS, T_PUB1_AMOUNT = 18, 19  # 公費1の単位数・請求額
 
     def __init__(self):
         self._reset()
@@ -86,11 +88,16 @@ class ClaimValidator:
 
         # 7111（保険請求行）と利用者合計の突き合わせ用
         self.summary = None
+        self.pub_summary = None
         self.summary_missing_reported = False
         self.user_started = False
         self.user_count = 0
         self.total_ins_units = 0
         self.total_ins_amount = 0
+
+        self.pub_user_count = 0
+        self.total_pub1_units = 0
+        self.total_pub1_amount = 0
 
         # 利用者レコードの並び順管理用（None -> '01' -> '02'(複数可) -> '10'）
         self.current_user_id = None
@@ -247,8 +254,22 @@ class ClaimValidator:
                 "units": to_int(r[self.S_UNITS]),
                 "amount": to_int(r[self.S_INS_AMOUNT]),
             }
-        elif kind != self.PUBLIC_CLAIM:
-            self._add_error(index, f"7111: 保険・公費等区分が不正です: {kind}")
+        elif kind == self.PUBLIC_CLAIM:
+            if self.pub_summary is not None:
+                self._add_error(index, "7111: 公費請求行が複数あります。")
+                return
+            # 公費の請求金額は11列目（S_INS_AMOUNT の隣）にあると想定
+            # ※ClaimBuilderの仕様に合わせて適宜インデックス(10)を調整してください
+            pub_amount_col = self.S_INS_AMOUNT + 1 if len(r) > self.S_INS_AMOUNT + 1 else self.S_INS_AMOUNT
+
+            self.pub_summary = {
+                "index": index,
+                "law_number": r[5],  # 法別番号 (例: 12)
+                "count": to_int(r[self.S_COUNT]),
+                "units": to_int(r[self.S_UNITS]),
+                "amount": to_int(r[pub_amount_col]),
+            }
+        else: self._add_error(index, f"7111: 保険・公費等区分が不正です: {kind}")
 
     # --- 7131 明細書情報 ---
     def _validate_user(self, index, r):
@@ -320,11 +341,18 @@ class ClaimValidator:
 
     def _validate_basic(self, index, r):
         units, amount = to_int(r[self.B_INS_UNITS]), to_int(r[self.B_INS_AMOUNT])
+        # 公費請求を取得
+        pub1_units, pub1_amount = to_int(r[self.B_PUB1_UNITS]), to_int(r[self.B_PUB1_AMOUNT])
+
         if units is None or amount is None:
             self._add_error(index, "7131(01): 保険の単位数・請求額が数値ではありません。")
             self.user_has_error = True
             return
-        self.user_basic = (units, amount)
+
+        # 公費利用者の判定[公費請求1円以上]
+        if pub1_amount is not None and pub1_amount > 0:
+            self.pub_user_count += 1
+        self.user_basic = (units, amount, pub1_units or 0, pub1_amount or 0)
 
     def _validate_service(self, index, r):
         if not is_digits(r[self.D_ITEM_CODE], 4):
@@ -339,8 +367,11 @@ class ClaimValidator:
     def _validate_total(self, index, r):
         limit = to_int(r[self.T_LIMIT_UNITS])
         non_limit = to_int(r[self.T_NON_LIMIT_UNITS])
-        ins_units = to_int(r[self.T_INS_UNITS])
-        ins_amount = to_int(r[self.T_INS_AMOUNT])
+        # 保険分の取得
+        ins_units, ins_amount = to_int(r[self.T_INS_UNITS]), to_int(r[self.T_INS_AMOUNT])
+        # 公費分の取得
+        pub1_units, pub1_amount = to_int(r[self.T_PUB1_UNITS]), to_int(r[self.T_PUB1_AMOUNT])
+
         if None in (limit, non_limit, ins_units, ins_amount):
             self._add_error(index, "7131(10): 単位数・請求額に数値でない値があります。")
             self.user_has_error = True
@@ -355,12 +386,21 @@ class ClaimValidator:
         if self.user_service_units != limit + non_limit:
             self._add_error(index, f"7131(10): 02の単位数合計 {self.user_service_units} と、10の限度額管理対象＋対象外 {limit + non_limit} が一致しません。")
         if self.user_basic:
-            basic_units, basic_amount = self.user_basic
+            basic_units, basic_amount, b_pub1_units, b_pub1_amount = self.user_basic
+            # 保険分 突き合わせ
             if basic_units != ins_units:
                 self._add_error(index, f"7131(10): 保険単位数合計 {ins_units} が01の {basic_units} と一致しません。")
             if basic_amount != ins_amount:
                 self._add_error(index, f"7131(10): 保険請求額 {ins_amount} が01の {basic_amount} と一致しません。")
 
+            # 公費分 突き合わせ
+            if b_pub1_amount > 0:
+                if b_pub1_units != pub1_units:
+                    self._add_error(index,
+                f"7131(10): 公費の単位数合計{b_pub1_units} が01の {pub1_units} と一致しません。")
+                if b_pub1_amount != pub1_amount:
+                    self._add_error(index,
+                f"7131(10): 公費の請求額{b_pub1_amount} が01の {pub1_amount} と一致しません。")
     # ==========================================
     # エンドレコード (3)
     # ==========================================
@@ -399,3 +439,21 @@ class ClaimValidator:
             self._add_error(idx, f"7111: 単位数 {s['units']} が10行の保険単位数合計 {self.total_ins_units} と一致しません。")
         if s["amount"] != self.total_ins_amount:
             self._add_error(idx, f"7111: 保険請求額 {s['amount']} が10行の保険請求額合計 {self.total_ins_amount} と一致しません。")
+        # 公費請求分
+        if self.pub_user_count > 0:
+            if self.pub_summary is None:
+                self._add_error(last_index,
+                                f"公費受給者が {self.pub_user_count} 名いますが、7111（公費請求）行が存在しません。")
+            else:
+                p, p_idx = self.pub_summary, self.pub_summary["index"]
+                if p["count"] != self.pub_user_count:
+                    self._add_error(p_idx,
+                                    f"7111(公費): 件数 {p['count']} が公費利用者数 {self.pub_user_count} と一致しません。")
+                if p["units"] != self.total_pub1_units:
+                    self._add_error(p_idx,
+                                    f"7111(公費): 単位数 {p['units']} が10行の公費単位数合計 {self.total_pub1_units} と一致しません。")
+                if p["amount"] != self.total_pub1_amount:
+                    self._add_error(p_idx,
+                                    f"7111(公費): 公費請求額 {p['amount']} が10行の公費請求額合計 {self.total_pub1_amount} と一致しません。")
+        elif self.pub_summary is not None:
+            self._add_error(self.pub_summary["index"], "公費受給者がいないのに、7111（公費請求）行が存在します。")
