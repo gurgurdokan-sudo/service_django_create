@@ -87,10 +87,18 @@ def build_user_service_context(office, user_id, year, month):
         "bank_account": f"振込先: {office._bank_account}", #todo 事務所口座番号
         "bikou": "",
     }
+    exclude_addon_ids = {
+        int(addon_id)
+        for p in plans
+        for addon_id in p.get_addon_summary.keys()
+    }
     addon_service = AddOnService.objects.filter(
         office_settings__office=office,
         office_settings__is_enabled=True,
         office_settings__is_archived=False,
+    ).exclude(
+        id__in=exclude_addon_ids,
+        insurance_type="self_pay"
     )
     return {
         'office': office,
