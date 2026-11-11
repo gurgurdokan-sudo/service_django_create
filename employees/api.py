@@ -7,6 +7,8 @@ from rest_framework.response import Response
 from .models import Assignment, Staff, ShiftPattern
 from .permissions import has_delete_permission
 
+from dashboard.utils import get_users_scheduled_on
+
 
 def _parse_time(value):
     if not value:

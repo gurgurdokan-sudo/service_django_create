@@ -7,6 +7,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from dashboard.models import ServicePlan
+from dashboard.utils import get_users_scheduled_on
 from diary.models import Entry
 
 from .forms import AssignmentForm, StaffForm, StaffUpdateForm, ShiftPatternForm
@@ -71,6 +72,7 @@ def employee_delete(request, employee_id):
 # 担当スケジュール（日付ごとの従業員×利用者の割当て）
 def assignment_list(request):
     target_date = _parse_date(request.GET.get('date')) or timezone.localdate()
+    scheduled_users = get_users_scheduled_on(target_date)
     assignments = (
         Assignment.objects.filter(date=target_date)
         .select_related('employee', 'user')
@@ -81,6 +83,7 @@ def assignment_list(request):
         'target_date': target_date,
         'prev_date': target_date - timedelta(days=1),
         'next_date': target_date + timedelta(days=1),
+        'scheduled_users': scheduled_users,
     })
 
 
@@ -88,6 +91,10 @@ def assignment_create(request):
     initial_date = _parse_date(request.GET.get('date')) or timezone.localdate()
     if request.method == 'POST':
         form = AssignmentForm(request.POST)
+        scheduled_users = get_users_scheduled_on(initial_date)
+        scheduled_user_ids = [u.id for u in scheduled_users]
+        # プルダウンを指定日付に利用予定の利用者に絞る
+        form['user'].queryset = form['user'].queryset.filter(id__in=scheduled_user_ids)
         if form.is_valid():
             assignment = form.save()
             # 「毎週◯曜日にシフトパターン登録しますか？」ポップアップでOKした場合
@@ -106,7 +113,10 @@ def assignment_create(request):
             return redirect(f"{_assignment_list_url()}?date={assignment.date.isoformat()}")
     else:
         form = AssignmentForm(initial={'date': initial_date})
-    return render(request, 'employees/assignment_form.html', {'form': form, 'title': '担当スケジュールの登録'})
+        scheduled_user_ids = [u.id for u in scheduled_users]
+        form['user'].queryset = form['user'].queryset.filter(id__in=scheduled_user_ids)
+    context =  {'form': form, 'title': '担当スケジュールの登録', 'scheduled_users': scheduled_users}
+    return render(request, 'employees/assignment_form.html', context)
 
 
 @delete_permission_required

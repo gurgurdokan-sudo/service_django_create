@@ -17,6 +17,8 @@
     <a href="{% url 'employees:assignment_list' %}" class="btn btn-secondary">戻る</a>
   </form>
 </div>
+{% endblock %}
+{% block script %}  
 <script>
 // 保存時に「毎週◯曜日にシフトパターン登録しますか？」ポップアップを出す
 document.getElementById('assignmentForm').addEventListener('submit', function() {

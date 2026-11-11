@@ -15,6 +15,16 @@
 <link rel="stylesheet" href="{% static 'dashboard/css/temp.css' %}">
 {% endblock css %}
 {% block body %}
+<div class="alert callout callout-info alert-dismissible fade show my-3 shadow-sm">
+  <h2>{{ target_date|date:'Y年n月j日（D）' }} の利用予定者</h2>
+  <ul>
+    {% for user in scheduled_users %}
+      <li>{{ user.name|default:'利用者名' }}</li>
+    {% empty %}
+      <li>本日の利用予定者はいません。</li>
+    {% endfor %}
+  </ul>
+</div>
 <div class="container">
   <div class="header-container">
     <h1 class="page-title">担当スケジュール</h1>
