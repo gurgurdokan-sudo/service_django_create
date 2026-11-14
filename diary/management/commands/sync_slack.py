@@ -3,7 +3,7 @@
 設定はプロジェクト直下の slack_config.json から読む:
     {
         "token": "xoxp-... または xoxb-...",
-        "user_id": "U0A1E588J2J",   // 取り込み対象ユーザー（伊丹琴貴）
+        "user_id": "U0A1E588J2J",   // 取り込み対象ユーザー
         "channel_id": ""            // 空なら user_id とのDMを自動で開く
     }
 
@@ -155,6 +155,7 @@ class Command(BaseCommand):
 
     def open_dm(self, client, user_id):
         """user_id とのDMチャンネルを開いてIDを返す"""
+        print(client, user_id)
         res = client.call('conversations.open', users=user_id)
         return res['channel']['id']
 

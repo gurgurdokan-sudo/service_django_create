@@ -35,13 +35,14 @@ class BreadcrumbUtil:
             
         return json.dumps(items, ensure_ascii=False)
 
-def get_users_scheduled_on(target_date: date_cls) -> list[UseUser]:
+def get_users_scheduled_on(target_date: date_cls, office) -> list[UseUser]:
     """指定した日付に利用予定（schedule_json == '1'）がある利用者のリストを返す"""
     year = target_date.year
     month = target_date.month
     day_str = str(target_date.day)
 
     plans = ServicePlan.objects.filter(
+        monthly_record__office=office,
         year=year, month=month
     ).select_related('user')
 
