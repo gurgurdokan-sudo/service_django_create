@@ -155,6 +155,9 @@ class Office(models.Model):
         help_text='通知用のチャンネルID'
     )
     @property
+    def slack_bot_token(self):
+        return self._slack_bot_token
+    @property
     def channel(self):
         return self._slack_channel
     @property
