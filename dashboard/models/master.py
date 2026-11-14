@@ -150,6 +150,13 @@ class Office(models.Model):
         'Slack Appトークン', max_length=100, blank=True, default='',
         help_text='xapp- で始まるトークン（Socket Mode接続用）',
     )
+    _slack_channel = models.CharField(
+        'Slack チャンネル', max_length=100, blank=True, default='',
+        help_text='通知用のチャンネルID'
+    )
+    @property
+    def channel(self):
+        return self._slack_channel
     @property
     def display_postal_code(self):
         digits = re.sub(r"\D", "", self._postal_code or "")

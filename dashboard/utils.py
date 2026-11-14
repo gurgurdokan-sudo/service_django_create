@@ -52,3 +52,22 @@ def get_users_scheduled_on(target_date: date_cls, office) -> list[UseUser]:
         if (plan.schedule_json or {}).get(day_str) == '1'
     ]
     return list(dict.fromkeys(scheduled_users)) # 重複削除
+
+def send_slack_message(office, channel_id, text, blocks=None):
+    """指定した事業所の設定を使ってSlackにメッセージを送信する"""
+    token = getattr(office, 'slack_bot_token', '')
+    if not token:
+        logger.warning(f"事業所 {office.name} にSlackトークンが設定されていません。")
+        return False
+
+    client = WebClient(token=token)
+    try:
+        response = client.chat_postMessage(
+            channel=channel_id,
+            text=text,
+            blocks=blocks
+        )
+        return True
+    except SlackApiError as e:
+        logger.error(f"Slack通知エラー: {e.response['error']}")
+        return False
