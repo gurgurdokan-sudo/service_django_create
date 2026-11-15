@@ -65,6 +65,9 @@ CSRF_TRUSTED_ORIGINS = [
 # dashboard.UseUser は被保険者（利用者）モデルであり認証には使わない。
 AUTH_USER_MODEL = 'employees.Staff'
 
+# Slackアプリの Basic Information → App Credentials → Signing Secret を環境変数に設定
+SLACK_SIGNING_SECRET = os.environ.get("SLACK_SIGNING_SECRET", "")
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
