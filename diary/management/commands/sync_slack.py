@@ -1,16 +1,9 @@
 """Slack DMのメッセージを日報に取り込む管理コマンド
 
-設定はプロジェクト直下の slack_config.json から読む:
-    {
-        "token": "xoxp-... または xoxb-...",
-        "user_id": "U0A1E588J2J",   // 取り込み対象ユーザー
-        "channel_id": ""            // 空なら user_id とのDMを自動で開く
-    }
-
 使い方:
-    python manage.py sync_slack             # 過去7日分を取り込み
-    python manage.py sync_slack --days 30   # 過去30日分
-    python manage.py sync_slack --dry-run   # 取り込まずプレビュー
+python manage.py sync_slack --office-id 1 --staff-id 10
+python manage.py sync_slack --office-id 1 --staff-id 10 --days 30
+python manage.py sync_slack --office-id 1 --staff-id 10 --dry-run
 """
 import gzip
 import http.client
@@ -28,7 +21,7 @@ from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
 from django.core.management.base import BaseCommand, CommandError
 
-from dashboard.models import Office
+from dashboard.models import Office, UseUser
 from diary.models import Entry
 
 CONFIG_PATH = Path(settings.BASE_DIR) / 'slack_config.json'
@@ -104,6 +97,7 @@ class Command(BaseCommand):
             pk=options["staff_id"],
             office=office,
             is_active=True,
+            is_staff=False,
             is_superuser=False,
         ).first()
         if not staff:
@@ -120,7 +114,7 @@ class Command(BaseCommand):
         messages = self.fetch_messages(client, channel_id, options["days"])
         targets = [
             m for m in messages
-            if m.get('user') == config['user_id']
+            if m.get('user') == staff.slack_user_id
             and m.get('type') == 'message'
             and not m.get('subtype')
             and (m.get('text', '').strip() or m.get('files'))
@@ -135,6 +129,26 @@ class Command(BaseCommand):
                 continue
 
             posted_at = datetime.fromtimestamp(float(msg['ts']), tz=JST)
+            report_users = list(
+                UseUser.objects.filter(
+                    assignments__employee=staff,
+                    assignments__date=posted_at.date(),
+                    assignments__is_daily_reporter=True,
+                    monthly_records__office=office,
+                    monthly_records__date__year=posted_at.year,
+                    monthly_records__date__month=posted_at.month,
+                ).distinct()[:2]
+            )
+
+            if len(report_users) != 1:
+                self.stderr.write(
+                    f'スキップ: {posted_at:%Y-%m-%d} の日報担当利用者を'
+                    f'一意に特定できません（{len(report_users)}件）'
+                )
+                skipped += 1
+                continue
+
+            report_user = report_users[0]
             text = msg.get('text', '').replace('`', '').strip()
             first_line = text.splitlines()[0] if text else '（画像のみ）'
             title = (first_line[:TITLE_MAX - 1] + '…') if len(first_line) > TITLE_MAX else first_line
@@ -145,7 +159,7 @@ class Command(BaseCommand):
                 continue
 
             entry = Entry.objects.create(
-                date=posted_at.date(),
+                date=report_user,
                 title=title,
                 body=text or '（Slackから画像を取り込み）',
                 slack_ts=msg['ts'],
