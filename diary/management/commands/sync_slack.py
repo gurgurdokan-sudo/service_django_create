@@ -24,9 +24,11 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
 from django.core.management.base import BaseCommand, CommandError
 
+from dashboard.models import Office
 from diary.models import Entry
 
 CONFIG_PATH = Path(settings.BASE_DIR) / 'slack_config.json'
@@ -89,16 +91,33 @@ class Command(BaseCommand):
                             help='何日前まで遡って取得するか（デフォルト: 7）')
         parser.add_argument('--dry-run', action='store_true',
                             help='取り込まずに対象メッセージを表示するだけ')
+        parser.add_argument("--office-id", type=int, required=True)
+        parser.add_argument("--staff-id", type=int, required=True)
 
     def handle(self, *args, **options):
-        config = self.load_config()
-        client = SlackClient(config['token'])
+        office = Office.objects.filter(pk=options["office_id"]).first()
+        if not office:
+            raise CommandError("指定した事業所が見つかりません。")
 
-        channel_id = config.get('channel_id') or self.open_dm(
-            client, config['user_id']
-        )
+        Staff = get_user_model()
+        staff = Staff.objects.filter(
+            pk=options["staff_id"],
+            office=office,
+            is_active=True,
+            is_superuser=False,
+        ).first()
+        if not staff:
+            raise CommandError("指定した事業所のスタッフが見つかりません。")
+        if not staff.slack_user_id:
+            raise CommandError("スタッフにSlackユーザーIDが設定されていません。")
 
-        messages = self.fetch_messages(client, channel_id, options['days'])
+        token = office._slack_bot_token
+        if not token:
+            raise CommandError("事業所にSlack Botトークンが設定されていません。")
+
+        client = SlackClient(token)
+        channel_id = self.open_dm(client, staff.slack_user_id)
+        messages = self.fetch_messages(client, channel_id, options["days"])
         targets = [
             m for m in messages
             if m.get('user') == config['user_id']
