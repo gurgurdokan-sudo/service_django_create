@@ -13,6 +13,7 @@ from .views.certificate_views import certificate_update, certificate_create, cer
 from .views.export_service_sheet import download_service_sheet, export_excel, download_claim_invoice_pdf
 from .views.user_service_view import user_service, prev_month_plan, service_act
 from .views.create_plan import create_plan
+from .views.slack import slack_interactions
 from .views.init_plan import init_plan
 from .views.caremana import care_mana_list,care_mana_update,care_mana_delete, care_mana_create
 from .views.created_service_list import created_service_list, created_service_list_api
@@ -48,6 +49,7 @@ urlpatterns = [
     path('caremanagers/<int:caremanager_id>/delete/', care_mana_delete, name='care_mana_delete'),
     path('user/init', init_plan, name='plan'),
     path('dashboard/create_kokuho_csv/', create_kokuho_csv, name='create_kokuho_csv'),
+    path("slack/interactions/", slack_interactions),
 
 # API
     path('created_service_list/api/', created_service_list_api, name='created_service_list_api'),
